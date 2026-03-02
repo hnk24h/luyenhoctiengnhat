@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  password       String?
+  role           String           @default("user") // "user" | "admin"
+  createdAt      DateTime         @default(now())
+  sessions       ExamSession[]
+  progress       UserProgress[]
+  lessonProgress LessonProgress[]
+}
+
+model Level {
+  id                 String             @id @default(cuid())
+  code               String             @unique // N5, N4, N3, N2, N1
+  name               String
+  description        String?
+  order              Int                @default(0)
+  examSets           ExamSet[]
+  learningCategories LearningCategory[]
+}
+
+model ExamSet {
+  id          String       @id @default(cuid())
+  levelId     String
+  level       Level        @relation(fields: [levelId], references: [id])
+  skill       String       // "nghe" | "noi" | "doc" | "viet"
+  title       String
+  description String?
+  timeLimit   Int?         // seconds, null = unlimited
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  questions   Question[]
+  sessions    ExamSession[]
+  progress    UserProgress[]
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  examSetId String
+  examSet   ExamSet  @relation(fields: [examSetId], references: [id], onDelete: Cascade)
+  type      String   // "tracnghiem" | "dien_tu" | "nghe_audio"
+  content   String
+  options   String?  // JSON array string for MC options
+  answer    String   // JSON string (single or array)
+  explain   String?
+  audioUrl  String?
+  imageUrl  String?
+  order     Int      @default(0)
+}
+
+model ExamSession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  examSetId   String
+  examSet     ExamSet   @relation(fields: [examSetId], references: [id])
+  answers     String    // JSON: { questionId: userAnswer }
+  score       Float?
+  totalQ      Int       @default(0)
+  correctQ    Int       @default(0)
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+}
+
+model UserProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  examSetId   String
+  examSet     ExamSet   @relation(fields: [examSetId], references: [id])
+  completed   Boolean   @default(false)
+  bestScore   Float?
+  attempts    Int       @default(0)
+  lastAttempt DateTime?
+
+  @@unique([userId, examSetId])
+}
+
+// ─── LEARNING MODULE ─────────────────────────────────────────────────────────
+
+model LearningCategory {
+  id          String           @id @default(cuid())
+  levelId     String
+  level       Level            @relation(fields: [levelId], references: [id])
+  skill       String           // nghe | noi | doc | viet
+  name        String
+  description String?
+  icon        String?
+  order       Int              @default(0)
+  lessons     LearningLesson[]
+}
+
+model LearningLesson {
+  id          String           @id @default(cuid())
+  categoryId  String
+  category    LearningCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  content     String?          // Markdown/HTML nội dung chính
+  type        String           @default("text") // text | vocab | grammar | audio
+  order       Int              @default(0)
+  items       LearningItem[]
+  progress    LessonProgress[]
+}
+
+model LearningItem {
+  id             String         @id @default(cuid())
+  lessonId       String
+  lesson         LearningLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  type           String         // vocab | kanji | grammar | example | phrase
+  japanese       String         // từ / mẫu câu tiếng Nhật
+  reading        String?        // hiragana/katakana
+  meaning        String         // nghĩa tiếng Việt
+  example        String?        // câu ví dụ
+  exampleReading String?        // reading của câu ví dụ
+  exampleMeaning String?        // nghĩa câu ví dụ
+  audioUrl       String?
+  imageUrl       String?
+  order          Int            @default(0)
+}
+
+model LessonProgress {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  lessonId    String
+  lesson      LearningLesson @relation(fields: [lessonId], references: [id])
+  completed   Boolean        @default(false)
+  completedAt DateTime?
+
+  @@unique([userId, lessonId])
+}
