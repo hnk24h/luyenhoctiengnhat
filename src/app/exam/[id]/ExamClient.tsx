@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SKILLS, formatDuration } from '@/lib/utils';
+import { SkillIcon } from '@/components/SkillIcon';
+import { FaHeadphones, FaCircleCheck, FaClock } from 'react-icons/fa6';
 
 interface Question {
   id: string;
@@ -63,7 +65,10 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
   if (!started) {
     return (
       <div className="card max-w-2xl mx-auto text-center py-12">
-        <div className="text-5xl mb-4">{skillInfo?.icon ?? '📝'}</div>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 mx-auto"
+          style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+          <SkillIcon skill={skill} size={28} />
+        </div>
         <h1 className="text-2xl font-bold mb-2">{title}</h1>
         <div className="flex items-center justify-center gap-3 text-sm text-gray-500 mb-6">
           <span>Cấp độ {level}</span>
@@ -91,8 +96,8 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">{answeredCount}/{questions.length} đã trả lời</span>
           {timeLimit ? (
-            <span className={`font-mono font-bold ${timeLeft < 60 ? 'text-red-600' : 'text-gray-700'}`}>
-              ⏱ {formatDuration(timeLeft)}
+            <span className={`font-mono font-bold flex items-center gap-1 ${timeLeft < 60 ? 'text-red-600' : 'text-gray-700'}`}>
+              <FaClock size={13}/> {formatDuration(timeLeft)}
             </span>
           ) : null}
           <button onClick={handleSubmit} disabled={submitting}
@@ -134,7 +139,7 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
           {/* Audio */}
           {q.audioUrl && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
-              <span className="text-xl">🎧</span>
+              <FaHeadphones size={18} className="text-blue-500 shrink-0"/>
               <audio controls src={q.audioUrl} className="flex-1 h-8" />
             </div>
           )}
@@ -184,8 +189,8 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
             {current < questions.length - 1 ? (
               <button onClick={() => setCurrent(c => c + 1)} className="btn-primary">Câu tiếp →</button>
             ) : (
-              <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
-                {submitting ? 'Đang nộp...' : '✅ Nộp bài'}
+              <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex items-center gap-1.5">
+                {submitting ? 'Đang nộp...' : <><FaCircleCheck size={14}/> Nộp bài</>}
               </button>
             )}
           </div>

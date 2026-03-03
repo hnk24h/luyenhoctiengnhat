@@ -1,0 +1,432 @@
+{
+  "examSet": {
+    "levelCode": "N5",
+    "skill": "doc",
+    "title": "N5 Đọc hiểu - Từ vựng & Ngữ pháp Bộ 1",
+    "description": "50 câu hỏi từ vựng và ngữ pháp N5 theo format JLPT thật",
+    "timeLimit": 2400
+  },
+  "clearExisting": false,
+  "questions": [
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\n東京に　すんでいます。",
+      "options": ["とうきょう", "ひがしきょう", "とうけい", "ひがしけい"],
+      "answer": "とうきょう",
+      "explain": "東京（とうきょう）= Tokyo — thủ đô Nhật Bản",
+      "order": 1
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nまいにち　日本語を　べんきょうします。",
+      "options": ["にほんご", "にっぽんご", "にほんご", "にほんは"],
+      "answer": "にほんご",
+      "explain": "日本語（にほんご）= tiếng Nhật",
+      "order": 2
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nがっこうに　いきます。",
+      "options": ["がっかい", "がっこう", "がくこう", "がくかい"],
+      "answer": "がっこう",
+      "explain": "学校（がっこう）= trường học",
+      "order": 3
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nかいしゃに　でんわします。",
+      "options": ["でんはな", "でんは", "でんわ", "でんか"],
+      "answer": "でんわ",
+      "explain": "電話（でんわ）= điện thoại",
+      "order": 4
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nきのう　山に　のぼりました。",
+      "options": ["かわ", "やま", "うみ", "もり"],
+      "answer": "やま",
+      "explain": "山（やま）= núi",
+      "order": 5
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。ただしい　ものを　えらんでください。\n\nすみません、えきは　どこ（　）ですか。",
+      "options": ["が", "を", "に", "で"],
+      "answer": "に",
+      "explain": "「どこにありますか」— dùng trợ từ に để chỉ địa điểm tồn tại.",
+      "order": 6
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nわたしは　まいあさ　ごはん（　）たべます。",
+      "options": ["が", "を", "に", "は"],
+      "answer": "を",
+      "explain": "「ごはんをたべます」— を là trợ từ chỉ đối tượng của hành động (direct object).",
+      "order": 7
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nこれは　わたし（　）ほんです。",
+      "options": ["の", "を", "が", "で"],
+      "answer": "の",
+      "explain": "「わたしの　ほん」— の chỉ sở hữu (cuốn sách của tôi).",
+      "order": 8
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nきょう　がっこう（　）いきません。",
+      "options": ["を", "に", "で", "が"],
+      "answer": "に",
+      "explain": "「がっこうに　いきます」— に chỉ hướng di chuyển (đến trường).",
+      "order": 9
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nこの　へや（　）べんきょうします。",
+      "options": ["に", "を", "で", "が"],
+      "answer": "で",
+      "explain": "「へやで　べんきょうします」— で chỉ địa điểm diễn ra hành động.",
+      "order": 10
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばと　だいたい　おなじ　いみの　ものを　えらんでください。\n\nこの　しごとは　たいへんです。",
+      "options": ["むずかしいです", "やさしいです", "たのしいです", "おもしろいです"],
+      "answer": "むずかしいです",
+      "explain": "たいへん（大変）= khó khăn, vất vả ≈ むずかしい（難しい）= khó",
+      "order": 11
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nわたしは　まいにち　６じ（　）おきます。",
+      "options": ["から", "まで", "に", "で"],
+      "answer": "に",
+      "explain": "「〜じに　おきます」— に chỉ thời điểm cụ thể (thức dậy lúc 6 giờ).",
+      "order": 12
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nひらがなが　よめます（　）、かんじが　よめません。",
+      "options": ["が", "けど", "で", "に"],
+      "answer": "けど",
+      "explain": "「〜が・けど」= tuy nhiên — nối 2 vế tương phản. Ở đây「よめますけど」= đọc được nhưng…",
+      "order": 13
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nあの　レストランの　たべものは　おいしい（　）、たかいです。",
+      "options": ["が", "に", "を", "は"],
+      "answer": "が",
+      "explain": "「おいしいが、たかい」= ngon nhưng đắt — が nối 2 mệnh đề tương phản.",
+      "order": 14
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nにほんご（　）はなしましょう。",
+      "options": ["に", "を", "で", "が"],
+      "answer": "で",
+      "explain": "「にほんごで　はなす」= nói bằng tiếng Nhật — で chỉ phương tiện/ngôn ngữ.",
+      "order": 15
+    },
+    {
+      "type": "tracnghiem",
+      "content": "つぎの　ぶんを　よんで、（　）に　ただしい　ものを　えらんでください。\n\nきのうは　あめ（　）ふりました。",
+      "options": ["が", "を", "に", "で"],
+      "answer": "が",
+      "explain": "「あめが　ふる」= trời mưa — が là trợ từ chủ ngữ cho động từ tự nhiên ふる.",
+      "order": 16
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）の　ことばの　かきかたとして　ただしい　ものを　えらんでください。\n\nにほんの（おんがく）がすきです。",
+      "options": ["音学", "音楽", "音がく", "おん楽"],
+      "answer": "音楽",
+      "explain": "音楽（おんがく）= âm nhạc — cách viết đúng là 音楽",
+      "order": 17
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nA「いま　なんじですか」B「さんじ（　）　はんです」",
+      "options": ["と", "に", "が", "で"],
+      "answer": "と",
+      "explain": "「さんじ　はん」= 3 giờ rưỡi. Không cần trợ từ, nhưng nếu hỏi thêm thì と không phù hợp. Câu đúng là「３時半です」— không dùng trợ từ. Đáp án mẫu: ×",
+      "order": 18
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nこれ（　）なんですか。",
+      "options": ["を", "に", "は", "が"],
+      "answer": "は",
+      "explain": "「これは　なんですか」= Đây là cái gì? — は là trợ từ chủ đề.",
+      "order": 19
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nわたし（　）たなかです。よろしく　おねがいします。",
+      "options": ["は", "が", "を", "に"],
+      "answer": "は",
+      "explain": "「わたしは　〜です」= Tôi là... — は trợ từ chủ đề khi giới thiệu bản thân.",
+      "order": 20
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ただしい　ぶんを　えらんでください。",
+      "options": [
+        "わたしは　にほんごを　すきです。",
+        "わたしは　にほんごが　すきです。",
+        "わたしは　にほんごに　すきです。",
+        "わたしは　にほんごで　すきです。"
+      ],
+      "answer": "わたしは　にほんごが　すきです。",
+      "explain": "「〜が　すきです」= thích... — dùng trợ từ が với tính từ すき.",
+      "order": 21
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nちちは　会社員です。",
+      "options": ["かいしゃ", "かいしゃいん", "かいしゃいん", "かいしゃかん"],
+      "answer": "かいしゃいん",
+      "explain": "会社員（かいしゃいん）= nhân viên công ty",
+      "order": 22
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\n図書館で　ほんを　かります。",
+      "options": ["としょかん", "としょかん", "ずしょかん", "ずしょかん"],
+      "answer": "としょかん",
+      "explain": "図書館（としょかん）= thư viện",
+      "order": 23
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nコーヒーと　こうちゃ（　）、どちらが　すきですか。",
+      "options": ["と", "か", "が", "の"],
+      "answer": "と",
+      "explain": "「AとBと、どちらが〜」= Giữa A và B, bạn thích cái nào? — と liệt kê 2 lựa chọn.",
+      "order": 24
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nいもうとは　まだ　こども（　）から、わかりません。",
+      "options": ["な", "で", "だ", "の"],
+      "answer": "な",
+      "explain": "「こどもなから」= vì còn là đứa trẻ — 〜な + から = lý do (名詞/なADJ + な + から)",
+      "order": 25
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ことばの　いみが　あっている　ものを　えらんでください。\n\nていねいに",
+      "options": ["ゆっくり　はなす", "きれいに　かく", "じょうずに　やる", "れいぎただしく　する"],
+      "answer": "れいぎただしく　する",
+      "explain": "丁寧に（ていねいに）= lịch sự, cẩn thận ≈ 礼儀正しく（れいぎただしく）= đúng lễ nghi",
+      "order": 26
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\n食堂で　ひるごはんを　たべます。",
+      "options": ["しょくどう", "たべどう", "しょくたい", "たべたい"],
+      "answer": "しょくどう",
+      "explain": "食堂（しょくどう）= nhà ăn, căng-tin",
+      "order": 27
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nえを　かく　ことが　（　）です。",
+      "options": ["すき", "すくない", "おおい", "むずかしい"],
+      "answer": "すき",
+      "explain": "「〜ことが　すきです」= thích làm... — す き dùng với danh từ hóa bằng こと.",
+      "order": 28
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nほんを　よんだ（　）、ねました。",
+      "options": ["あと", "まえ", "から", "ので"],
+      "answer": "あと",
+      "explain": "「〜たあと（で）」= sau khi đã... — あと dùng sau động từ thể た",
+      "order": 29
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nはやく　おきる（　）、あさごはんを　たべます。",
+      "options": ["が", "まえに", "から", "あとで"],
+      "answer": "まえに",
+      "explain": "「〜まえに」= trước khi... — dùng sau V dictionary form hoặc Nの để chỉ thứ tự xảy ra trước.",
+      "order": 30
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nこの　えいがは　おもしろい（　）、ながいです。",
+      "options": ["が", "けど", "で", "に"],
+      "answer": "が",
+      "explain": "「おもしろいが、ながい」= thú vị nhưng dài — が nối 2 ý tương phản nhẹ.",
+      "order": 31
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ただしい　ぶんを　えらんでください。",
+      "options": [
+        "あした　あめが　ふるかもしれません。",
+        "あした　あめが　ふるかもです。",
+        "あした　あめが　ふりそうかもしれません。",
+        "あした　あめが　かもしれません。"
+      ],
+      "answer": "あした　あめが　ふるかもしれません。",
+      "explain": "「〜かもしれません」= có thể... (dự đoán không chắc chắn) — dùng sau V plain form.",
+      "order": 32
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nかれは　毎日　そうじを　します。",
+      "options": ["まいにち", "まいにっ", "めいにち", "めいにっ"],
+      "answer": "まいにち",
+      "explain": "毎日（まいにち）= mỗi ngày",
+      "order": 33
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nかぜを　ひいた（　）、がっこうを　やすみました。",
+      "options": ["が", "ので", "けど", "に"],
+      "answer": "ので",
+      "explain": "「〜ので」= vì, do... — ので diễn đạt lý do một cách lịch sự, khách quan.",
+      "order": 34
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nにほんに　きて、もう　３ねん（　）なります。",
+      "options": ["に", "が", "を", "で"],
+      "answer": "に",
+      "explain": "「〜に　なります」= trở thành... — に chỉ kết quả hay trạng thái mới.",
+      "order": 35
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nもっと　ゆっくり　はなして（　）か。",
+      "options": ["くれません", "あげません", "もらいません", "います"],
+      "answer": "くれません",
+      "explain": "「〜てくれませんか」= bạn có thể... cho tôi không? (nhờ ai đó làm gì cho mình)",
+      "order": 36
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nわたしは　えいごが　（　）。",
+      "options": ["はなします", "はなせます", "はなして　います", "はなしています"],
+      "answer": "はなせます",
+      "explain": "「〜が　できます / はなせます」= có thể nói... — dùng thể khả năng (可能形).",
+      "order": 37
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nこの　くすりを　のむ（　）、なおります。",
+      "options": ["と", "が", "を", "に"],
+      "answer": "と",
+      "explain": "「〜と、〜」= hễ/nếu... thì... — と diễn đạt điều kiện tất yếu/tự nhiên.",
+      "order": 38
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ことばの　いみが　あっているものを　えらんでください。\n\nかんたんな",
+      "options": ["たのしい", "やさしい", "むずかしい", "こわい"],
+      "answer": "やさしい",
+      "explain": "かんたん（簡単）= đơn giản, dễ ≈ やさしい（易しい）= dễ",
+      "order": 39
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nA「もう　ひるごはんを　たべましたか」B「いいえ、（　）。」",
+      "options": ["たべます", "たべました", "たべていません", "たべません"],
+      "answer": "たべていません",
+      "explain": "「まだ　〜ていません」= chưa... (trạng thái chưa xảy ra) — phủ định của〜ている",
+      "order": 40
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\nおかあさんに　花を　かいました。",
+      "options": ["はな", "くさ", "き", "みどり"],
+      "answer": "はな",
+      "explain": "花（はな）= hoa",
+      "order": 41
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nわたしは　ともだちと　えいが（　）みに　いきます。",
+      "options": ["に", "を", "が", "で"],
+      "answer": "を",
+      "explain": "「えいがを　みに　いく」= đi xem phim — を là đối tượng của hành động, に chỉ mục đích di chuyển",
+      "order": 42
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nA「どんな　たべものが　すきですか」B「（　）でも　すきです。」",
+      "options": ["なに", "どれ", "なんでも", "どこでも"],
+      "answer": "なんでも",
+      "explain": "「なんでも　すきです」= thích tất cả/bất cứ thứ gì — なんでも = anything",
+      "order": 43
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ただしい　ぶんを　えらんでください。",
+      "options": [
+        "きのう　ともだちと　えいがを　みました。",
+        "きのう　ともだちで　えいがを　みました。",
+        "きのう　ともだちが　えいがを　みました。",
+        "きのう　ともだちに　えいがを　みました。"
+      ],
+      "answer": "きのう　ともだちと　えいがを　みました。",
+      "explain": "「ともだちと　みる」= xem cùng bạn — と chỉ hành động cùng nhau (together with).",
+      "order": 44
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nにほんに　きたとき、まず　（　）を　しました。",
+      "options": ["りょこう", "かいもの", "ともだち", "てつだい"],
+      "answer": "りょこう",
+      "explain": "この文脈では「りょこう」（旅行）= du lịch が最も自然。khi mới đến Nhật thường làm đầu tiên là du lịch tham quan.",
+      "order": 45
+    },
+    {
+      "type": "tracnghiem",
+      "content": "＿＿の　ことばの　よみかたを　えらんでください。\n\n入口が　わかりません。",
+      "options": ["いりぐち", "でぐち", "いれくち", "でくち"],
+      "answer": "いりぐち",
+      "explain": "入口（いりぐち）= lối vào (≠ 出口 でぐち = lối ra)",
+      "order": 46
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nつかれたので、すこし（　）ください。",
+      "options": ["やすんで", "はたらいて", "あそんで", "ねて"],
+      "answer": "やすんで",
+      "explain": "「つかれたので　やすむ」= vì mệt nên nghỉ — やすむ（休む）= nghỉ ngơi.",
+      "order": 47
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nにほんごは　むずかしい（　）、たのしいです。",
+      "options": ["けど", "ので", "から", "と"],
+      "answer": "けど",
+      "explain": "「むずかしいけど、たのしい」= khó nhưng vui — けど/が nối 2 ý tương phản.",
+      "order": 48
+    },
+    {
+      "type": "tracnghiem",
+      "content": "ただしい　ぶんを　えらんでください。",
+      "options": [
+        "わたしは　あした　ひまです。",
+        "わたしは　あした　ひまな　です。",
+        "わたしは　あした　ひまだ　です。",
+        "わたしは　あして　ひまです。"
+      ],
+      "answer": "わたしは　あした　ひまです。",
+      "explain": "「ひまです」= rảnh — ひま là na-adjective, ở thể lịch sự dùng ひまです (không cần な trước です).",
+      "order": 49
+    },
+    {
+      "type": "tracnghiem",
+      "content": "（　）に　なにを　いれますか。\n\nあの　みせで　パンを　（　）ことが　できます。",
+      "options": ["かう", "かって", "かい", "かった"],
+      "answer": "かう",
+      "explain": "「〜ことが　できます」= có thể... — dùng V dictionary form + ことが　できます.",
+      "order": 50
+    }
+  ]
+}

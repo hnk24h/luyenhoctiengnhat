@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Level { id: string; code: string; name: string; description: string | null; order: number }
 
 export default function AdminLevelsClient({ levels: initial }: { levels: Level[] }) {
   const router = useRouter();
-  const [levels, setLevels] = useState(initial);
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
@@ -62,7 +62,7 @@ export default function AdminLevelsClient({ levels: initial }: { levels: Level[]
       </form>
 
       <div className="space-y-2">
-        {levels.map(l => (
+        {initial.map(l => (
           <div key={l.id} className="card flex items-center justify-between py-3">
             <div>
               <span className="font-bold text-gray-900 mr-2">{l.code}</span>
@@ -77,7 +77,7 @@ export default function AdminLevelsClient({ levels: initial }: { levels: Level[]
             </div>
           </div>
         ))}
-        {levels.length === 0 && <div className="text-center text-gray-400 py-8">Chưa có cấp độ nào.</div>}
+        {initial.length === 0 && <div className="text-center text-gray-400 py-8">Chưa có cấp độ nào.</div>}
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SKILLS } from '@/lib/utils';
+import { FaHeadphones, FaMicrophone, FaBookOpen, FaPencil, FaFileLines, FaClock } from 'react-icons/fa6';
+import type { ReactNode } from 'react';
 
 interface Level { id: string; code: string; name: string }
 interface ExamSet {
@@ -41,7 +43,12 @@ export default function AdminExamSetsClient({ levels, examSets: initial }: { lev
     nghe: 'bg-blue-100 text-blue-700', noi: 'bg-green-100 text-green-700',
     doc: 'bg-yellow-100 text-yellow-700', viet: 'bg-purple-100 text-purple-700',
   };
-  const skillIcons: Record<string, string> = { nghe: '🎧', noi: '🎤', doc: '📖', viet: '✏️' };
+  const skillIcons: Record<string, ReactNode> = {
+    nghe: <FaHeadphones size={18}/>,
+    noi:  <FaMicrophone size={18}/>,
+    doc:  <FaBookOpen   size={18}/>,
+    viet: <FaPencil     size={18}/>,
+  };
 
   return (
     <div>
@@ -91,14 +98,17 @@ export default function AdminExamSetsClient({ levels, examSets: initial }: { lev
         {initial.map(s => (
           <div key={s.id} className="card flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <span className="text-xl">{skillIcons[s.skill] ?? '📝'}</span>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: 'var(--bg-muted)' }}>
+                {skillIcons[s.skill] ?? <FaFileLines size={18}/>}
+              </div>
               <div>
                 <div className="font-semibold text-gray-900">{s.title}</div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs text-gray-400">{s.level.code}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${skillColors[s.skill] ?? 'bg-gray-100'}`}>{s.skill}</span>
                   <span className="text-xs text-gray-400">{s._count.questions} câu hỏi</span>
-                  {s.timeLimit && <span className="text-xs text-gray-400">⏱ {s.timeLimit / 60}p</span>}
+                  {s.timeLimit && <span className="text-xs text-gray-400 flex items-center gap-0.5"><FaClock size={10}/> {s.timeLimit / 60}p</span>}
                 </div>
               </div>
             </div>

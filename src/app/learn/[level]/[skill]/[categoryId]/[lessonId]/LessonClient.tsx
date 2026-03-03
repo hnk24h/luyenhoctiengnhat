@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { FaFileLines, FaRuler, FaListUl, FaVolumeHigh, FaStop, FaLightbulb, FaCircleCheck, FaLock, FaHandPointer } from 'react-icons/fa6';
 
 interface LearningItem {
   id: string; type: string; japanese: string; reading: string | null;
@@ -22,12 +23,12 @@ interface Props {
   nextLesson: NavLesson | null;
 }
 
-const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  vocab:   { label: '単語',   color: 'text-blue-700',  bg: 'bg-blue-50 border-blue-200' },
-  kanji:   { label: '漢字',   color: 'text-red-700',   bg: 'bg-red-50 border-red-200' },
-  grammar: { label: '文法',   color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
-  example: { label: '例文',   color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-  phrase:  { label: '表現',   color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
+const TYPE_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  vocab:   { label: '単語',   color: '#1D4ED8',  bg: '#EFF6FF', border: '#BFDBFE' },
+  kanji:   { label: '漢字',   color: '#B91C1C',  bg: '#FEF2F2', border: '#FECACA' },
+  grammar: { label: '文法',   color: '#6D28D9',  bg: '#F5F3FF', border: '#DDD6FE' },
+  example: { label: '例文',   color: '#065F46',  bg: '#F0FDF4', border: '#A7F3D0' },
+  phrase:  { label: '表現',   color: '#C2410C',  bg: '#FFF7ED', border: '#FED7AA' },
 };
 
 export default function LessonClient({ lessonId, lessonType, content, items, isCompleted: initCompleted, isLoggedIn, prevLesson, nextLesson }: Props) {
@@ -74,7 +75,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
     <div>
       {/* Markdown/text content */}
       {content && (
-        <div className="card mb-6 prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap leading-relaxed">
+        <div className="card mb-6 prose prose-sm max-w-none whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-primary)' }}>
           {content}
         </div>
       )}
@@ -82,32 +83,37 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
       {/* Items list */}
       {items.length > 0 && (
         <div className="mb-6">
-          <h2 className="font-bold text-gray-700 text-sm mb-3 uppercase tracking-wide">
-            {lessonType === 'vocab' ? '📝 Từ vựng' :
-             lessonType === 'grammar' ? '📐 Ngữ pháp' : '📋 Nội dung'}
-            <span className="ml-2 text-gray-400 font-normal normal-case">({items.length} mục)</span>
+          <h2 className="font-bold text-sm mb-3 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+            {lessonType === 'vocab'   ? <><FaFileLines size={13}/> Từ vựng</> :
+             lessonType === 'grammar' ? <><FaRuler     size={13}/> Ngữ pháp</> :
+             <><FaListUl size={13}/> Nội dung</>}
+            <span className="ml-2 font-normal normal-case" style={{ color: 'var(--text-muted)' }}>({items.length} mục)</span>
           </h2>
           <div className="space-y-3">
             {items.map(item => {
-              const ti = TYPE_LABELS[item.type] ?? { label: item.type, color: 'text-gray-700', bg: 'bg-gray-50 border-gray-200' };
+              const ti = TYPE_LABELS[item.type] ?? { label: item.type, color: 'var(--text-secondary)', bg: 'var(--bg-muted)', border: 'var(--border)' };
               const isFlipped = flipped[item.id];
               return (
                 <div key={item.id}
-                  className={`rounded-xl border p-4 transition ${ti.bg} cursor-pointer select-none`}
+                  className="rounded-xl border p-4 transition-all cursor-pointer select-none hover:shadow-md"
+                  style={{ background: ti.bg, borderColor: ti.border }}
                   onClick={() => setFlipped(f => ({ ...f, [item.id]: !f[item.id] }))}>
                   <div className="flex items-start gap-3">
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${ti.color} border border-current bg-white shrink-0`}>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border bg-white shrink-0" style={{ color: ti.color, borderColor: ti.color }}>
                       {ti.label}
                     </span>
                     <div className="flex-1">
                       {/* Japanese + reading */}
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-2xl font-bold text-gray-900 font-japanese">{item.japanese}</span>
+                        <span className="text-2xl font-bold font-japanese" style={{ color: 'var(--text-primary)' }}>{item.japanese}</span>
                         {item.reading && (
-                          <span className="text-sm text-gray-500">【{item.reading}】</span>
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>【{item.reading}】</span>
                         )}
                         <button
-                          className={`text-sm px-1.5 py-0.5 rounded transition ${speaking === item.id ? 'text-white bg-blue-500' : 'text-blue-500 hover:bg-blue-50'}`}
+                          className="text-sm px-1.5 py-0.5 rounded-md transition"
+                          style={speaking === item.id
+                            ? { background: 'var(--primary)', color: '#fff' }
+                            : { color: 'var(--primary)', background: 'var(--primary-light)' }}
                           title="Nghe phát âm tiếng Nhật"
                           onClick={e => {
                             e.stopPropagation();
@@ -117,35 +123,38 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
                               speak(item.japanese, item.id);
                             }
                           }}>
-                          {speaking === item.id ? '⏹' : '🔊'}
+                          {speaking === item.id ? <FaStop size={12}/> : <FaVolumeHigh size={12}/>}
                         </button>
                       </div>
 
                       {/* Meaning (click to reveal) */}
                       <div className={`mt-1 transition-all ${isFlipped ? '' : 'blur-sm select-none'}`}>
-                        <span className="text-base font-semibold text-gray-700">{item.meaning}</span>
+                        <span className="text-base font-semibold" style={{ color: 'var(--text-secondary)' }}>{item.meaning}</span>
                       </div>
                       {!isFlipped && (
-                        <div className="text-xs text-gray-400 mt-0.5">👆 Nhấn để xem nghĩa</div>
+                        <div className="text-xs mt-0.5 flex items-center gap-0.5" style={{ color: 'var(--text-muted)' }}><FaHandPointer size={10}/> Nhấn để xem nghĩa</div>
                       )}
 
                       {/* Example */}
                       {isFlipped && item.example && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-gray-800 font-japanese">{item.example}</p>
+                            <p className="text-sm font-medium font-japanese" style={{ color: 'var(--text-primary)' }}>{item.example}</p>
                             <button
-                              className={`text-xs px-1 py-0.5 rounded transition ${speaking === item.id + '_ex' ? 'text-white bg-green-500' : 'text-green-500 hover:bg-green-50'}`}
+                              className="text-xs px-1 py-0.5 rounded transition"
+                              style={speaking === item.id + '_ex'
+                                ? { background: '#059669', color: '#fff' }
+                                : { color: '#059669', background: '#D1FAE5' }}
                               title="Nghe câu ví dụ"
                               onClick={e => { e.stopPropagation(); speak(item.example!, item.id + '_ex'); }}>
-                              {speaking === item.id + '_ex' ? '⏹' : '🔊'}
+                            {speaking === item.id + '_ex' ? <FaStop size={10}/> : <FaVolumeHigh size={10}/>}
                             </button>
                           </div>
                           {item.exampleReading && (
-                            <p className="text-xs text-gray-500">{item.exampleReading}</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.exampleReading}</p>
                           )}
                           {item.exampleMeaning && (
-                            <p className="text-xs text-gray-600 italic">{item.exampleMeaning}</p>
+                            <p className="text-xs italic" style={{ color: 'var(--text-secondary)' }}>{item.exampleMeaning}</p>
                           )}
                         </div>
                       )}
@@ -160,7 +169,9 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
               );
             })}
           </div>
-          <p className="text-xs text-gray-400 mt-3 text-center">💡 Nhấn 🔊 để nghe phát âm · Nhấn vào từng mục để xem nghĩa và ví dụ</p>
+          <p className="text-xs mt-3 text-center flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+            <FaLightbulb size={12}/> Nhấn <FaVolumeHigh size={12}/> để nghe phát âm · Nhấn vào từng mục để xem nghĩa và ví dụ
+          </p>
         </div>
       )}
 
@@ -169,22 +180,24 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
         <div className="flex items-center gap-3">
           {prevLesson ? (
             <Link href={navUrl(prevLesson)} className="btn-secondary text-sm">← {prevLesson.title}</Link>
-          ) : (
-            <div />
-          )}
+          ) : <div />}
         </div>
 
         <button onClick={markComplete} disabled={completed || marking || !isLoggedIn}
-          className={`btn-primary px-6 ${completed ? 'bg-green-600 hover:bg-green-700' : ''}`}>
-          {completed ? '✓ Đã học xong' : marking ? 'Đang lưu...' : isLoggedIn ? '✅ Đánh dấu hoàn thành' : '🔒 Đăng nhập để lưu tiến trình'}
+          className="btn-primary px-6"
+          style={completed ? { background: '#059669', boxShadow: '0 2px 12px rgba(5,150,105,.3)' } : {}}>
+          {completed
+            ? <><FaCircleCheck size={14}/> Đã học xong</>
+            : marking ? 'Đang lưu...'
+            : isLoggedIn
+              ? <><FaCircleCheck size={14}/> Đánh dấu hoàn thành</>
+              : <><FaLock size={14}/> Đăng nhập để lưu tiến trình</>}
         </button>
 
         <div>
           {nextLesson ? (
             <Link href={navUrl(nextLesson)} className="btn-primary text-sm">Bài tiếp → {nextLesson.title}</Link>
-          ) : (
-            <div />
-          )}
+          ) : <div />}
         </div>
       </div>
     </div>

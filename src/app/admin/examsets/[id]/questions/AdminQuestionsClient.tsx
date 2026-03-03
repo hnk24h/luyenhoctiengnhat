@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FaHeadphones, FaLightbulb } from 'react-icons/fa6';
 
 interface Question {
   id: string; type: string; content: string;
@@ -140,7 +141,7 @@ export default function AdminQuestionsClient({ examSetId, questions: initial }: 
                     <span className="text-sm font-bold text-gray-500">Câu {q.order}</span>
                     <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{q.type}</span>
                   </div>
-                  {q.audioUrl && <div className="text-xs text-blue-500 mb-1">🎧 {q.audioUrl}</div>}
+                  {q.audioUrl && <div className="text-xs text-blue-500 mb-1 flex items-center gap-1"><FaHeadphones size={12}/> {q.audioUrl}</div>}
                   <p className="text-sm text-gray-800 whitespace-pre-wrap">{q.content}</p>
                   {opts && (
                     <div className="mt-2 space-y-0.5">
@@ -155,7 +156,7 @@ export default function AdminQuestionsClient({ examSetId, questions: initial }: 
                   {q.type === 'dien_tu' && (
                     <div className="text-xs text-green-700 mt-1">✓ Đáp án: {q.answer}</div>
                   )}
-                  {q.explain && <div className="text-xs text-yellow-700 mt-1">💡 {q.explain}</div>}
+                  {q.explain && <div className="text-xs text-yellow-700 mt-1 flex items-center gap-1"><FaLightbulb size={12}/> {q.explain}</div>}
                 </div>
                 <button onClick={() => handleDelete(q.id)} className="text-xs text-red-400 hover:text-red-600 ml-2 shrink-0">Xóa</button>
               </div>

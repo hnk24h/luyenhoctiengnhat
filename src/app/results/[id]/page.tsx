@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { getSkillLabel, SKILLS } from '@/lib/utils';
+import { FaTrophy, FaBook, FaHeadphones, FaLightbulb } from 'react-icons/fa6';
 
 interface Props { params: { id: string } }
 
@@ -35,7 +36,10 @@ export default async function ResultsPage({ params }: Props) {
     <div className="max-w-4xl mx-auto px-4 py-10">
       {/* Result summary */}
       <div className={`card mb-8 text-center py-10 border-2 ${passed ? 'border-green-400 bg-green-50' : 'border-red-300 bg-red-50'}`}>
-        <div className="text-5xl mb-3">{passed ? '🎉' : '📚'}</div>
+        <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4 mx-auto"
+          style={{ background: passed ? '#dcfce7' : '#fee2e2', color: passed ? '#16a34a' : '#dc2626' }}>
+          {passed ? <FaTrophy size={36}/> : <FaBook size={36}/>}
+        </div>
         <h1 className="text-3xl font-bold mb-1">{passed ? 'Xuất sắc!' : 'Hãy ôn luyện thêm!'}</h1>
         <p className="text-gray-600 mb-4">{session.examSet.title} · {session.examSet.level.code} · {skillInfo?.label}</p>
         <div className="text-6xl font-bold mb-2" style={{ color: passed ? '#16a34a' : '#dc2626' }}>
@@ -75,7 +79,7 @@ export default async function ResultsPage({ params }: Props) {
 
               {q.audioUrl && (
                 <div className="mb-2 p-2 bg-blue-50 rounded flex items-center gap-2">
-                  <span>🎧</span>
+                  <FaHeadphones size={14} className="text-blue-500 shrink-0"/>
                   <audio controls src={q.audioUrl} className="h-7 flex-1" />
                 </div>
               )}
@@ -99,8 +103,8 @@ export default async function ResultsPage({ params }: Props) {
                   </div>
                 )}
                 {q.explain && (
-                  <div className="mt-1 p-2 bg-yellow-50 rounded text-yellow-800 text-xs border border-yellow-200">
-                    💡 {q.explain}
+                  <div className="mt-1 p-2 bg-yellow-50 rounded text-yellow-800 text-xs border border-yellow-200 flex items-start gap-1.5">
+                    <FaLightbulb size={12} className="mt-0.5 shrink-0"/> {q.explain}
                   </div>
                 )}
               </div>
