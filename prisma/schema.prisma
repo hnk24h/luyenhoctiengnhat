@@ -20,6 +20,9 @@ model User {
   sessions       ExamSession[]
   progress       UserProgress[]
   lessonProgress LessonProgress[]
+  flashcardDecks FlashcardDeck[]
+  savedWords     SavedWord[]
+  wordCollections WordCollection[]
 }
 
 model Level {
@@ -142,4 +145,103 @@ model LessonProgress {
   completedAt DateTime?
 
   @@unique([userId, lessonId])
+}
+
+// ─── FLASHCARD MODULE ─────────────────────────────────────────────────────────
+
+model FlashcardDeck {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  color       String      @default("#4F46E5") // accent color for the deck
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  cards       Flashcard[]
+}
+
+model Flashcard {
+  id         String            @id @default(cuid())
+  deckId     String
+  deck       FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  front      String            // question / Japanese word
+  back       String            // answer / meaning
+  reading    String?           // furigana (optional)
+  example    String?           // example sentence
+  imageUrl   String?           // optional image URL
+  createdAt  DateTime          @default(now())
+  order      Int               @default(0)
+  progress   FlashcardProgress?
+}
+
+model FlashcardProgress {
+  id           String    @id @default(cuid())
+  cardId       String    @unique
+  card         Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId       String
+  // SM-2 fields
+  repetitions  Int       @default(0)   // consecutive correct reviews
+  interval     Int       @default(1)   // days until next review
+  easeFactor   Float     @default(2.5) // multiplier (min 1.3)
+  dueAt        DateTime  @default(now())
+  lastReview   DateTime?
+  totalReviews Int       @default(0)
+}
+
+// ─── READING MODULE ───────────────────────────────────────────────────────────
+
+model ReadingPassage {
+  id         String   @id @default(cuid())
+  title      String                        // Japanese title
+  titleVi    String?                       // Vietnamese title
+  content    String                        // Full Japanese text
+  summary    String?                       // Short Vietnamese summary
+  level      String                        // N5 | N4 | N3 | N2 | N1
+  type       String   @default("short")   // "short" | "long" | "news"
+  source     String?                       // Source name (e.g. NHK Web Easy)
+  sourceUrl  String?
+  tags       String?                       // JSON array of tag strings
+  published  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SavedWord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  japanese    String
+  reading     String?
+  meaning     String                         // definition (english/vietnamese)
+  context     String?                        // sentence the word appeared in
+  sourceId    String?                        // passageId (optional reference)
+  createdAt   DateTime @default(now())
+  collections SavedWordsOnCollections[]
+
+  @@unique([userId, japanese])
+}
+
+// ─── WORD COLLECTION (user-defined topic folders) ────────────────────────────
+
+model WordCollection {
+  id        String                    @id @default(cuid())
+  userId    String
+  user      User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String                    @default("#4F46E5")
+  createdAt DateTime                  @default(now())
+  words     SavedWordsOnCollections[]
+
+  @@unique([userId, name])
+}
+
+model SavedWordsOnCollections {
+  wordId       String
+  word         SavedWord      @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  collectionId String
+  collection   WordCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  addedAt      DateTime       @default(now())
+
+  @@id([wordId, collectionId])
 }

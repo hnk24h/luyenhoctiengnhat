@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen } from 'react-icons/fa6';
+import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen, FaNewspaper } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
 export default async function AdminPage() {
@@ -65,6 +65,11 @@ export default async function AdminPage() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#dbeafe', color: '#1d4ed8' }}><FaBookOpen size={20}/></div>
           <h3 className="font-semibold text-gray-900 group-hover:text-red-600">Quản lý bài học</h3>
           <p className="text-sm text-gray-500 mt-1">Thêm/sửa bài học từ vựng, ngữ pháp</p>
+        </Link>
+        <Link href="/admin/reading" className="card hover:shadow-md transition group">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#fff7ed', color: '#ea580c' }}><FaNewspaper size={20}/></div>
+          <h3 className="font-semibold text-gray-900 group-hover:text-orange-600">Quản lý bài đọc</h3>
+          <p className="text-sm text-gray-500 mt-1">Thêm/sửa bài đọc tiếng Nhật cho học viên</p>
         </Link>
       </div>
     </div>
