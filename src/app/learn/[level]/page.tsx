@@ -32,6 +32,8 @@ async function getLevel(code: string) {
   });
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function LearnLevelPage({ params }: Props) {
   const level = await getLevel(params.level);
   if (!level) notFound();

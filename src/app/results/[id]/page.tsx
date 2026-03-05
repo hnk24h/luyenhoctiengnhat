@@ -16,6 +16,8 @@ async function getSession(id: string) {
   });
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function ResultsPage({ params }: Props) {
   const session = await getSession(params.id);
   if (!session) notFound();

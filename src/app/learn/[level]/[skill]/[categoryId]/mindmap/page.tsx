@@ -39,6 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: `Mindmap — ${cat?.name ?? 'Chủ đề'}` };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function MindmapPage({ params }: Props) {
   const category = await getCategory(params.categoryId);
   if (!category) notFound();

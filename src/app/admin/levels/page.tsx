@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AdminLevelsClient from './AdminLevelsClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLevelsPage() {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') redirect('/');

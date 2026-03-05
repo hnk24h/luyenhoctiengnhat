@@ -7,6 +7,8 @@ import AdminQuestionsClient from './AdminQuestionsClient';
 
 interface Props { params: { id: string } }
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminQuestionsPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') redirect('/');

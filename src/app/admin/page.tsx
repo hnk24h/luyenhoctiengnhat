@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen, FaNewspaper, FaUsers } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') redirect('/');

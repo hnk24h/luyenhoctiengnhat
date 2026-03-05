@@ -21,6 +21,8 @@ async function getLesson(lessonId: string, userId?: string) {
   });
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function LessonPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;

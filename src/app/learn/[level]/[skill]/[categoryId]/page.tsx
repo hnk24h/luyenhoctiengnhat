@@ -26,6 +26,8 @@ async function getCategoryWithLessons(categoryId: string, userId?: string) {
   return category;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function LearnCategoryPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;

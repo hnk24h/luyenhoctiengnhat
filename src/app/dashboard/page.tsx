@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { getSkillLabel, SKILLS } from '@/lib/utils';
 import { SkillIcon } from '@/components/SkillIcon';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');

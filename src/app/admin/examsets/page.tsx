@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import AdminExamSetsClient from './AdminExamSetsClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminExamSetsPage({ searchParams }: { searchParams: { level?: string } }) {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') redirect('/');
