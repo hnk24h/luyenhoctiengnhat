@@ -39,7 +39,7 @@ export default async function LessonPage({ params }: Props) {
   const nextLesson = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-xs mb-5 flex-wrap" style={{ color: 'var(--text-secondary)' }}>
         <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>

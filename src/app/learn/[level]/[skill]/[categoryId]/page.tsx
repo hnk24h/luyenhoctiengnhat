@@ -41,7 +41,7 @@ export default async function LearnCategoryPage({ params }: Props) {
     : 0;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm mb-5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
         <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>

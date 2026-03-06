@@ -46,7 +46,7 @@ export default async function LearnLevelPage({ params }: Props) {
   })).filter(g => g.categories.length > 0);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
         <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>

@@ -80,7 +80,7 @@ export default function ReadingDetailPage({ params }: { params: { id: string } }
   const tags: string[] = passage.tags ? JSON.parse(passage.tags) : [];
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-4 py-8">
 
       {/* Back */}
       <Link href="/reading"

@@ -30,7 +30,7 @@ export default async function LevelDetailPage({ params }: Props) {
   }));
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="flex items-center gap-3 mb-2">
         <Link href="/levels" className="text-sm text-gray-500 hover:text-red-600">← Tất cả cấp độ</Link>
       </div>

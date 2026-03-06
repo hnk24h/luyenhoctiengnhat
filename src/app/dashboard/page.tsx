@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
       {/* Header */}
       <div>
         <p className="text-sm font-medium mb-1" style={{ color: 'var(--primary)' }}>Bảng điều khiển</p>

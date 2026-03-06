@@ -345,7 +345,7 @@ export default function DeckPage({ params }: { params: { deckId: string } }) {
   const dueCards = deck.cards.filter(isDue);
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-4 py-8">
       {/* Back */}
       <Link href="/flashcards" className="inline-flex items-center gap-1.5 text-sm mb-6 btn-ghost" style={{ color: 'var(--text-muted)' }}>
         <FaArrowLeft size={11} /> Danh sách bộ thẻ
