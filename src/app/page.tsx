@@ -62,7 +62,7 @@ export default function HomePage() {
 
       {/* ── Stats strip (Riki-style) ──────────────────── */}
       <section style={{ background: 'var(--primary)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
           {STATS.map(s => (
             <div key={s.label} className="text-center text-white">
               <div className="text-2xl font-black">{s.num}</div>
@@ -74,7 +74,7 @@ export default function HomePage() {
 
       {/* ── Level cards (DungMori-style) ──────────────── */}
       <section className="py-16 px-4" style={{ background: 'var(--bg-base)' }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--primary)' }}>LỘ TRÌNH</div>
             <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Chọn cấp độ của bạn</h2>
@@ -148,14 +148,14 @@ export default function HomePage() {
 
       {/* ── 4 Skills ─────────────────────────────────── */}
       <section className="py-14 px-4" style={{ background: 'var(--bg-base)' }}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--primary)' }}>NỘI DUNG HỌC</div>
             <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>4 Kỹ năng luyện thi JLPT</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {SKILLS.map(s => (
-              <Link key={s.key} href="/learn"
+              <Link key={s.key} href={s.key === 'nghe' ? '/listening' : '/learn'}
                 className={`card-hover border text-center p-5 ${s.cls}`}>
                 <div className="text-3xl mb-2">{s.icon}</div>
                 <div className="font-bold text-base mb-1">{s.label}</div>

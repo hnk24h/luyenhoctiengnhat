@@ -41,29 +41,29 @@ export default async function LessonPage({ params }: Props) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1 text-xs text-gray-400 mb-5 flex-wrap">
-        <Link href="/learn" className="hover:text-red-600">Học</Link>
+      <div className="flex items-center gap-1 text-xs mb-5 flex-wrap" style={{ color: 'var(--text-secondary)' }}>
+        <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
         <span>/</span>
-        <Link href={`/learn/${category.level.code}`} className="hover:text-red-600">{category.level.code}</Link>
+        <Link href={`/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
         <span>/</span>
-        <Link href={`/learn/${category.level.code}/${category.skill}/${category.id}`} className="hover:text-red-600">
+        <Link href={`/learn/${category.level.code}/${category.skill}/${category.id}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>
           {category.name}
         </Link>
         <span>/</span>
-        <span className="text-gray-600">{lesson.title}</span>
+        <span style={{ color: 'var(--text-primary)' }}>{lesson.title}</span>
       </div>
 
       {/* Lesson header */}
-      <div className="card mb-6 border-l-4 border-l-red-500">
+      <div className="card mb-6" style={{ borderLeft: '4px solid var(--primary)', padding: '1.25rem 1.5rem' }}>
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className={`text-xs px-2 py-0.5 rounded-full ${skill?.color ?? 'bg-gray-100'}`}>{skill?.label}</span>
-              <span className="text-xs text-gray-400">Bài {currentIdx + 1} / {allLessons.length}</span>
-              {isCompleted && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ Đã học</span>}
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Bài {currentIdx + 1} / {allLessons.length}</span>
+              {isCompleted && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#DCFCE7', color: '#166534' }}>✓ Đã học</span>}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
-            {lesson.description && <p className="text-sm text-gray-500 mt-1">{lesson.description}</p>}
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{lesson.title}</h1>
+            {lesson.description && <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{lesson.description}</p>}
           </div>
         </div>
       </div>

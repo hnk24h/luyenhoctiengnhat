@@ -318,7 +318,7 @@ export default function VocabPage() {
   const activeCol = collections.find(c => c.id === activeColId) ?? null;
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-6 md:py-8">
+    <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
 
       {/* Back */}
       <Link href="/reading" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"

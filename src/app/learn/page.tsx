@@ -28,7 +28,7 @@ export default async function LearnPage() {
     <div>
       {/* ── Page header ─────────────────────────────── */}
       <section className="py-12 px-4" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--primary)' }}>
             NỘI DUNG HỌC
           </div>
@@ -75,11 +75,11 @@ export default async function LearnPage() {
                         style={{ background: m.color }}>{l.code}</div>
                       <div>
                         <div className="font-bold" style={{ color: m.color }}>{m.desc}</div>
-                        <div className="text-xs font-japanese opacity-50" style={{ color: m.color }}>{m.jp}</div>
+                        <div className="text-xs font-japanese" style={{ color: m.color, opacity: 0.8 }}>{m.jp}</div>
                       </div>
                     </div>
 
-                    <p className="text-xs mb-4 leading-relaxed opacity-70" style={{ color: m.color }}>
+                    <p className="text-xs mb-4 leading-relaxed" style={{ color: m.color, opacity: 0.9 }}>
                       {l.name || `Cấp độ ${l.code} JLPT — ${l._count.learningCategories} chủ đề`}
                     </p>
 
@@ -96,8 +96,8 @@ export default async function LearnPage() {
 
                     <div className="mt-auto">
                       <div className="flex items-center justify-between text-xs mb-1" style={{ color: m.color }}>
-                        <span className="opacity-60">{l._count.learningCategories} chủ đề</span>
-                        <span className="opacity-60">{'★'.repeat(i + 1)}{'☆'.repeat(4 - i)}</span>
+                        <span style={{ opacity: 0.82 }}>{l._count.learningCategories} chủ đề</span>
+                        <span style={{ opacity: 0.82 }}>{'★'.repeat(i + 1)}{'☆'.repeat(4 - i)}</span>
                       </div>
                       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.1)' }}>
                         <div className="h-full rounded-full" style={{ width: `${m.pct}%`, background: m.bar }} />
@@ -115,7 +115,7 @@ export default async function LearnPage() {
                   <FaPencil size={28} className="text-white"/>
                 </div>
                 <div className="font-bold text-lg">Luyện thi</div>
-                <p className="text-sm text-white/70">Thi thử với đề sát format JLPT thật</p>
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,.86)' }}>Thi thử với đề sát format JLPT thật</p>
                 <span className="px-4 py-1.5 rounded-xl text-sm font-bold mt-1"
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
                   Vào thi thử →
@@ -132,18 +132,21 @@ export default async function LearnPage() {
           <h2 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>4 Kỹ năng rèn luyện</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {SKILLS.map(s => (
-              <div key={s.key} className={`card-hover border text-center ${s.key === 'nghe' ? 'skill-nghe' : s.key === 'noi' ? 'skill-noi' : s.key === 'doc' ? 'skill-doc' : 'skill-viet'}`}>
+              <Link
+                key={s.key}
+                href={s.key === 'nghe' ? '/listening' : '/learn'}
+                className={`card-hover border text-center ${s.key === 'nghe' ? 'skill-nghe' : s.key === 'noi' ? 'skill-noi' : s.key === 'doc' ? 'skill-doc' : 'skill-viet'}`}>
                 <div className="w-10 h-10 flex items-center justify-center rounded-xl mb-2 mx-auto">
                   <SkillIcon skill={s.key} size={22}/>
                 </div>
                 <div className="font-bold text-sm mb-1">{s.label}</div>
-                <p className="text-xs opacity-75 leading-relaxed">
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {s.key === 'nghe' && 'Luyện nghe hội thoại, thông báo'}
                   {s.key === 'noi'  && 'Mẫu câu giao tiếp, phát âm'}
                   {s.key === 'doc'  && 'Từ vựng, ngữ pháp, đọc hiểu'}
                   {s.key === 'viet' && 'Hiragana, Katakana, Kanji'}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

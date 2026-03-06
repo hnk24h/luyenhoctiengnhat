@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaFileLines, FaRuler, FaListUl, FaVolumeHigh, FaStop, FaLightbulb, FaCircleCheck, FaLock, FaHandPointer } from 'react-icons/fa6';
+import { useTheme } from '@/context/ThemeContext';
 
 interface LearningItem {
   id: string; type: string; japanese: string; reading: string | null;
@@ -23,16 +24,25 @@ interface Props {
   nextLesson: NavLesson | null;
 }
 
-const TYPE_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  vocab:   { label: '単語',   color: '#1D4ED8',  bg: '#EFF6FF', border: '#BFDBFE' },
-  kanji:   { label: '漢字',   color: '#B91C1C',  bg: '#FEF2F2', border: '#FECACA' },
-  grammar: { label: '文法',   color: '#6D28D9',  bg: '#F5F3FF', border: '#DDD6FE' },
-  example: { label: '例文',   color: '#065F46',  bg: '#F0FDF4', border: '#A7F3D0' },
-  phrase:  { label: '表現',   color: '#C2410C',  bg: '#FFF7ED', border: '#FED7AA' },
+const TYPE_LABELS: Record<string, { label: string; color: string; bg: string; border: string; badgeBg: string }> = {
+  vocab:   { label: '単語',   color: '#1D4ED8',  bg: '#EFF6FF', border: '#BFDBFE', badgeBg: '#FFFFFF' },
+  kanji:   { label: '漢字',   color: '#B91C1C',  bg: '#FEF2F2', border: '#FECACA', badgeBg: '#FFFFFF' },
+  grammar: { label: '文法',   color: '#6D28D9',  bg: '#F5F3FF', border: '#DDD6FE', badgeBg: '#FFFFFF' },
+  example: { label: '例文',   color: '#065F46',  bg: '#F0FDF4', border: '#A7F3D0', badgeBg: '#FFFFFF' },
+  phrase:  { label: '表現',   color: '#C2410C',  bg: '#FFF7ED', border: '#FED7AA', badgeBg: '#FFFFFF' },
+};
+
+const TYPE_LABELS_DARK: Record<string, { label: string; color: string; bg: string; border: string; badgeBg: string }> = {
+  vocab:   { label: '単語',   color: '#93C5FD', bg: '#1B2B46', border: '#29456E', badgeBg: '#16243B' },
+  kanji:   { label: '漢字',   color: '#FDA4AF', bg: '#3A1E28', border: '#5B2B38', badgeBg: '#321924' },
+  grammar: { label: '文法',   color: '#C4B5FD', bg: '#2C2145', border: '#463068', badgeBg: '#241B39' },
+  example: { label: '例文',   color: '#86EFAC', bg: '#1D352A', border: '#2E533F', badgeBg: '#172B22' },
+  phrase:  { label: '表現',   color: '#FDBA74', bg: '#3B281B', border: '#5A3C28', badgeBg: '#322216' },
 };
 
 export default function LessonClient({ lessonId, lessonType, content, items, isCompleted: initCompleted, isLoggedIn, prevLesson, nextLesson }: Props) {
   const router = useRouter();
+  const { resolvedAppearance } = useTheme();
   const [completed, setCompleted] = useState(initCompleted);
   const [marking, setMarking] = useState(false);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
@@ -71,11 +81,13 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
     setMarking(false);
   }
 
+  const typePalette = resolvedAppearance === 'dark' ? TYPE_LABELS_DARK : TYPE_LABELS;
+
   return (
     <div>
       {/* Markdown/text content */}
       {content && (
-        <div className="card mb-6 prose prose-sm max-w-none whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+        <div className="card mb-6 prose prose-sm max-w-none whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-primary)', lineHeight: 1.8 }}>
           {content}
         </div>
       )}
@@ -87,19 +99,25 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
             {lessonType === 'vocab'   ? <><FaFileLines size={13}/> Từ vựng</> :
              lessonType === 'grammar' ? <><FaRuler     size={13}/> Ngữ pháp</> :
              <><FaListUl size={13}/> Nội dung</>}
-            <span className="ml-2 font-normal normal-case" style={{ color: 'var(--text-muted)' }}>({items.length} mục)</span>
+            <span className="ml-2 font-normal normal-case" style={{ color: 'var(--text-secondary)' }}>({items.length} mục)</span>
           </h2>
           <div className="space-y-3">
             {items.map(item => {
-              const ti = TYPE_LABELS[item.type] ?? { label: item.type, color: 'var(--text-secondary)', bg: 'var(--bg-muted)', border: 'var(--border)' };
+              const ti = typePalette[item.type] ?? {
+                label: item.type,
+                color: 'var(--text-secondary)',
+                bg: 'var(--bg-muted)',
+                border: 'var(--border)',
+                badgeBg: 'var(--bg-surface)',
+              };
               const isFlipped = flipped[item.id];
               return (
                 <div key={item.id}
-                  className="rounded-xl border p-4 transition-all cursor-pointer select-none hover:shadow-md"
+                  className="rounded-2xl border p-4 transition-all cursor-pointer select-none hover:shadow-md"
                   style={{ background: ti.bg, borderColor: ti.border }}
                   onClick={() => setFlipped(f => ({ ...f, [item.id]: !f[item.id] }))}>
                   <div className="flex items-start gap-3">
-                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border bg-white shrink-0" style={{ color: ti.color, borderColor: ti.color }}>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border shrink-0" style={{ color: ti.color, borderColor: ti.color, background: ti.badgeBg }}>
                       {ti.label}
                     </span>
                     <div className="flex-1">
@@ -107,7 +125,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
                       <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="text-2xl font-bold font-japanese" style={{ color: 'var(--text-primary)' }}>{item.japanese}</span>
                         {item.reading && (
-                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>【{item.reading}】</span>
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>【{item.reading}】</span>
                         )}
                         <button
                           className="text-sm px-1.5 py-0.5 rounded-md transition"
@@ -128,11 +146,11 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
                       </div>
 
                       {/* Meaning (click to reveal) */}
-                      <div className={`mt-1 transition-all ${isFlipped ? '' : 'blur-sm select-none'}`}>
-                        <span className="text-base font-semibold" style={{ color: 'var(--text-secondary)' }}>{item.meaning}</span>
+                      <div className={`mt-1 transition-all ${isFlipped ? '' : 'blur-[5px] select-none opacity-85'}`}>
+                        <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{item.meaning}</span>
                       </div>
                       {!isFlipped && (
-                        <div className="text-xs mt-0.5 flex items-center gap-0.5" style={{ color: 'var(--text-muted)' }}><FaHandPointer size={10}/> Nhấn để xem nghĩa</div>
+                        <div className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}><FaHandPointer size={10}/> Nhấn để xem nghĩa</div>
                       )}
 
                       {/* Example */}
@@ -151,10 +169,10 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
                             </button>
                           </div>
                           {item.exampleReading && (
-                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.exampleReading}</p>
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{item.exampleReading}</p>
                           )}
                           {item.exampleMeaning && (
-                            <p className="text-xs italic" style={{ color: 'var(--text-secondary)' }}>{item.exampleMeaning}</p>
+                            <p className="text-xs italic mt-1" style={{ color: 'var(--text-primary)' }}>{item.exampleMeaning}</p>
                           )}
                         </div>
                       )}
@@ -169,7 +187,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
               );
             })}
           </div>
-          <p className="text-xs mt-3 text-center flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-3 text-center flex items-center justify-center gap-1" style={{ color: 'var(--text-secondary)' }}>
             <FaLightbulb size={12}/> Nhấn <FaVolumeHigh size={12}/> để nghe phát âm · Nhấn vào từng mục để xem nghĩa và ví dụ
           </p>
         </div>
@@ -179,7 +197,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
       <div className="card flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
         <div className="flex items-center gap-3">
           {prevLesson ? (
-            <Link href={navUrl(prevLesson)} className="btn-secondary text-sm">← {prevLesson.title}</Link>
+            <Link href={navUrl(prevLesson)} className="btn-secondary text-sm max-w-[240px] truncate">← {prevLesson.title}</Link>
           ) : <div />}
         </div>
 
@@ -196,7 +214,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
 
         <div>
           {nextLesson ? (
-            <Link href={navUrl(nextLesson)} className="btn-primary text-sm">Bài tiếp → {nextLesson.title}</Link>
+            <Link href={navUrl(nextLesson)} className="btn-primary text-sm max-w-[240px] truncate">Bài tiếp → {nextLesson.title}</Link>
           ) : <div />}
         </div>
       </div>

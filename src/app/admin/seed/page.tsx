@@ -7,6 +7,8 @@ export default function AdminSeedPage() {
   const [msg, setMsg] = useState('');
   const [loadingLearn, setLoadingLearn] = useState(false);
   const [msgLearn, setMsgLearn] = useState('');
+  const [loadingListening, setLoadingListening] = useState(false);
+  const [msgListening, setMsgListening] = useState('');
 
   async function handleSeed() {
     setLoading(true); setMsg('');
@@ -22,6 +24,14 @@ export default function AdminSeedPage() {
     const data = await res.json();
     setMsgLearn(data.message);
     setLoadingLearn(false);
+  }
+
+  async function handleSeedListening() {
+    setLoadingListening(true); setMsgListening('');
+    const res = await fetch('/api/admin/seed-listening', { method: 'POST' });
+    const data = await res.json();
+    setMsgListening(data.message);
+    setLoadingListening(false);
   }
 
   return (
@@ -64,6 +74,28 @@ export default function AdminSeedPage() {
         <button onClick={handleSeedLearning} disabled={loadingLearn} className="btn-primary">
           {loadingLearn ? 'Đang seed...' : '📖 Tạo nội dung học N5'}
         </button>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">🎧 Bài nghe JLPT mẫu</h2>
+        <p className="text-gray-600 mb-4">
+          Dùng đúng bộ dữ liệu mẫu hiện có trên page nghe để tạo ngân hàng bài nghe N5~N1 trong database.
+        </p>
+        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+          <li>Seed đủ 5 level từ N5 đến N1</li>
+          <li>Giữ nguyên mondai, transcript, đáp án và giải thích</li>
+          <li>Nếu audioUrl trống thì page nghe vẫn dùng Web Speech làm mặc định</li>
+        </ul>
+        <p className="text-xs text-amber-600 bg-amber-50 rounded p-2 mb-3">⚠️ Cần có các level N5~N1 trước khi seed listening.</p>
+        {msgListening && <p className={`text-sm mb-3 p-2 rounded ${msgListening.includes('Đã seed') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msgListening}</p>}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={handleSeedListening} disabled={loadingListening} className="btn-primary">
+            {loadingListening ? 'Đang seed...' : '🎧 Seed bài nghe mẫu'}
+          </button>
+          <a href="/samples/jlpt-listening-sample.json" download className="btn-secondary">
+            Tải JSON mẫu
+          </a>
+        </div>
       </div>
     </div>
   );

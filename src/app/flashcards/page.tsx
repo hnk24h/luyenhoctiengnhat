@@ -90,7 +90,7 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-8 flex-wrap">
         <div>
