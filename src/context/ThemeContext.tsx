@@ -1,7 +1,8 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 export type ThemeId = 'default' | 'sakura' | 'matcha' | 'ocean' | 'sunset' | 'midnight';
+export type AppearanceMode = 'system' | 'light' | 'dark';
 
 export interface Theme {
   id: ThemeId;
@@ -51,50 +52,87 @@ export const THEMES: Theme[] = [
     id: 'midnight',
     name: 'Midnight',
     emoji: '🌙',
-    description: 'Giao diện tối ban đêm',
-    preview: { primary: '#7C6AF7', bg: '#0F0F1A', surface: '#1A1A2E', accent: '#F472B6' },
+    description: 'Tím đêm hiện đại',
+    preview: { primary: '#7C6AF7', bg: '#F6F4FF', surface: '#FFFFFF', accent: '#F472B6' },
   },
 ];
 
 interface ThemeCtx {
   theme: ThemeId;
+  appearance: AppearanceMode;
+  resolvedAppearance: 'light' | 'dark';
   setTheme: (id: ThemeId) => void;
+  setAppearance: (mode: AppearanceMode) => void;
 }
 
-const ThemeContext = createContext<ThemeCtx>({ theme: 'default', setTheme: () => {} });
+const ThemeContext = createContext<ThemeCtx>({
+  theme: 'default',
+  appearance: 'system',
+  resolvedAppearance: 'light',
+  setTheme: () => {},
+  setAppearance: () => {},
+});
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>('default');
+  const [appearance, setAppearanceState] = useState<AppearanceMode>('system');
+  const [systemAppearance, setSystemAppearance] = useState<'light' | 'dark'>('light');
 
-  // Load from localStorage on mount
+  const resolvedAppearance = useMemo(
+    () => (appearance === 'system' ? systemAppearance : appearance),
+    [appearance, systemAppearance]
+  );
+
   useEffect(() => {
     const stored = localStorage.getItem('app-theme') as ThemeId | null;
+    const storedAppearance = localStorage.getItem('app-appearance') as AppearanceMode | null;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const syncSystemAppearance = () => {
+      setSystemAppearance(media.matches ? 'dark' : 'light');
+    };
+
+    syncSystemAppearance();
+    media.addEventListener('change', syncSystemAppearance);
+
     if (stored && THEMES.find(t => t.id === stored)) {
-      applyTheme(stored);
       setThemeState(stored);
     }
+    if (storedAppearance && ['system', 'light', 'dark'].includes(storedAppearance)) {
+      setAppearanceState(storedAppearance);
+    }
+
+    return () => media.removeEventListener('change', syncSystemAppearance);
   }, []);
+
+  useEffect(() => {
+    applyPreferences(theme, resolvedAppearance);
+  }, [theme, resolvedAppearance]);
 
   const setTheme = (id: ThemeId) => {
     localStorage.setItem('app-theme', id);
-    applyTheme(id);
     setThemeState(id);
   };
 
+  const setAppearance = (mode: AppearanceMode) => {
+    localStorage.setItem('app-appearance', mode);
+    setAppearanceState(mode);
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, appearance, resolvedAppearance, setTheme, setAppearance }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-function applyTheme(id: ThemeId) {
+function applyPreferences(themeId: ThemeId, appearance: 'light' | 'dark') {
   const root = document.documentElement;
-  // Remove all existing theme attrs
   root.removeAttribute('data-theme');
-  if (id !== 'default') {
-    root.setAttribute('data-theme', id);
+  if (themeId !== 'default') {
+    root.setAttribute('data-theme', themeId);
   }
+  root.setAttribute('data-appearance', appearance);
+  root.style.colorScheme = appearance;
 }
 
 export function useTheme() {

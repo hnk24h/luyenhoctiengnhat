@@ -397,7 +397,6 @@ export default function AdminLearningPage() {
           </div>
 
           <div className="relative">
-            <FaMagnifyingGlass size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input className="input w-full pl-7 text-sm py-1.5" placeholder="Tìm chủ đề..."
               value={catSearch} onChange={e => setCatSearch(e.target.value)} />
           </div>

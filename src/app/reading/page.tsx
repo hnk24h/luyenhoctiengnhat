@@ -58,7 +58,7 @@ export default function ReadingPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8">
+    <main className="max-w-6xl mx-auto px-4 py-8">
 
       {/* Header */}
       <div className="mb-8">

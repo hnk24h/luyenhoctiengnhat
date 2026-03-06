@@ -58,9 +58,9 @@ export default async function LearnLevelPage({ params }: Props) {
       <div className={`rounded-2xl bg-gradient-to-br ${meta.gradient} text-white px-8 py-7 mb-8 shadow-lg`}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-white/70 text-sm mb-1">{meta.desc}</div>
+            <div className="text-sm mb-1" style={{ color: 'rgba(255,255,255,.88)' }}>{meta.desc}</div>
             <h1 className="text-4xl font-bold mb-1">Học {level.code}</h1>
-            <p className="text-white/80">{level.name}</p>
+            <p style={{ color: 'rgba(255,255,255,.92)' }}>{level.name}</p>
           </div>
           <div className="text-right">
             <div className="text-5xl font-black opacity-20">{level.code}</div>
@@ -88,11 +88,11 @@ export default async function LearnLevelPage({ params }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm mb-0.5">{cat.name}</div>
                       {cat.description && (
-                        <p className="text-xs opacity-70 truncate">{cat.description}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{cat.description}</p>
                       )}
-                      <div className="text-xs opacity-60 mt-1">{cat._count.lessons} bài học</div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{cat._count.lessons} bài học</div>
                     </div>
-                    <span className="text-lg opacity-40">→</span>
+                    <span className="text-lg" style={{ opacity: 0.6 }}>→</span>
                   </Link>
                 ))}
               </div>

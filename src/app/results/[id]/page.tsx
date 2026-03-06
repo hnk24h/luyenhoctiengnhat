@@ -35,7 +35,7 @@ export default async function ResultsPage({ params }: Props) {
   const passed = scorePercent >= 60;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
+    <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Result summary */}
       <div className={`card mb-8 text-center py-10 border-2 ${passed ? 'border-green-400 bg-green-50' : 'border-red-300 bg-red-50'}`}>
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4 mx-auto"

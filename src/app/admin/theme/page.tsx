@@ -1,9 +1,14 @@
 'use client';
-import { THEMES, useTheme, type ThemeId } from '@/context/ThemeContext';
-import { FaCheck, FaPalette } from 'react-icons/fa6';
+import { THEMES, useTheme, type ThemeId, type AppearanceMode } from '@/context/ThemeContext';
+import { FaCheck, FaDesktop, FaMoon, FaPalette, FaSun } from 'react-icons/fa6';
 
 export default function AdminThemePage() {
-  const { theme: currentTheme, setTheme } = useTheme();
+  const { theme: currentTheme, appearance, resolvedAppearance, setTheme, setAppearance } = useTheme();
+  const appearanceOptions: { id: AppearanceMode; label: string; hint: string; icon: typeof FaSun }[] = [
+    { id: 'light', label: 'Sáng', hint: 'Luôn dùng nền sáng', icon: FaSun },
+    { id: 'dark', label: 'Tối', hint: 'Nền slate dịu mắt, không dùng đen gắt', icon: FaMoon },
+    { id: 'system', label: 'Theo hệ thống', hint: 'Tự theo máy của người dùng', icon: FaDesktop },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -22,6 +27,50 @@ export default function AdminThemePage() {
             Thay đổi màu sắc toàn bộ website
           </p>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
+          Chế độ sáng tối
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {appearanceOptions.map((option) => {
+            const active = appearance === option.id;
+            return (
+              <button
+                key={option.id}
+                onClick={() => setAppearance(option.id)}
+                className="text-left rounded-2xl border-2 p-4 transition-all duration-150 hover:shadow-lg"
+                style={{
+                  background: 'var(--bg-surface)',
+                  borderColor: active ? 'var(--primary)' : 'var(--border)',
+                  boxShadow: active ? '0 0 0 3px rgba(61,58,140,.12)' : 'var(--shadow-sm)',
+                }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <option.icon size={14} />
+                      {option.label}
+                    </div>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{option.hint}</p>
+                  </div>
+                  {active && (
+                    <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: 'var(--primary)' }}>
+                      <FaCheck size={10} color="#fff" />
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+          Hiện tại đang hiển thị theo chế độ: <strong style={{ color: 'var(--text-primary)' }}>{resolvedAppearance === 'dark' ? 'Tối' : 'Sáng'}</strong>
+        </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+          Chế độ tối đã được tinh chỉnh theo tông xanh xám để giảm mỏi mắt khi dùng lâu.
+        </p>
       </div>
 
       <div className="mt-8">
@@ -122,7 +171,7 @@ export default function AdminThemePage() {
 
       {/* Note */}
       <p className="mt-6 text-xs" style={{ color: 'var(--text-muted)' }}>
-        * Theme được lưu trong trình duyệt và áp dụng ngay lập tức cho toàn bộ website.
+        * Theme và chế độ sáng tối được lưu trong trình duyệt và áp dụng ngay lập tức cho toàn bộ website.
       </p>
     </div>
   );

@@ -44,9 +44,9 @@ export default async function LearnCategoryPage({ params }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm mb-5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
-        <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-muted)' }}>Học</Link>
+        <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
         <span>/</span>
-        <Link href={`/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-muted)' }}>{category.level.code}</Link>
+        <Link href={`/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
         <span>/</span>
         <span style={{ color: 'var(--text-secondary)' }}>{category.name}</span>
       </div>
@@ -59,15 +59,15 @@ export default async function LearnCategoryPage({ params }: Props) {
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{category.name}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>{skill?.label}</span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Cấp {category.level.code}</span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{category.lessons.length} bài</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Cấp {category.level.code}</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{category.lessons.length} bài</span>
             </div>
-            {category.description && <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{category.description}</p>}
+            {category.description && <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>{category.description}</p>}
           </div>
           {userId && (
             <div className="text-right shrink-0">
               <div className="text-2xl font-bold" style={{ color: 'var(--primary)' }}>{completedCount}/{category.lessons.length}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>hoàn thành</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>hoàn thành</div>
             </div>
           )}
         </div>
@@ -124,11 +124,11 @@ export default async function LearnCategoryPage({ params }: Props) {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{lesson.title}</h3>
-                {lesson.description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{lesson.description}</p>}
+                {lesson.description && <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{lesson.description}</p>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                  <span className="flex items-center" style={{ color: 'var(--text-muted)' }}>{typeIcon[lesson.type] ?? <FaFile size={14}/>}</span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{lesson._count.items} mục</span>
+                  <span className="flex items-center" style={{ color: 'var(--text-secondary)' }}>{typeIcon[lesson.type] ?? <FaFile size={14}/>}</span>
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{lesson._count.items} mục</span>
                 <span className="opacity-30 group-hover:opacity-70 transition-opacity" style={{ color: 'var(--primary)' }}>→</span>
               </div>
             </Link>
