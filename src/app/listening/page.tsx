@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   FaHeadphones,
@@ -31,6 +31,14 @@ function formatDuration(durationSec: number) {
 }
 
 export default function ListeningPage() {
+  return (
+    <Suspense fallback={<ListeningPageFallback />}>
+      <ListeningPageContent />
+    </Suspense>
+  );
+}
+
+function ListeningPageContent() {
   const searchParams = useSearchParams();
   const queryLevel = searchParams.get('level');
   const queryMondai = searchParams.get('mondai');
@@ -546,6 +554,27 @@ export default function ListeningPage() {
               )}
             </div>
           </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function ListeningPageFallback() {
+  return (
+    <main>
+      <section className="px-4 py-12" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+        <div className="max-w-6xl mx-auto animate-pulse">
+          <div className="h-9 w-64 rounded-xl mb-4" style={{ background: 'var(--border)' }} />
+          <div className="h-12 w-full max-w-2xl rounded-xl mb-3" style={{ background: 'var(--border)' }} />
+          <div className="h-5 w-full max-w-3xl rounded-lg" style={{ background: 'var(--border)' }} />
+        </div>
+      </section>
+      <section className="px-4 py-8">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-4 animate-pulse">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="rounded-3xl h-40" style={{ background: 'var(--border)' }} />
+          ))}
         </div>
       </section>
     </main>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -41,6 +41,14 @@ function readTime(chars: number) {
 }
 
 export default function ReadingPage() {
+  return (
+    <Suspense fallback={<ReadingPageFallback />}>
+      <ReadingPageContent />
+    </Suspense>
+  );
+}
+
+function ReadingPageContent() {
   const searchParams = useSearchParams();
   const queryLevel = searchParams.get('level') ?? '';
   const queryType = searchParams.get('type') ?? '';
@@ -186,6 +194,26 @@ export default function ReadingPage() {
           })}
         </div>
       )}
+    </main>
+  );
+}
+
+function ReadingPageFallback() {
+  return (
+    <main className="max-w-6xl mx-auto px-4 py-8">
+      <div className="mb-8 animate-pulse">
+        <div className="h-4 w-32 rounded mb-2" style={{ background: 'var(--border)' }} />
+        <div className="h-10 w-72 rounded-xl mb-3" style={{ background: 'var(--border)' }} />
+        <div className="h-5 w-full max-w-xl rounded" style={{ background: 'var(--border)' }} />
+      </div>
+      <div className="rounded-3xl p-6 mb-6 animate-pulse" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="h-6 w-48 rounded" style={{ background: 'var(--border)' }} />
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4 animate-pulse">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="rounded-3xl h-40" style={{ background: 'var(--border)' }} />
+        ))}
+      </div>
     </main>
   );
 }
