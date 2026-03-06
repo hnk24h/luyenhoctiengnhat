@@ -33,6 +33,8 @@ function isDue(card: Card): boolean {
 
 type Rating = 0 | 1 | 2 | 3;
 
+const STUDY_SETUP_STORAGE_KEY = 'flashcard-study-setup';
+
 const RATING_CONFIG: {
   rating: Rating;
   label: string;
@@ -67,6 +69,7 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
   const [limitPreset,  setLimitPreset]  = useState<10 | 20 | 50 | 0>(10); // 0 = custom / all
   const [customCount,  setCustomCount]  = useState('');
   const [useCustom,    setUseCustom]    = useState(false);
+  const [savedSetupLoaded, setSavedSetupLoaded] = useState(false);
 
   // Session stats
   const [sessionDone,  setSessionDone]  = useState(0);
@@ -90,16 +93,59 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
     if (status === 'authenticated') loadDeck();
   }, [status, loadDeck, router]);
 
+  useEffect(() => {
+    if (savedSetupLoaded || typeof window === 'undefined') return;
+
+    try {
+      const raw = window.localStorage.getItem(STUDY_SETUP_STORAGE_KEY);
+      if (!raw) {
+        setSavedSetupLoaded(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as {
+        shuffle?: boolean;
+        cardSource?: 'due' | 'all';
+        limitPreset?: 10 | 20 | 50 | 0;
+        customCount?: string;
+        useCustom?: boolean;
+      };
+
+      if (typeof parsed.shuffle === 'boolean') setShuffle(parsed.shuffle);
+      if (parsed.cardSource === 'due' || parsed.cardSource === 'all') setCardSource(parsed.cardSource);
+      if (parsed.limitPreset === 10 || parsed.limitPreset === 20 || parsed.limitPreset === 50 || parsed.limitPreset === 0) {
+        setLimitPreset(parsed.limitPreset);
+      }
+      if (typeof parsed.customCount === 'string') setCustomCount(parsed.customCount);
+      if (typeof parsed.useCustom === 'boolean') setUseCustom(parsed.useCustom);
+    } catch {
+      // Ignore invalid localStorage payloads.
+    }
+
+    setSavedSetupLoaded(true);
+  }, [savedSetupLoaded]);
+
   // ── Build queue and start ─────────────────────────────────────────────────
   function startSession() {
     const pool = cardSource === 'due' ? allDue : allCards;
-    let ordered = shuffle ? [...pool].sort(() => Math.random() - 0.5) : [...pool];
+    const ordered = shuffle ? [...pool].sort(() => Math.random() - 0.5) : [...pool];
 
     const n = useCustom
       ? Math.max(1, parseInt(customCount) || pool.length)
       : limitPreset === 0 ? pool.length : limitPreset;
 
     const finalQueue = ordered.slice(0, Math.min(n, ordered.length));
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STUDY_SETUP_STORAGE_KEY, JSON.stringify({
+        shuffle,
+        cardSource,
+        limitPreset,
+        customCount,
+        useCustom,
+      }));
+    }
+
     setQueue(finalQueue);
     setIdx(0);
     setFlipped(false);
@@ -151,6 +197,11 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
   // Keyboard shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName))) {
+        return;
+      }
+
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         setFlipped(f => !f);
@@ -279,6 +330,11 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
                 Sẽ ôn <strong style={{ color: deck.color }}>{effectiveLimit || '?'}</strong> / {pool.length} thẻ
               </p>
             )}
+            {useCustom && customCount && Number(customCount) > pool.length ? (
+              <p className="text-xs mt-1" style={{ color: '#B45309' }}>
+                Số bạn nhập lớn hơn lượng thẻ hiện có, hệ thống sẽ tự lấy tối đa {pool.length} thẻ.
+              </p>
+            ) : null}
           </div>
 
           {/* Shuffle toggle */}
@@ -316,13 +372,18 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
               </Link>
             </div>
           ) : (
-            <button
-              onClick={startSession}
-              disabled={useCustom && (!customCount || parseInt(customCount) < 1)}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-base font-bold disabled:opacity-50"
-              style={{ background: deck.color }}>
-              <FaPlay size={14} /> Bắt đầu ôn tập
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={startSession}
+                disabled={useCustom && (!customCount || parseInt(customCount) < 1)}
+                className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-base font-bold disabled:opacity-50"
+                style={{ background: deck.color }}>
+                <FaPlay size={14} /> Bắt đầu ôn tập
+              </button>
+              <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                Cấu hình buổi ôn sẽ được nhớ cho lần tiếp theo trên thiết bị này.
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -531,7 +592,7 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
                 <FaRotate size={10} /> Lật lại
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {RATING_CONFIG.map(({ rating, label, hint, icon, bg, color }) => (
                 <button
                   key={rating}

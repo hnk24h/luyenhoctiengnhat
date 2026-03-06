@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { FaHeadphones, FaMicrophone, FaBookOpen, FaPencil, FaMapPin, FaBook, FaCircleCheck } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
+import { HomeIntentSelector } from '@/components/HomeIntentSelector';
 
 const LEVELS = [
   { code: 'N5', desc: 'Sơ cấp',        bg: '#DCFCE7', color: '#15803D', bar: '#4ADE80', pct: 20, jp: 'にほんご　はじめの　いっぽ' },
@@ -71,6 +72,8 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <HomeIntentSelector />
 
       {/* ── Level cards (DungMori-style) ──────────────── */}
       <section className="py-16 px-4" style={{ background: 'var(--bg-base)' }}>

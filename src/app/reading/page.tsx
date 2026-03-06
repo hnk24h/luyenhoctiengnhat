@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   FaBook, FaNewspaper, FaAlignLeft, FaAlignJustify,
   FaFilter, FaChevronRight, FaClock, FaBolt,
@@ -40,10 +41,18 @@ function readTime(chars: number) {
 }
 
 export default function ReadingPage() {
+  const searchParams = useSearchParams();
+  const queryLevel = searchParams.get('level') ?? '';
+  const queryType = searchParams.get('type') ?? '';
   const [passages, setPassages] = useState<Passage[]>([]);
   const [loading,  setLoading]  = useState(true);
-  const [level,    setLevel]    = useState('');
-  const [type,     setType]     = useState('');
+  const [level,    setLevel]    = useState(queryLevel);
+  const [type,     setType]     = useState(queryType);
+
+  useEffect(() => {
+    setLevel(queryLevel);
+    setType(queryType);
+  }, [queryLevel, queryType]);
 
   const load = useCallback(async () => {
     setLoading(true);

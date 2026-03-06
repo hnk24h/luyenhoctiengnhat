@@ -113,9 +113,8 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
               const isFlipped = flipped[item.id];
               return (
                 <div key={item.id}
-                  className="rounded-2xl border p-4 transition-all cursor-pointer select-none hover:shadow-md"
-                  style={{ background: ti.bg, borderColor: ti.border }}
-                  onClick={() => setFlipped(f => ({ ...f, [item.id]: !f[item.id] }))}>
+                  className="rounded-2xl border p-4 transition-all hover:shadow-md"
+                  style={{ background: ti.bg, borderColor: ti.border }}>
                   <div className="flex items-start gap-3">
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded border shrink-0" style={{ color: ti.color, borderColor: ti.color, background: ti.badgeBg }}>
                       {ti.label}
@@ -143,14 +142,27 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
                           }}>
                           {speaking === item.id ? <FaStop size={12}/> : <FaVolumeHigh size={12}/>}
                         </button>
+                        <button
+                          type="button"
+                          className="text-xs px-2.5 py-1 rounded-md font-semibold transition"
+                          style={isFlipped
+                            ? { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }
+                            : { background: 'var(--primary-light)', color: 'var(--primary)' }}
+                          onClick={() => setFlipped(f => ({ ...f, [item.id]: !f[item.id] }))}>
+                          {isFlipped ? 'Ẩn nghĩa' : 'Xem nghĩa'}
+                        </button>
                       </div>
 
-                      {/* Meaning (click to reveal) */}
-                      <div className={`mt-1 transition-all ${isFlipped ? '' : 'blur-[5px] select-none opacity-85'}`}>
-                        <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{item.meaning}</span>
-                      </div>
-                      {!isFlipped && (
-                        <div className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}><FaHandPointer size={10}/> Nhấn để xem nghĩa</div>
+                      {/* Meaning */}
+                      {isFlipped ? (
+                        <div className="mt-2">
+                          <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{item.meaning}</span>
+                        </div>
+                      ) : (
+                        <div className="mt-2 rounded-xl border border-dashed px-3 py-3 text-sm"
+                          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>
+                          <div className="flex items-center gap-1.5"><FaHandPointer size={10}/> Nghĩa đang được ẩn để bạn tự nhớ lại trước khi mở.</div>
+                        </div>
                       )}
 
                       {/* Example */}

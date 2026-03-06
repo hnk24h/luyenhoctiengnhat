@@ -88,9 +88,12 @@ export default async function LearnLevelPage({ params }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm mb-0.5">{cat.name}</div>
                       {cat.description && (
-                        <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{cat.description}</p>
+                        <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{cat.description}</p>
                       )}
-                      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{cat._count.lessons} bài học</div>
+                      <div className="text-xs mt-1 flex flex-wrap gap-x-3 gap-y-1" style={{ color: 'var(--text-muted)' }}>
+                        <span>{cat._count.lessons} bài học</span>
+                        <span>Bắt đầu theo thứ tự từ bài 1</span>
+                      </div>
                     </div>
                     <span className="text-lg" style={{ opacity: 0.6 }}>→</span>
                   </Link>

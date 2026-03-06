@@ -24,6 +24,35 @@ model User {
   flashcardDecks FlashcardDeck[]
   savedWords     SavedWord[]
   wordCollections WordCollection[]
+  examPlan       UserExamPlan?
+  studyProfile   UserStudyProfile?
+}
+
+model UserStudyProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyGoal       Int      @default(12)
+  currentStreak    Int      @default(0)
+  longestStreak    Int      @default(0)
+  lastActivityDate DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model UserExamPlan {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetLevelCode      String
+  examDate             DateTime
+  daysLeftAtSave       Int
+  weeksLeftAtSave      Int
+  examsPerWeek         Int
+  studySessionsPerWeek Int
+  reviewDays           Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model Level {
