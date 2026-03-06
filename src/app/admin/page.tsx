@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen, FaNewspaper, FaUsers } from 'react-icons/fa6';
+import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen, FaNewspaper, FaUsers, FaPalette } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
 export const dynamic = 'force-dynamic';
@@ -77,6 +77,11 @@ export default async function AdminPage() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#ede9fe', color: '#7c3aed' }}><FaUsers size={20}/></div>
           <h3 className="font-semibold text-gray-900 group-hover:text-violet-600">Quản lý người dùng</h3>
           <p className="text-sm text-gray-500 mt-1">Xem, phân quyền và xóa tài khoản học viên</p>
+        </Link>
+        <Link href="/admin/theme" className="card hover:shadow-md transition group">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#fce7f3', color: '#db2777' }}><FaPalette size={20}/></div>
+          <h3 className="font-semibold text-gray-900 group-hover:text-pink-600">Giao diện & Theme</h3>
+          <p className="text-sm text-gray-500 mt-1">Thay đổi màu sắc toàn bộ website</p>
         </Link>
       </div>
     </div>

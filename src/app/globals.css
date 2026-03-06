@@ -190,3 +190,130 @@ body {
 
 /* ── Japanese font ────────────────────────────────────── */
 .font-jp { font-family: 'Noto Sans JP', sans-serif; }
+
+/* ══════════════════════════════════════════════════════
+   THEMES — applied via [data-theme] on <html>
+   ══════════════════════════════════════════════════════ */
+
+/* ── Sakura ───────────────────────────────────────────── */
+[data-theme="sakura"] {
+  --bg-base:    #FFF7F9;
+  --bg-surface: #FFFFFF;
+  --bg-muted:   #FCEEF4;
+
+  --primary:        #D4507A;
+  --primary-hover:  #BF3A65;
+  --primary-light:  #FDEEF4;
+
+  --accent:       #8B5CF6;
+  --accent-light: #EDE9FE;
+
+  --text-primary:   #2D1B2E;
+  --text-secondary: #6B3F5E;
+  --text-muted:     #A885A0;
+
+  --border:       #F3C6D8;
+  --border-hover: #E9A0BF;
+}
+[data-theme="sakura"] .progress-fill {
+  background: linear-gradient(90deg, var(--primary), #F472B6);
+}
+
+/* ── Matcha ───────────────────────────────────────────── */
+[data-theme="matcha"] {
+  --bg-base:    #F4F9F5;
+  --bg-surface: #FFFFFF;
+  --bg-muted:   #E8F5E9;
+
+  --primary:        #2D6A4F;
+  --primary-hover:  #1B4332;
+  --primary-light:  #D8F3DC;
+
+  --accent:       #D97706;
+  --accent-light: #FEF3C7;
+
+  --text-primary:   #1A2E1F;
+  --text-secondary: #3D5E45;
+  --text-muted:     #76977E;
+
+  --border:       #C3DFC8;
+  --border-hover: #A5C9AB;
+}
+[data-theme="matcha"] .progress-fill {
+  background: linear-gradient(90deg, var(--primary), #52B788);
+}
+
+/* ── Ocean ────────────────────────────────────────────── */
+[data-theme="ocean"] {
+  --bg-base:    #F0F7FF;
+  --bg-surface: #FFFFFF;
+  --bg-muted:   #E0EFFF;
+
+  --primary:        #0369A1;
+  --primary-hover:  #075985;
+  --primary-light:  #E0F2FE;
+
+  --accent:       #0891B2;
+  --accent-light: #CFFAFE;
+
+  --text-primary:   #0C1E2E;
+  --text-secondary: #1E4A6E;
+  --text-muted:     #5B93B8;
+
+  --border:       #BAD8F0;
+  --border-hover: #93C4E8;
+}
+[data-theme="ocean"] .progress-fill {
+  background: linear-gradient(90deg, var(--primary), #0EA5E9);
+}
+
+/* ── Sunset ───────────────────────────────────────────── */
+[data-theme="sunset"] {
+  --bg-base:    #FFFBF7;
+  --bg-surface: #FFFFFF;
+  --bg-muted:   #FFF0E6;
+
+  --primary:        #EA580C;
+  --primary-hover:  #C2410C;
+  --primary-light:  #FFF7ED;
+
+  --accent:       #D97706;
+  --accent-light: #FEF3C7;
+
+  --text-primary:   #2D1200;
+  --text-secondary: #7C3614;
+  --text-muted:     #B87A54;
+
+  --border:       #FAD2AC;
+  --border-hover: #F5B880;
+}
+[data-theme="sunset"] .progress-fill {
+  background: linear-gradient(90deg, var(--primary), #F59E0B);
+}
+
+/* ── Midnight ─────────────────────────────────────────── */
+[data-theme="midnight"] {
+  --bg-base:    #0F0F1A;
+  --bg-surface: #1A1A2E;
+  --bg-muted:   #16213E;
+
+  --primary:        #7C6AF7;
+  --primary-hover:  #6C5CE7;
+  --primary-light:  #2D2450;
+
+  --accent:       #F472B6;
+  --accent-light: #3D1A2E;
+
+  --text-primary:   #E8E6F8;
+  --text-secondary: #A9A8C0;
+  --text-muted:     #6B6A80;
+
+  --border:       #2A2A4A;
+  --border-hover: #3D3D65;
+}
+[data-theme="midnight"] .progress-fill {
+  background: linear-gradient(90deg, var(--primary), #A78BFA);
+}
+[data-theme="midnight"] ::-webkit-scrollbar-track { background: #1A1A2E; }
+[data-theme="midnight"] ::-webkit-scrollbar-thumb { background: #3D3D65; }
+[data-theme="midnight"] ::-webkit-scrollbar-thumb:hover { background: #5A5A8A; }
