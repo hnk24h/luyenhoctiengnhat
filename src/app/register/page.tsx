@@ -1,16 +1,22 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaTriangleExclamation } from 'react-icons/fa6';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') router.replace('/');
+  }, [status, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

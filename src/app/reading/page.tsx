@@ -77,6 +77,12 @@ function ReadingPageContent() {
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
 
+      {/* Back link */}
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
+        style={{ color: 'var(--text-muted)' }}>
+        <FaBook size={11} /> Trang chủ
+      </Link>
+
       {/* Header */}
       <div className="mb-8">
         <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--primary)' }}>

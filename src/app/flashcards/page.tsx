@@ -1,12 +1,14 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaLayerGroup, FaPlus, FaXmark, FaCheck, FaBolt,
-  FaCircleCheck, FaClockRotateLeft, FaTrash,
+  FaCircleCheck, FaClockRotateLeft, FaTrash, FaArrowLeft,
 } from 'react-icons/fa6';
 
 interface Deck {
@@ -91,6 +93,12 @@ export default function FlashcardsPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
+      {/* Back link */}
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
+        style={{ color: 'var(--text-muted)' }}>
+        <FaArrowLeft size={11} /> Trang chủ
+      </Link>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-8 flex-wrap">
         <div>
