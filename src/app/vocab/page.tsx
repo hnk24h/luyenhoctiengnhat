@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaBookmark, FaTrash, FaPlus, FaArrowLeft, FaLayerGroup,
   FaMagnifyingGlass, FaXmark, FaCheck, FaFolder, FaCircleXmark,
-  FaEllipsisVertical, FaPen, FaSliders,
+  FaEllipsisVertical, FaPen, FaSliders, FaBookOpen,
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,6 +36,74 @@ const PALETTE = [
   '#4F46E5','#0EA5E9','#10B981','#F59E0B','#EF4444',
   '#8B5CF6','#EC4899','#14B8A6','#F97316','#6366F1',
 ];
+
+// ─── JLPT Reference Vocab ─────────────────────────────────────────────────────
+
+const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
+const LEVEL_COLORS: Record<string, string> = {
+  N5: '#48BB78', N4: '#4299E1', N3: '#ECC94B', N2: '#ED8936', N1: '#F56565',
+};
+const LEVEL_LABELS: Record<string, string> = {
+  N5: 'Sơ cấp', N4: 'Sơ trung cấp', N3: 'Trung cấp', N2: 'Trung cao cấp', N1: 'Cao cấp',
+};
+
+type VocabRefItem = {
+  id: string; japanese: string; reading: string | null; meaning: string;
+  example: string | null; exampleReading: string | null; exampleMeaning: string | null;
+};
+
+function CardSkeleton() {
+  return (
+    <div className="rounded-2xl border animate-pulse"
+      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', minHeight: '9rem' }} />
+  );
+}
+
+function VocabCard({ item, color, flipped, onFlip }: {
+  item: VocabRefItem; color: string; flipped: boolean; onFlip: () => void;
+}) {
+  return (
+    <button onClick={onFlip}
+      className="rounded-2xl border text-left transition-all hover:-translate-y-0.5 hover:shadow-md w-full"
+      style={{
+        background: flipped ? `${color}10` : 'var(--bg-surface)',
+        borderColor: flipped ? color : 'var(--border)',
+        minHeight: '9rem', padding: '1rem',
+      }}>
+      {!flipped ? (
+        <div className="flex flex-col items-center justify-center h-full gap-1.5 py-2">
+          <span className="text-2xl font-bold leading-tight text-center"
+            style={{ fontFamily: 'Noto Serif JP, serif', color: 'var(--text-primary)' }}>
+            {item.japanese}
+          </span>
+          {item.reading && (
+            <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{item.reading}</span>
+          )}
+          <span className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>nhấn để xem nghĩa</span>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 h-full">
+          <div className="flex items-start gap-1.5">
+            <span className="text-xs font-bold shrink-0 mt-0.5" style={{ color }}>意</span>
+            <span className="text-sm font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>{item.meaning}</span>
+          </div>
+          {item.reading && <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.reading}</div>}
+          {item.example && (
+            <div className="pt-2 border-t" style={{ borderColor: `${color}30` }}>
+              <p className="text-xs leading-relaxed font-medium" style={{ color: 'var(--text-secondary)' }}>{item.example}</p>
+              {item.exampleReading && (
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.exampleReading}</p>
+              )}
+              {item.exampleMeaning && (
+                <p className="text-xs mt-1 italic" style={{ color }}>{item.exampleMeaning}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </button>
+  );
+}
 
 // ─── CollectionSidebar ────────────────────────────────────────────────────────
 
@@ -180,6 +248,10 @@ export default function VocabPage() {
   const { status } = useSession();
   const router = useRouter();
 
+  // ── Tab ───────────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<'mine' | 'reference'>('mine');
+
+  // ── My vocab state ────────────────────────────────────────────────────────────
   const [words,        setWords]        = useState<Word[]>([]);
   const [collections,  setCollections]  = useState<Collection[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -190,9 +262,12 @@ export default function VocabPage() {
   const [exportDone,   setExportDone]   = useState(false);
   const [sheetOpen,    setSheetOpen]    = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login');
-  }, [status, router]);
+  // ── Reference vocab state ─────────────────────────────────────────────────────
+  const [refLevel,   setRefLevel]   = useState('N5');
+  const [refSearch,  setRefSearch]  = useState('');
+  const [refItems,   setRefItems]   = useState<VocabRefItem[]>([]);
+  const [refLoading, setRefLoading] = useState(false);
+  const [refFlipped, setRefFlipped] = useState<Set<string>>(new Set());
 
   const loadAll = useCallback(async () => {
     const [wRes, cRes] = await Promise.all([
@@ -206,6 +281,7 @@ export default function VocabPage() {
 
   useEffect(() => {
     if (status === 'authenticated') loadAll();
+    else if (status === 'unauthenticated') setLoading(false);
   }, [status, loadAll]);
 
   // ── Collection CRUD ──────────────────────────────────────────────────────────
@@ -293,6 +369,24 @@ export default function VocabPage() {
     setTimeout(() => setExportDone(false), 3000);
   }
 
+  // ── Reference vocab fetch ─────────────────────────────────────────────────────
+
+  const fetchRefVocab = useCallback(async (level: string) => {
+    setRefLoading(true);
+    try {
+      const res = await fetch(`/api/jlpt/vocab?level=${level}`);
+      const data: VocabRefItem[] = await res.json();
+      setRefItems(Array.isArray(data) ? data : []);
+    } catch { setRefItems([]); }
+    finally { setRefLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    fetchRefVocab(refLevel);
+    setRefFlipped(new Set());
+    setRefSearch('');
+  }, [refLevel, fetchRefVocab]);
+
   // ── Filtering ─────────────────────────────────────────────────────────────────
 
   const filtered = words.filter(w => {
@@ -308,7 +402,29 @@ export default function VocabPage() {
     else setSelected(prev => new Set([...prev, ...filtered.map(w => w.id)]));
   }
 
-  if (status === 'loading' || loading) return (
+  // ── Reference tab computed values ─────────────────────────────────────────────
+
+  const refFiltered = useMemo(() => {
+    if (!refSearch.trim()) return refItems;
+    const q = refSearch.toLowerCase();
+    return refItems.filter(i =>
+      i.japanese.includes(q) || (i.reading ?? '').toLowerCase().includes(q) ||
+      i.meaning.toLowerCase().includes(q) || (i.example ?? '').includes(q)
+    );
+  }, [refItems, refSearch]);
+
+  const refColor = LEVEL_COLORS[refLevel] ?? '#6C5CE7';
+  const allRefFlipped = refFiltered.length > 0 && refFlipped.size === refFiltered.length;
+
+  function toggleRefFlip(id: string) {
+    setRefFlipped(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  }
+  function flipAllRef() {
+    if (allRefFlipped) setRefFlipped(new Set());
+    else setRefFlipped(new Set(refFiltered.map(i => i.id)));
+  }
+
+  if (status === 'loading') return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
       <div className="w-10 h-10 rounded-full border-4 animate-spin"
         style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
@@ -319,6 +435,42 @@ export default function VocabPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
+
+      {/* ── Tab bar ── */}
+      <div className="flex gap-1 p-1 rounded-2xl mb-6 w-fit"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <button onClick={() => setActiveTab('reference')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          style={activeTab === 'reference'
+            ? { background: 'var(--primary)', color: '#fff' }
+            : { color: 'var(--text-muted)' }}>
+          <FaBookOpen size={13} /> Tham khảo JLPT
+        </button>
+        <button onClick={() => setActiveTab('mine')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          style={activeTab === 'mine'
+            ? { background: 'var(--primary)', color: '#fff' }
+            : { color: 'var(--text-muted)' }}>
+          <FaBookmark size={13} /> Từ vựng của tôi
+        </button>
+      </div>
+
+      {activeTab === 'mine' ? (
+      /* ─── My vocab tab ─── */
+      <>
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="w-10 h-10 rounded-full border-4 animate-spin"
+            style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+        </div>
+      ) : status === 'unauthenticated' ? (
+        <div className="card text-center py-14">
+          <div className="text-5xl mb-3 opacity-40">🔐</div>
+          <p className="font-semibold mb-3" style={{ color: 'var(--text-base)' }}>Đăng nhập để xem từ vựng của bạn</p>
+          <Link href="/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
+        </div>
+      ) : (
+      <>
 
       {/* Back */}
       <Link href="/reading" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
@@ -543,6 +695,82 @@ export default function VocabPage() {
           )}
         </div>
       </div>
+
+      </>
+      )}
+      </>
+      ) : (
+      /* ─── Reference tab ─── */
+      <div>
+        {/* Level tabs + search */}
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
+            {JLPT_LEVELS.map(lvl => (
+              <button key={lvl} onClick={() => setRefLevel(lvl)}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                style={refLevel === lvl
+                  ? { background: LEVEL_COLORS[lvl], color: '#fff', boxShadow: `0 2px 8px ${LEVEL_COLORS[lvl]}60` }
+                  : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                {lvl}
+              </button>
+            ))}
+          </div>
+          <div className="relative flex-1 max-w-xs">
+            <FaMagnifyingGlass size={12} className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--text-muted)' }} />
+            <input type="text" placeholder="Tìm từ vựng, ví dụ..."
+              value={refSearch} onChange={e => setRefSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 rounded-xl text-sm border"
+              style={{ background: 'var(--bg-muted)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+        </div>
+
+        {/* Title + flip all */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-extrabold text-lg inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              Từ vựng tham khảo
+              <span className="px-2 py-0.5 rounded-lg text-sm font-bold"
+                style={{ background: `${refColor}20`, color: refColor }}>
+                {refLevel}
+              </span>
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {LEVEL_LABELS[refLevel]} — {refFiltered.length} từ
+            </p>
+          </div>
+          {refFiltered.length > 0 && (
+            <button onClick={flipAllRef}
+              className="text-xs px-3 py-1.5 rounded-xl font-semibold border transition-all"
+              style={{ borderColor: refColor, color: allRefFlipped ? '#fff' : refColor, background: allRefFlipped ? refColor : 'transparent' }}>
+              {allRefFlipped ? 'Giấu tất cả' : 'Lật tất cả'}
+            </button>
+          )}
+        </div>
+
+        {/* Card grid */}
+        {refLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 16 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : refFiltered.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-5xl mb-3">📭</div>
+            <p className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              {refSearch ? 'Không tìm thấy từ vựng phù hợp.' : 'Chưa có dữ liệu từ vựng.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {refFiltered.map(item => (
+              <VocabCard key={item.id} item={item} color={refColor}
+                flipped={refFlipped.has(item.id)} onFlip={() => toggleRefFlip(item.id)} />
+            ))}
+          </div>
+        )}
+      </div>
+      )}
+
     </main>
   );
 }

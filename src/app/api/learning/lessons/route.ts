@@ -8,13 +8,17 @@ function isAdmin(session: any) {
   return role === 'admin' || role === 'ADMIN';
 }
 
-// GET /api/learning/lessons?categoryId=
+// GET /api/learning/lessons?categoryId=&subject=JLPT
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const categoryId = searchParams.get('categoryId');
+  const subject    = searchParams.get('subject');  // 'JLPT' | 'HSK'
 
   const lessons = await prisma.learningLesson.findMany({
-    where: categoryId ? { categoryId } : {},
+    where: {
+      ...(categoryId ? { categoryId } : {}),
+      ...(subject    ? { category: { level: { subject } } } : {}),
+    },
     orderBy: { order: 'asc' },
     include: {
       _count: { select: { items: true } },

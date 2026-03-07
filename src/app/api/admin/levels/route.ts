@@ -7,8 +7,13 @@ function adminOnly(session: any) {
   return !session || session.user?.role !== 'admin';
 }
 
-export async function GET() {
-  const levels = await prisma.level.findMany({ orderBy: { order: 'asc' } });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const subject = searchParams.get('subject'); // 'JLPT' | 'HSK'
+  const levels = await prisma.level.findMany({
+    where: subject ? { subject } : {},
+    orderBy: { order: 'asc' },
+  });
   return NextResponse.json(levels);
 }
 

@@ -98,6 +98,7 @@ type LevelSummary = {
 
 async function getLevelsWithContent() {
   return prisma.level.findMany({
+    where: { subject: 'JLPT' },
     orderBy: { order: 'asc' },
     select: {
       id: true,
@@ -275,6 +276,7 @@ export default async function LearnPage() {
     getLevelsWithContent(),
     userId
       ? prisma.learningLesson.findMany({
+          where: { category: { level: { subject: 'JLPT' } } },
           include: {
             progress: {
               where: { userId },

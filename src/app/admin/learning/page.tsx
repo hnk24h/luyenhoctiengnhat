@@ -128,7 +128,7 @@ export default function AdminLearningPage() {
 
   // ── Load levels ──
   useEffect(() => {
-    fetch('/api/admin/levels').then(r => r.json()).then(setLevels).catch(() => {
+    fetch('/api/admin/levels?subject=JLPT').then(r => r.json()).then(setLevels).catch(() => {
       // fallback: use static list
       setLevels(LEVELS.map((c, i) => ({ id: c, code: c, name: c })));
     });
@@ -141,6 +141,7 @@ export default function AdminLearningPage() {
     const params = new URLSearchParams();
     if (level) params.set('levelId', level.id);
     if (activeSkill) params.set('skill', activeSkill);
+    params.set('subject', 'JLPT');
     const res = await fetch(`/api/learning/categories?${params}`);
     if (res.ok) setCategories(await res.json());
     setActiveCatId(null);

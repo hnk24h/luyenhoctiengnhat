@@ -12,20 +12,21 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String           @unique
-  password       String?
-  role           String           @default("user") // "user" | "admin"
-  createdAt      DateTime         @default(now())
-  sessions       ExamSession[]
-  progress       UserProgress[]
-  lessonProgress LessonProgress[]
-  flashcardDecks FlashcardDeck[]
-  savedWords     SavedWord[]
+  id              String            @id @default(cuid())
+  name            String
+  email           String            @unique
+  password        String?
+  role            String            @default("user") // "user" | "admin"
+  createdAt       DateTime          @default(now())
+  sessions        ExamSession[]
+  progress        UserProgress[]
+  lessonProgress  LessonProgress[]
+  flashcardDecks  FlashcardDeck[]
+  savedWords      SavedWord[]
   wordCollections WordCollection[]
-  examPlan       UserExamPlan?
-  studyProfile   UserStudyProfile?
+  examPlan        UserExamPlan?
+  studyProfile    UserStudyProfile?
+  pmpProgress     PMPUserProgress[]
 }
 
 model UserStudyProfile {
@@ -57,10 +58,11 @@ model UserExamPlan {
 
 model Level {
   id                 String             @id @default(cuid())
-  code               String             @unique // N5, N4, N3, N2, N1
+  code               String             @unique // N5, N4, N3, N2, N1 | HSK1-HSK6
   name               String
   description        String?
   order              Int                @default(0)
+  subject            String             @default("JLPT") // "JLPT" | "HSK"
   examSets           ExamSet[]
   learningCategories LearningCategory[]
 }
@@ -274,4 +276,88 @@ model SavedWordsOnCollections {
   addedAt      DateTime       @default(now())
 
   @@id([wordId, collectionId])
+}
+
+// ─── Chinese / HSK Module ─────────────────────────────────────────────────────
+
+model ChinesePassage {
+  id           String   @id @default(cuid())
+  title        String
+  titleVi      String?
+  level        String   // HSK1 | HSK2 | … | HSK6
+  content      String   // Simplified Chinese text
+  pinyin       String?  // Full passage pinyin annotation (JSON or plain)
+  translation  String?  // Vietnamese translation
+  audioUrl     String?
+  topic        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── PMP / PMBOK 6 Module ─────────────────────────────────────────────────────
+
+model PMPKnowledgeArea {
+  id          String       @id @default(cuid())
+  code        String       @unique // e.g. "integration", "scope", ...
+  name        String       // English name
+  nameVi      String       // Vietnamese name
+  description String?
+  order       Int          @default(0)
+  processes   PMPProcess[]
+}
+
+model PMPProcessGroup {
+  id       String       @id @default(cuid())
+  code     String       @unique // initiating | planning | executing | monitoring | closing
+  name     String
+  nameVi   String
+  order    Int          @default(0)
+  processes PMPProcess[]
+}
+
+model PMPProcess {
+  id               String           @id @default(cuid())
+  knowledgeAreaId  String
+  knowledgeArea    PMPKnowledgeArea @relation(fields: [knowledgeAreaId], references: [id])
+  processGroupId   String
+  processGroup     PMPProcessGroup  @relation(fields: [processGroupId], references: [id])
+  name             String
+  nameVi           String
+  description      String?
+  inputs           Json?            // array of strings
+  tools            Json?            // array of strings
+  outputs          Json?            // array of strings
+  keyPoints        String?          // Markdown notes for learners
+  order            Int              @default(0)
+  examQuestions    PMPExamQuestion[]
+}
+
+model PMPExamQuestion {
+  id         String      @id @default(cuid())
+  processId  String?
+  process    PMPProcess? @relation(fields: [processId], references: [id])
+  area       String?     // knowledge area code if question is KA-level
+  group      String?     // process group code if question is PG-level
+  content    String      // Question text (Vietnamese)
+  optionA    String
+  optionB    String
+  optionC    String
+  optionD    String
+  answer     String      // "A" | "B" | "C" | "D"
+  explain    String?
+  difficulty String      @default("medium") // easy | medium | hard
+  tags       Json?       // e.g. ["ITTOs", "Concepts"]
+  createdAt  DateTime    @default(now())
+}
+
+model PMPUserProgress {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  knowledgeArea       String   // knowledge area code
+  questionsAttempted  Int      @default(0)
+  questionsCorrect    Int      @default(0)
+  updatedAt           DateTime @updatedAt
+
+  @@unique([userId, knowledgeArea])
 }
