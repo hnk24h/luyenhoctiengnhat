@@ -32,9 +32,10 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       example:  example?.trim()  ?? auth.card.example,
       imageUrl: imageUrl !== undefined ? (imageUrl?.trim() || null) : auth.card.imageUrl,
     },
-    include: { progress: true },
+    include: { progress: { where: { userId: auth.user.id } } },
   });
-  return NextResponse.json(card);
+  const normalized = { ...card, progress: card.progress[0] ?? null };
+  return NextResponse.json(normalized);
 }
 
 // DELETE /api/flashcards/cards/[cardId]

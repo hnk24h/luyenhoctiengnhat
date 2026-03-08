@@ -31,10 +31,11 @@ interface Lesson {
   category: { name: string; skill: string; level: { code: string } };
 }
 
+interface ContentMeaning { id: string; language: string; meaning: string }
+interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
 interface LearningItem {
-  id: string; lessonId: string; type: string; japanese: string;
-  reading: string | null; meaning: string; example: string | null;
-  exampleReading: string | null; exampleMeaning: string | null;
+  id: string; lessonId: string; type: string; language: string; term: string;
+  pronunciation: string | null; meanings: ContentMeaning[]; examples: ContentExample[];
   audioUrl: string | null; imageUrl: string | null; order: number;
 }
 
@@ -48,13 +49,13 @@ const SKILLS = [
   { value: 'tu_vung',  label: 'Từ vựng' },
 ];
 const LESSON_TYPES = ['text', 'vocab', 'grammar', 'audio'];
-const ITEM_TYPES   = ['vocab', 'kanji', 'grammar', 'example', 'phrase'];
+const ITEM_TYPES   = ['vocab', 'character', 'grammar', 'example', 'phrase', 'tone', 'idiom'];
 
 const CAT_BLANK = { levelCode: 'N5', skill: 'tu_vung', name: '', description: '', icon: '', order: 0 };
-const LES_BLANK = { title: '', description: '', content: '', type: 'vocab', order: 0 };
+const LES_BLANK = { title: '', description: '', type: 'vocab', order: 0 };
 const ITEM_BLANK = {
-  type: 'vocab', japanese: '', reading: '', meaning: '',
-  example: '', exampleReading: '', exampleMeaning: '', order: 0,
+  type: 'vocab', term: '', pronunciation: '', language: 'ja', meaning: '',
+  example: '', exampleMeaning: '', order: 0,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -222,7 +223,7 @@ export default function AdminLearningPage() {
   }
 
   function openLesEdit(les: Lesson) {
-    setLesForm({ title: les.title, description: les.description ?? '', content: les.content ?? '', type: les.type, order: les.order });
+    setLesForm({ title: les.title, description: les.description ?? '', type: les.type, order: les.order });
     setEditId(les.id); setModalErr(''); setModal('les-edit');
   }
 
@@ -265,17 +266,18 @@ export default function AdminLearningPage() {
 
   function openItemEdit(item: LearningItem) {
     setItemForm({
-      type: item.type, japanese: item.japanese, reading: item.reading ?? '',
-      meaning: item.meaning, example: item.example ?? '',
-      exampleReading: item.exampleReading ?? '', exampleMeaning: item.exampleMeaning ?? '',
+      type: item.type, term: item.term, pronunciation: item.pronunciation ?? '',
+      language: item.language,
+      meaning: item.meanings?.[0]?.meaning ?? '', example: item.examples?.[0]?.exampleText ?? '',
+      exampleMeaning: item.examples?.[0]?.translation ?? '',
       order: item.order,
     });
     setEditId(item.id); setModalErr(''); setModal('item-edit');
   }
 
   async function saveItem() {
-    if (!itemForm.japanese.trim() || !itemForm.meaning.trim()) {
-      setModalErr('Tiếng Nhật và nghĩa là bắt buộc'); return;
+    if (!itemForm.term.trim() || !itemForm.meaning.trim()) {
+      setModalErr('Term và nghĩa là bắt buộc'); return;
     }
     if (!activeLesId) { setModalErr('Chọn bài học trước'); return; }
     setSaving(true); setModalErr('');
@@ -563,11 +565,11 @@ export default function AdminLearningPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold" style={{ fontFamily: '"Noto Sans JP", serif', color: 'var(--primary)' }}>
-                        {item.japanese}
+                        {item.term}
                       </span>
-                      {item.reading && (
+                      {item.pronunciation && (
                         <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: '"Noto Sans JP", serif' }}>
-                          ({item.reading})
+                          ({item.pronunciation})
                         </span>
                       )}
                       <span className="px-1.5 py-0.5 rounded text-xs font-medium"
@@ -575,10 +577,10 @@ export default function AdminLearningPage() {
                         {item.type}
                       </span>
                     </div>
-                    <div className="text-sm mt-0.5" style={{ color: 'var(--text-base)' }}>{item.meaning}</div>
-                    {item.example && (
+                    <div className="text-sm mt-0.5" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</div>
+                    {item.examples?.[0] && (
                       <div className="text-xs mt-1 italic" style={{ color: 'var(--text-muted)', fontFamily: '"Noto Sans JP", serif' }}>
-                        {item.example}
+                        {item.examples[0].exampleText}
                       </div>
                     )}
                   </div>
@@ -709,14 +711,6 @@ export default function AdminLearningPage() {
                   value={lesForm.description} onChange={e => setLesForm(f => ({ ...f, description: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
-                  Nội dung (Markdown)
-                </label>
-                <textarea className="input w-full resize-y font-mono text-xs" rows={6}
-                  placeholder="## Giới thiệu&#10;Nội dung bài học..."
-                  value={lesForm.content} onChange={e => setLesForm(f => ({ ...f, content: e.target.value }))} />
-              </div>
-              <div>
                 <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Thứ tự</label>
                 <input type="number" className="input w-24" min={0}
                   value={lesForm.order} onChange={e => setLesForm(f => ({ ...f, order: Number(e.target.value) }))} />
@@ -757,19 +751,19 @@ export default function AdminLearningPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
-                    Tiếng Nhật *
-                    <span className="ml-1 font-normal opacity-60" style={{ fontFamily: '"Noto Sans JP"' }}>（日本語）</span>
+                    Term *
+                    <span className="ml-1 font-normal opacity-60" style={{ fontFamily: '"Noto Sans JP"' }}>（単語 / 漢字 / 内容）</span>
                   </label>
                   <input className="input w-full" placeholder="食べる" style={{ fontFamily: '"Noto Sans JP"' }}
-                    value={itemForm.japanese} onChange={e => setItemForm(f => ({ ...f, japanese: e.target.value }))} />
+                    value={itemForm.term} onChange={e => setItemForm(f => ({ ...f, term: e.target.value }))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
-                    Cách đọc
-                    <span className="ml-1 font-normal opacity-60" style={{ fontFamily: '"Noto Sans JP"' }}>（よみかた）</span>
+                    Phát âm
+                    <span className="ml-1 font-normal opacity-60" style={{ fontFamily: '"Noto Sans JP"' }}>（よみかた / pīnyīn）</span>
                   </label>
                   <input className="input w-full" placeholder="たべる" style={{ fontFamily: '"Noto Sans JP"' }}
-                    value={itemForm.reading} onChange={e => setItemForm(f => ({ ...f, reading: e.target.value }))} />
+                    value={itemForm.pronunciation} onChange={e => setItemForm(f => ({ ...f, pronunciation: e.target.value }))} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -794,17 +788,10 @@ export default function AdminLearningPage() {
                 <input className="input w-full" placeholder="毎日ご飯を食べます。" style={{ fontFamily: '"Noto Sans JP"' }}
                   value={itemForm.example} onChange={e => setItemForm(f => ({ ...f, example: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Cách đọc ví dụ</label>
-                  <input className="input w-full text-sm" placeholder="まいにちごはんをたべます。" style={{ fontFamily: '"Noto Sans JP"' }}
-                    value={itemForm.exampleReading} onChange={e => setItemForm(f => ({ ...f, exampleReading: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Nghĩa ví dụ</label>
-                  <input className="input w-full text-sm" placeholder="Tôi ăn cơm mỗi ngày."
-                    value={itemForm.exampleMeaning} onChange={e => setItemForm(f => ({ ...f, exampleMeaning: e.target.value }))} />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Nghĩa ví dụ</label>
+                <input className="input w-full text-sm" placeholder="Tôi ăn cơm mỗi ngày."
+                  value={itemForm.exampleMeaning} onChange={e => setItemForm(f => ({ ...f, exampleMeaning: e.target.value }))} />
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Thứ tự</label>
@@ -865,17 +852,17 @@ export default function AdminLearningPage() {
               {importFmt === 'csv' ? (
                 <>
                   <div className="font-semibold mb-1" style={{ color: 'var(--text-base)', fontFamily: 'inherit' }}>📋 Định dạng CSV (cột phân cách bằng dấu phẩy):</div>
-                  <div>japanese,reading,meaning,type,example,exampleReading,exampleMeaning</div>
+                  <div>term,pronunciation,meaning,type,example,exampleReading,exampleMeaning</div>
                   <div className="mt-1">食べる,たべる,ăn,vocab,毎日食べます,まいにちたべます,Tôi ăn mỗi ngày</div>
                   <div>家族,かぞく,gia đình,vocab,,,</div>
-                  <div className="mt-1" style={{ color: '#059669' }}>• type: vocab | kanji | grammar | example | phrase</div>
-                  <div style={{ color: '#059669' }}>• reading/example/... có thể để trống</div>
+                  <div className="mt-1" style={{ color: '#059669' }}>• type: vocab | character | grammar | example | phrase | tone | idiom</div>
+                  <div style={{ color: '#059669' }}>• pronunciation/example/... có thể để trống</div>
                 </>
               ) : (
                 <>
                   <div className="font-semibold mb-1" style={{ color: 'var(--text-base)', fontFamily: 'inherit' }}>📋 Định dạng JSON (mảng object):</div>
-                  <div>{'['}{'{'}&quot;japanese&quot;:&quot;食べる&quot;,&quot;reading&quot;:&quot;たべる&quot;,&quot;meaning&quot;:&quot;ăn&quot;,&quot;type&quot;:&quot;vocab&quot;{'}'},{'{'}...{'}'}]</div>
-                  <div className="mt-1" style={{ color: '#059669' }}>• Các field: japanese*, meaning*, reading, type, example, exampleReading, exampleMeaning</div>
+                  <div>{'['}{'{'}&quot;term&quot;:&quot;食べる&quot;,&quot;pronunciation&quot;:&quot;たべる&quot;,&quot;meaning&quot;:&quot;ăn&quot;,&quot;type&quot;:&quot;vocab&quot;{'}'},{'{'}...{'}'}]</div>
+                  <div className="mt-1" style={{ color: '#059669' }}>• Các field: term*, meaning*, pronunciation, type, example, exampleReading, exampleMeaning</div>
                   <div style={{ color: '#059669' }}>• (*) bắt buộc</div>
                 </>
               )}
@@ -885,8 +872,8 @@ export default function AdminLearningPage() {
             <div className="mb-3 shrink-0">
               <button onClick={() => {
                 const content = importFmt === 'csv'
-                  ? 'japanese,reading,meaning,type,example,exampleReading,exampleMeaning\n食べる,たべる,ăn,vocab,毎日食べます,まいにちたべます,Tôi ăn mỗi ngày\n家族,かぞく,gia đình,vocab,,,'
-                  : JSON.stringify([{ japanese: '食べる', reading: 'たべる', meaning: 'ăn', type: 'vocab', example: '毎日食べます', exampleReading: 'まいにちたべます', exampleMeaning: 'Tôi ăn mỗi ngày' }], null, 2);
+                  ? 'term,pronunciation,meaning,type,example,exampleReading,exampleMeaning\n食べる,たべる,ăn,vocab,毎日食べます,まいにちたべます,Tôi ăn mỗi ngày\n家族,かぞく,gia đình,vocab,,,'
+                  : JSON.stringify([{ term: '食べる', pronunciation: 'たべる', meaning: 'ăn', type: 'vocab', example: '毎日食べます', exampleReading: 'まいにちたべます', exampleMeaning: 'Tôi ăn mỗi ngày' }], null, 2);
                 const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
                 a.download = `template.${importFmt}`; a.click();
@@ -904,8 +891,8 @@ export default function AdminLearningPage() {
               <textarea
                 className="input flex-1 resize-none font-mono text-xs w-full min-h-[160px]"
                 placeholder={importFmt === 'csv'
-                  ? 'japanese,reading,meaning,type,...\n食べる,たべる,ăn,vocab,...'
-                  : '[{"japanese":"食べる","reading":"たべる","meaning":"ăn","type":"vocab"}]'}
+                  ? 'term,pronunciation,meaning,type,...\n食べる,たべる,ăn,vocab,...'
+                  : '[{"term":"食べる","pronunciation":"たべる","meaning":"ăn","type":"vocab"}]'}
                 value={importText}
                 onChange={e => { setImportText(e.target.value); setImportResult(null); setImportErr(''); }}
               />

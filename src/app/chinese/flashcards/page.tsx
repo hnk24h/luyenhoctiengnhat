@@ -12,9 +12,9 @@ type Card = { id: string; front: string; back: string; pinyin: string };
 
 type ApiItem = {
   id: string;
-  japanese: string;
-  reading: string;
-  meaning: string;
+  term: string;
+  pronunciation: string;
+  meanings: { id: string; language: string; meaning: string }[];
 };
 
 export default function ChineseFlashcardsPage() {
@@ -33,7 +33,7 @@ export default function ChineseFlashcardsPage() {
     try {
       const res = await fetch(`/api/chinese/vocab?level=${level}`);
       const data: ApiItem[] = await res.json();
-      setCards(data.map(d => ({ id: d.id, front: d.japanese, pinyin: d.reading, back: d.meaning })));
+      setCards(data.map(d => ({ id: d.id, front: d.term, pinyin: d.pronunciation, back: d.meanings?.[0]?.meaning ?? '' })));
     } catch { setCards([]); } finally { setLoading(false); }
   }, []);
 

@@ -271,7 +271,7 @@ export default async function DashboardPage() {
       where: { deck: { userId } },
       include: {
         deck: true,
-        progress: true,
+        progress: { where: { userId } },
       },
       orderBy: [
         { deck: { updatedAt: 'desc' } },
@@ -353,7 +353,7 @@ export default async function DashboardPage() {
 
   const currentLevel = levelSummary.find((level) => level.total > 0 && level.done < level.total) ?? levelSummary[0] ?? null;
 
-  const typedFlashcards = flashcards as FlashcardForDashboard[];
+  const typedFlashcards = flashcards.map(c => ({ ...c, progress: c.progress[0] ?? null })) as FlashcardForDashboard[];
   const dueCards = typedFlashcards.filter((card: FlashcardForDashboard) => !card.progress || new Date(card.progress.dueAt) <= now);
   const dueDeckMap = dueCards.reduce<Record<string, DueDeckSummary>>((acc: Record<string, DueDeckSummary>, card: FlashcardForDashboard) => {
     const existing = acc[card.deckId];

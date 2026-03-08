@@ -24,13 +24,18 @@ export async function GET(_: NextRequest, { params }: Ctx) {
     where: { id: params.deckId },
     include: {
       cards: {
-        include: { progress: true },
+        include: { progress: { where: { userId: auth.user.id } } },
         orderBy: { order: 'asc' },
       },
     },
   });
 
-  return NextResponse.json(deck);
+  // Normalize: progress[] → progress (single, for this user) for backward compat
+  const normalized = {
+    ...deck,
+    cards: deck?.cards.map(c => ({ ...c, progress: c.progress[0] ?? null })) ?? [],
+  };
+  return NextResponse.json(normalized);
 }
 
 // PUT /api/flashcards/[deckId] — update deck meta

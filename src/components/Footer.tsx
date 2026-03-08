@@ -86,7 +86,7 @@ export function Footer() {
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
                 <Link href="/register" className="btn-primary text-xs py-2 px-3.5 rounded-2xl">Tạo tài khoản</Link>
-                <Link href="/learn" className="btn-secondary text-xs py-2 px-3.5 rounded-2xl">Bắt đầu học</Link>
+                <Link href="/ja/learn" className="btn-secondary text-xs py-2 px-3.5 rounded-2xl">Bắt đầu học</Link>
               </div>
             </div>
           </div>

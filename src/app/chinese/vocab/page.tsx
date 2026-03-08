@@ -10,16 +10,16 @@ const LEVEL_COLORS: Record<string, string> = {
 
 type VocabItem = {
   id: string;
-  japanese: string; // used as: Chinese character
-  reading: string;  // pinyin
-  meaning: string;  // Vietnamese
+  term: string;
+  pronunciation: string;
+  meanings: { id: string; language: string; meaning: string }[];
 };
 
 type ApiItem = {
   id: string;
-  japanese: string;
-  reading: string;
-  meaning: string;
+  term: string;
+  pronunciation: string;
+  meanings: { id: string; language: string; meaning: string }[];
 };
 
 export default function ChineseVocabPage() {
@@ -48,7 +48,7 @@ export default function ChineseVocabPage() {
     if (!search.trim()) return items;
     const q = search.toLowerCase();
     return items.filter(i =>
-      i.japanese.includes(q) || i.reading.toLowerCase().includes(q) || i.meaning.toLowerCase().includes(q)
+      i.term.includes(q) || i.pronunciation.toLowerCase().includes(q) || (i.meanings?.[0]?.meaning ?? '').toLowerCase().includes(q)
     );
   }, [items, search]);
 
@@ -149,13 +149,13 @@ export default function ChineseVocabPage() {
                   }}>
                   {!isFlipped ? (
                     <div className="flex flex-col items-center justify-center h-full gap-1">
-                      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{item.japanese}</span>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.reading}</span>
+                      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{item.term}</span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full gap-1">
-                      <span className="text-sm font-bold text-center leading-snug" style={{ color }}>{item.meaning}</span>
-                      <span className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{item.japanese}</span>
+                      <span className="text-sm font-bold text-center leading-snug" style={{ color }}>{item.meanings?.[0]?.meaning ?? ''}</span>
+                      <span className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{item.term}</span>
                     </div>
                   )}
                 </button>

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FaArrowLeft, FaArrowRight, FaCircleCheck, FaCircleXmark, FaRotate } from 'react-icons/fa6';
+import { useSession } from 'next-auth/react';
 
 const KA_LIST = [
   { code: 'integration',    nameVi: 'Tích hợp',         color: '#6C5CE7' },
@@ -32,6 +33,7 @@ type Question = {
 type AnswerRecord = { questionId: string; selected: string; correct: boolean };
 
 export default function PMPExamPage() {
+  const { data: session } = useSession();
   const [mode, setMode] = useState<'config' | 'quiz' | 'result'>('config');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -73,7 +75,18 @@ export default function PMPExamPage() {
 
   function next() {
     setShowExplain(false);
-    if (current + 1 >= questions.length) { setMode('result'); return; }
+    if (current + 1 >= questions.length) {
+      setMode('result');
+      // Save session to DB if logged in (fire-and-forget)
+      if (session) {
+        fetch('/api/pmp/exam/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers, areaCode: selectedArea }),
+        }).catch(() => {});
+      }
+      return;
+    }
     setCurrent(c => c + 1); setSelected(null); setAnswered(false);
   }
 

@@ -9,39 +9,47 @@ import { useTheme, type AppearanceMode } from '@/context/ThemeContext';
 
 type NavLink = { href: string; label: string; icon: IconType; authRequired?: boolean };
 
+// ── ISO-coded nav links ─────────────────────────────────────────────────────
+
 const JLPT_NAV_LINKS: NavLink[] = [
-  { href: '/learn',        label: 'Cấp độ',          icon: FaBookOpen },
-  { href: '/listening',    label: 'Luyện nghe',       icon: FaHeadphones },
-  { href: '/levels',       label: 'Luyện thi',        icon: FaPencil },
-  { href: '/flashcards',   label: 'Flashcard',        icon: FaLayerGroup, authRequired: true },
-  { href: '/reading',      label: 'Đọc hiểu',         icon: FaNewspaper },
-  { href: '/vocab',        label: 'Từ vựng',          icon: FaBookmark },
-  { href: '/dashboard',    label: 'Tiến trình',       icon: FaChartBar,   authRequired: true },
+  { href: '/ja/learn',     label: 'Cấp độ',    icon: FaBookOpen },
+  { href: '/ja/listening', label: 'Luyện nghe', icon: FaHeadphones },
+  { href: '/ja/levels',    label: 'Luyện thi',  icon: FaPencil },
+  { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
+  { href: '/ja/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
+  { href: '/ja/vocab',     label: 'Từ vựng',    icon: FaBookmark },
+  { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar,   authRequired: true },
 ];
 
 const CHINESE_NAV_LINKS: NavLink[] = [
-  { href: '/chinese',             label: 'Tổng quan',   icon: FaBookOpen },
-  { href: '/chinese/grammar',     label: 'Ngữ pháp',    icon: FaBookOpen },
-  { href: '/chinese/listening',   label: 'Luyện nghe',  icon: FaHeadphones },
-  { href: '/chinese/reading',     label: 'Đọc hiểu',    icon: FaNewspaper },
-  { href: '/chinese/vocab',       label: 'Từ vựng',     icon: FaBookmark,  authRequired: true },
-  { href: '/chinese/flashcards',  label: 'Flashcard',   icon: FaLayerGroup, authRequired: true },
+  { href: '/zh',           label: 'Tổng quan',  icon: FaBookOpen },
+  { href: '/zh/learn',     label: 'Cấp độ',     icon: FaCompass },
+  { href: '/zh/grammar',   label: 'Ngữ pháp',   icon: FaBookOpen },
+  { href: '/zh/listening', label: 'Luyện nghe', icon: FaHeadphones },
+  { href: '/zh/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
+  { href: '/zh/vocab',     label: 'Từ vựng',    icon: FaBookmark,  authRequired: true },
+  { href: '/zh/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
 ];
 
 const PMP_NAV_LINKS: NavLink[] = [
-  { href: '/pmp',                    label: 'Tổng quan',       icon: FaBookOpen },
-  { href: '/pmp/knowledge-areas',    label: 'Knowledge Areas', icon: FaLayerGroup },
-  { href: '/pmp/exam',               label: 'Luyện thi',       icon: FaPencil },
+  { href: '/en/pmp',                     label: 'Tổng quan',       icon: FaBookOpen },
+  { href: '/en/pmp/knowledge-areas',     label: 'Knowledge Areas', icon: FaLayerGroup },
+  { href: '/en/pmp/exam',                label: 'Luyện thi',       icon: FaPencil },
 ];
 
 const SUBJECTS = [
-  { id: 'JLPT', label: 'Tiếng Nhật', flag: '🇯🇵', href: '/learn', color: '#6C5CE7' },
-  { id: 'HSK',  label: 'Tiếng Trung', flag: '🇨🇳', href: '/chinese', color: '#e53e3e' },
-  { id: 'PMP',  label: 'PMP PMBOK', flag: '📊', href: '/pmp', color: '#2b6cb0' },
+  { id: 'ja', label: 'Tiếng Nhật',  flag: '🇯🇵', href: '/ja/learn', color: '#6C5CE7',
+    desc: 'N5 → N1 · Học tiếng Nhật' },
+  { id: 'zh', label: 'Tiếng Trung', flag: '🇨🇳', href: '/zh/learn',  color: '#DC2626',
+    desc: 'HSK1 → HSK6 · Học tiếng Trung' },
+  { id: 'en', label: 'PMP PMBOK',   flag: '📊',  href: '/en/pmp',   color: '#2B6CB0',
+    desc: 'PMBOK 6th · Chứng chỉ PMP' },
 ] as const;
 
-// legacy alias for code that references NAV_LINKS
+// legacy alias kept for isActive checks below
 const NAV_LINKS = JLPT_NAV_LINKS;
+
+const KNOWN_LANGS = new Set(['ja', 'zh', 'ko', 'vi', 'en']);
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -57,13 +65,13 @@ export function Navbar() {
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const modulesMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const currentSubject = pathname.startsWith('/chinese') ? 'HSK'
-    : pathname.startsWith('/pmp') ? 'PMP'
-    : 'JLPT';
-  const currentSubjectMeta = SUBJECTS.find(s => s.id === currentSubject)!;
+  // Detect current language from the first URL segment (ISO 639-1)
+  const langSegment = pathname.split('/')[1] ?? '';
+  const currentLang = KNOWN_LANGS.has(langSegment) ? langSegment : 'ja';
+  const currentSubjectMeta = SUBJECTS.find(s => s.id === currentLang) ?? SUBJECTS[0];
 
-  const activeNavLinks: NavLink[] = currentSubject === 'HSK' ? CHINESE_NAV_LINKS
-    : currentSubject === 'PMP' ? PMP_NAV_LINKS
+  const activeNavLinks: NavLink[] = currentLang === 'zh' ? CHINESE_NAV_LINKS
+    : currentLang === 'en' ? PMP_NAV_LINKS
     : JLPT_NAV_LINKS;
 
   const isAdmin = (session?.user as any)?.role === 'admin';
@@ -79,22 +87,22 @@ export function Navbar() {
   ];
   const primaryLinks = useMemo(
     () => visibleLinks.filter(link => {
-      if (currentSubject === 'JLPT') {
-        return ['/learn', '/listening', '/reading', '/vocab', '/flashcards'].includes(link.href);
+      if (currentLang === 'ja') {
+        return ['/ja/learn', '/ja/listening', '/ja/reading', '/ja/vocab', '/ja/practice'].includes(link.href);
       }
-      if (currentSubject === 'HSK') {
-        return ['/chinese', '/chinese/grammar', '/chinese/listening', '/chinese/reading', '/chinese/vocab'].includes(link.href);
+      if (currentLang === 'zh') {
+        return ['/zh', '/zh/grammar', '/zh/listening', '/zh/reading', '/zh/vocab'].includes(link.href);
       }
       return true;
     }).slice(0, 5),
-    [visibleLinks, currentSubject]
+    [visibleLinks, currentLang]
   );
   const exploreLinks = useMemo(
     () => visibleLinks.filter(link => {
-      if (currentSubject === 'JLPT' && session && link.href === '/levels') return false;
+      if (currentLang === 'ja' && session && link.href === '/ja/levels') return false;
       return !primaryLinks.some(primary => primary.href === link.href);
     }),
-    [primaryLinks, session, visibleLinks, currentSubject]
+    [primaryLinks, session, visibleLinks, currentLang]
   );
   const appearanceOptions: { id: AppearanceMode; label: string; icon: IconType }[] = [
     { id: 'light', label: 'Sáng', icon: FaSun },
@@ -151,7 +159,7 @@ export function Navbar() {
             <Link href="/" className="flex items-center gap-2 shrink-0 group" onClick={() => setMobileOpen(false)}>
               <span className="flex h-9 w-9 items-center justify-center rounded-2xl text-white text-base font-bold shadow-lg transition-transform group-hover:scale-105"
                 style={{ background: currentSubjectMeta.color, boxShadow: `0 4px 14px ${currentSubjectMeta.color}55` }}>
-                {currentSubject === 'JLPT' ? '日' : currentSubject === 'HSK' ? '中' : '📊'}
+                {currentLang === 'ja' ? '日' : currentLang === 'zh' ? '中' : '📊'}
               </span>
               <span className="flex flex-col leading-none">
                 <span className="font-bold text-sm tracking-tight" style={{ color: 'var(--text-primary)' }}>Luyện Thi</span>
@@ -174,7 +182,7 @@ export function Navbar() {
                       ? { background: 'var(--bg-muted)', color: 'var(--text-primary)' }
                       : { color: 'var(--text-secondary)' }}>
                     <span>{currentSubjectMeta.flag}</span>
-                    <span className="hidden lg:inline">{currentSubject}</span>
+                    <span className="hidden lg:inline">{currentSubjectMeta.label}</span>
                     <FaChevronDown size={10} style={{ transform: modulesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
                   </button>
                   {modulesOpen && (
@@ -184,19 +192,17 @@ export function Navbar() {
                       {SUBJECTS.map(sub => (
                         <Link key={sub.id} href={sub.href}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                          style={currentSubject === sub.id
+                          style={currentLang === sub.id
                             ? { background: 'var(--bg-muted)', color: 'var(--text-primary)', fontWeight: 700 }
                             : { color: 'var(--text-secondary)' }}>
                           <span className="text-base">{sub.flag}</span>
                           <div>
                             <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{sub.label}</div>
                             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {sub.id === 'JLPT' ? 'N5 → N1 · Học tiếng Nhật'
-                                : sub.id === 'HSK' ? 'HSK1 → HSK6 · Học tiếng Trung'
-                                : 'PMBOK 6th · Chứng chỉ PMP'}
+                              {sub.desc}
                             </div>
                           </div>
-                          {currentSubject === sub.id && <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full font-bold text-white" style={{ background: sub.color }}>▶</span>}
+                          {currentLang === sub.id && <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full font-bold text-white" style={{ background: sub.color }}>▶</span>}
                         </Link>
                       ))}
                     </div>
@@ -225,7 +231,7 @@ export function Navbar() {
                       setAppearanceOpen(false);
                     }}
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all"
-                    style={isActive('/reading') || isActive('/flashcards') || isActive('/vocab') || (!session && isActive('/levels')) || exploreOpen
+                    style={isActive(`/${currentLang}/reading`) || isActive(`/${currentLang}/practice`) || isActive(`/${currentLang}/vocab`) || (!session && isActive(`/${currentLang}/levels`)) || exploreOpen
                       ? { background: 'var(--bg-muted)', color: 'var(--text-primary)' }
                       : { color: 'var(--text-secondary)' }}>
                     <FaCompass size={14} />
@@ -401,7 +407,7 @@ export function Navbar() {
                   {SUBJECTS.map(sub => (
                     <Link key={sub.id} href={sub.href} onClick={() => setMobileOpen(false)}
                       className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-all text-center"
-                      style={currentSubject === sub.id
+                      style={currentLang === sub.id
                         ? { background: sub.color, color: '#fff' }
                         : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
                       <span className="text-base">{sub.flag}</span>

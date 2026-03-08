@@ -11,22 +11,94 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum Language {
+  ja
+  zh
+  ko
+  en
+  vi
+}
+
+enum Subject {
+  JLPT
+  HSK
+  PMP
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum Skill {
+  nghe
+  noi
+  doc
+  viet
+  vocab
+  grammar
+}
+
+enum QuestionType {
+  tracnghiem
+  dien_tu
+  nghe_audio
+  ghi_am
+  upload_file
+}
+
+enum LessonType {
+  text
+  vocab
+  grammar
+  audio
+}
+
+enum ContentType {
+  vocab
+  character  // language-agnostic: kanji (ja) | hanzi (zh) | hanja (ko)
+  grammar
+  example
+  phrase
+  tone       // tonal marks / pitch accent (vi, zh)
+  idiom      // 成語 / 慣用句
+}
+
+enum StudyEventType {
+  lesson_open
+  lesson_complete
+  flashcard_review
+  exam_start
+  exam_finish
+  vocab_view
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
 model User {
-  id              String            @id @default(cuid())
-  name            String
-  email           String            @unique
-  password        String?
-  role            String            @default("user") // "user" | "admin"
-  createdAt       DateTime          @default(now())
-  sessions        ExamSession[]
-  progress        UserProgress[]
-  lessonProgress  LessonProgress[]
-  flashcardDecks  FlashcardDeck[]
-  savedWords      SavedWord[]
-  wordCollections WordCollection[]
-  examPlan        UserExamPlan?
-  studyProfile    UserStudyProfile?
-  pmpProgress     PMPUserProgress[]
+  id                String              @id @default(cuid())
+  name              String
+  email             String              @unique
+  password          String?
+  role              UserRole            @default(user)
+  createdAt         DateTime            @default(now())
+  sessions          ExamSession[]
+  progress          UserProgress[]
+  lessonProgress    LessonProgress[]
+  flashcardDecks    FlashcardDeck[]
+  flashcardProgress FlashcardProgress[]
+  savedWords        SavedWord[]
+  wordCollections   WordCollection[]
+  examPlan          UserExamPlan?
+  studyProfile      UserStudyProfile?
+  pmpProgress       PMPUserProgress[]
+  studyEvents       StudyEvent[]
+  courseEnrollments CourseEnrollment[]
+  pmpSessions       PMPExamSession[]
 }
 
 model UserStudyProfile {
@@ -62,16 +134,19 @@ model Level {
   name               String
   description        String?
   order              Int                @default(0)
-  subject            String             @default("JLPT") // "JLPT" | "HSK"
+  subject            Subject            @default(JLPT)
   examSets           ExamSet[]
   learningCategories LearningCategory[]
+  courses            Course[]
+  readingPassages    ReadingPassage[]
+  chinesePassages    ChinesePassage[]
 }
 
 model ExamSet {
   id          String       @id @default(cuid())
   levelId     String
   level       Level        @relation(fields: [levelId], references: [id])
-  skill       String       // "nghe" | "noi" | "doc" | "viet"
+  skill       Skill
   title       String
   description String?
   timeLimit   Int?         // seconds, null = unlimited
@@ -80,20 +155,24 @@ model ExamSet {
   questions   Question[]
   sessions    ExamSession[]
   progress    UserProgress[]
+
+  @@index([levelId, skill])
 }
 
 model Question {
   id        String   @id @default(cuid())
   examSetId String
   examSet   ExamSet  @relation(fields: [examSetId], references: [id], onDelete: Cascade)
-  type      String   // "tracnghiem" | "dien_tu" | "nghe_audio"
+  type      QuestionType
   content   String
-  options   String?  // JSON array string for MC options
-  answer    String   // JSON string (single or array)
+  options   Json?    // array of option strings for multiple choice
+  answer    String   // correct answer string (or JSON-encoded array for multi-answer)
   explain   String?
   audioUrl  String?
   imageUrl  String?
   order     Int      @default(0)
+
+  @@index([examSetId, order])
 }
 
 model ExamSession {
@@ -102,12 +181,27 @@ model ExamSession {
   user        User      @relation(fields: [userId], references: [id])
   examSetId   String
   examSet     ExamSet   @relation(fields: [examSetId], references: [id])
-  answers     String    // JSON: { questionId: userAnswer }
+  answers     ExamAnswer[]
   score       Float?
   totalQ      Int       @default(0)
   correctQ    Int       @default(0)
   startedAt   DateTime  @default(now())
   finishedAt  DateTime?
+
+  @@index([userId, startedAt])
+  @@index([examSetId])
+}
+
+model ExamAnswer {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  answer     String
+  isCorrect  Boolean
+
+  @@index([sessionId])
+  @@index([questionId])
 }
 
 model UserProgress {
@@ -130,12 +224,14 @@ model LearningCategory {
   id          String           @id @default(cuid())
   levelId     String
   level       Level            @relation(fields: [levelId], references: [id])
-  skill       String           // nghe | noi | doc | viet
+  skill       Skill
   name        String
   description String?
   icon        String?
   order       Int              @default(0)
   lessons     LearningLesson[]
+
+  @@index([levelId, skill])
 }
 
 model LearningLesson {
@@ -144,27 +240,58 @@ model LearningLesson {
   category    LearningCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   title       String
   description String?
-  content     String?          // Markdown/HTML nội dung chính
-  type        String           @default("text") // text | vocab | grammar | audio
+  content     String?          // JSON blob for audio/text lessons (listening: ListeningContentPayload; text: markdown)
+  type        LessonType       @default(text)
   order       Int              @default(0)
-  items       LearningItem[]
+  items       Content[]
   progress    LessonProgress[]
+  modules     LessonsOnModule[]
+
+  @@index([categoryId, order])
+  @@index([type])
 }
 
-model LearningItem {
-  id             String         @id @default(cuid())
-  lessonId       String
-  lesson         LearningLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  type           String         // vocab | kanji | grammar | example | phrase
-  japanese       String         // từ / mẫu câu tiếng Nhật
-  reading        String?        // hiragana/katakana
-  meaning        String         // nghĩa tiếng Việt
-  example        String?        // câu ví dụ
-  exampleReading String?        // reading của câu ví dụ
-  exampleMeaning String?        // nghĩa câu ví dụ
-  audioUrl       String?
-  imageUrl       String?
-  order          Int            @default(0)
+model Content {
+  id            String         @id @default(cuid())
+  lessonId      String
+  lesson        LearningLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  type          ContentType
+  language      Language
+  term          String         @map("japanese")
+  pronunciation String?        @map("reading")
+  audioUrl      String?
+  imageUrl      String?
+  order         Int            @default(0)
+  meanings      ContentMeaning[]
+  examples      ContentExample[]
+  flashcards    Flashcard[]
+  savedBy       SavedWord[]
+
+  @@index([lessonId, type])
+  @@index([lessonId, language])
+  @@index([term])              // words API: findFirst by term
+}
+
+model ContentMeaning {
+  id        String  @id @default(cuid())
+  contentId String
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  language  Language
+  meaning   String
+
+  @@unique([contentId, language])
+}
+
+model ContentExample {
+  id                  String  @id @default(cuid())
+  contentId           String  @map("learning_item_id")
+  content             Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  exampleText         String  @map("example_text")
+  translation         String?
+  language            Language
+  translationLanguage Language? @map("translation_language")
+
+  @@index([contentId])
 }
 
 model LessonProgress {
@@ -191,27 +318,35 @@ model FlashcardDeck {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   cards       Flashcard[]
+
+  @@index([userId])
 }
 
 model Flashcard {
-  id         String            @id @default(cuid())
+  id         String              @id @default(cuid())
   deckId     String
-  deck       FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  deck       FlashcardDeck       @relation(fields: [deckId], references: [id], onDelete: Cascade)
   front      String            // question / Japanese word
   back       String            // answer / meaning
   reading    String?           // furigana (optional)
   example    String?           // example sentence
   imageUrl   String?           // optional image URL
+  contentId  String?           // optional FK → Content (for system-generated cards)
+  contentRef Content?          @relation(fields: [contentId], references: [id], onDelete: SetNull)
   createdAt  DateTime          @default(now())
   order      Int               @default(0)
-  progress   FlashcardProgress?
+  progress   FlashcardProgress[] // one record per user (was wrongly singular + @unique(cardId))
+
+  @@index([deckId, order])
+  @@index([contentId])
 }
 
 model FlashcardProgress {
   id           String    @id @default(cuid())
-  cardId       String    @unique
+  cardId       String
   card         Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
   userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   // SM-2 fields
   repetitions  Int       @default(0)   // consecutive correct reviews
   interval     Int       @default(1)   // days until next review
@@ -219,6 +354,10 @@ model FlashcardProgress {
   dueAt        DateTime  @default(now())
   lastReview   DateTime?
   totalReviews Int       @default(0)
+
+  @@unique([userId, cardId]) // FIXED: was @unique(cardId) which blocked multiple users per card
+  @@index([userId, dueAt])   // for SRS review queue queries
+  @@index([userId, lastReview]) // for activity calendar queries
 }
 
 // ─── READING MODULE ───────────────────────────────────────────────────────────
@@ -229,29 +368,32 @@ model ReadingPassage {
   titleVi    String?                       // Vietnamese title
   content    String                        // Full Japanese text
   summary    String?                       // Short Vietnamese summary
-  level      String                        // N5 | N4 | N3 | N2 | N1
+  level      String                        // N5 | N4 | N3 | N2 | N1 — kept for simple filtering
+  levelId    String?                       // optional FK → Level.id
+  levelRef   Level?   @relation(fields: [levelId], references: [id])
   type       String   @default("short")   // "short" | "long" | "news"
   source     String?                       // Source name (e.g. NHK Web Easy)
   sourceUrl  String?
-  tags       String?                       // JSON array of tag strings
+  tags       Json?                         // array of tag strings
   published  Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([level, published])
+  @@index([published, createdAt])
 }
 
 model SavedWord {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  japanese    String
-  reading     String?
-  meaning     String                         // definition (english/vietnamese)
-  context     String?                        // sentence the word appeared in
-  sourceId    String?                        // passageId (optional reference)
+  contentId   String
+  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  context     String?  // sentence the word appeared in
   createdAt   DateTime @default(now())
   collections SavedWordsOnCollections[]
 
-  @@unique([userId, japanese])
+  @@unique([userId, contentId])
 }
 
 // ─── WORD COLLECTION (user-defined topic folders) ────────────────────────────
@@ -284,7 +426,9 @@ model ChinesePassage {
   id           String   @id @default(cuid())
   title        String
   titleVi      String?
-  level        String   // HSK1 | HSK2 | … | HSK6
+  level        String   // HSK1 | HSK2 | … | HSK6 — kept for simple filtering
+  levelId      String?  // optional FK → Level.id
+  levelRef     Level?   @relation(fields: [levelId], references: [id])
   content      String   // Simplified Chinese text
   pinyin       String?  // Full passage pinyin annotation (JSON or plain)
   translation  String?  // Vietnamese translation
@@ -292,6 +436,9 @@ model ChinesePassage {
   topic        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([level])
+  @@index([topic])
 }
 
 // ─── PMP / PMBOK 6 Module ─────────────────────────────────────────────────────
@@ -330,6 +477,9 @@ model PMPProcess {
   keyPoints        String?          // Markdown notes for learners
   order            Int              @default(0)
   examQuestions    PMPExamQuestion[]
+
+  @@index([knowledgeAreaId])
+  @@index([processGroupId])
 }
 
 model PMPExamQuestion {
@@ -345,9 +495,13 @@ model PMPExamQuestion {
   optionD    String
   answer     String      // "A" | "B" | "C" | "D"
   explain    String?
-  difficulty String      @default("medium") // easy | medium | hard
+  difficulty Difficulty  @default(medium)
   tags       Json?       // e.g. ["ITTOs", "Concepts"]
   createdAt  DateTime    @default(now())
+  answers    PMPExamAnswer[]
+
+  @@index([area, difficulty])
+  @@index([processId])
 }
 
 model PMPUserProgress {
@@ -360,4 +514,103 @@ model PMPUserProgress {
   updatedAt           DateTime @updatedAt
 
   @@unique([userId, knowledgeArea])
+}
+
+model PMPExamSession {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  areaCode    String?         // null = mixed exam; knowledge area code e.g. "integration"
+  answers     PMPExamAnswer[]
+  score       Float?
+  totalQ      Int             @default(0)
+  correctQ    Int             @default(0)
+  startedAt   DateTime        @default(now())
+  finishedAt  DateTime?
+
+  @@index([userId, startedAt])
+}
+
+model PMPExamAnswer {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    PMPExamSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  question   PMPExamQuestion @relation(fields: [questionId], references: [id])
+  answer     String          // "A" | "B" | "C" | "D"
+  isCorrect  Boolean
+
+  @@index([sessionId])
+  @@index([questionId])
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────────────────────
+// Tracks every meaningful learning interaction for analytics & streak system.
+
+model StudyEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      StudyEventType
+  targetId  String?  // lessonId | flashcardId | examSetId | learningItemId (depending on type)
+  targetType String? // lesson | flashcard | exam | item
+  score     Float?   // for exam_finish: score %; for flashcard_review: ease rating 1-5
+  duration  Int?     // seconds spent
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, type])
+}
+
+// ─── COURSE / MODULE LAYER ───────────────────────────────────────────────────
+// Optional LMS hierarchy above LearningCategory.
+// Level → Course → Module → LearningLesson (existing)
+// LearningCategory stays, but a Module can group lessons more explicitly.
+
+model Course {
+  id          String           @id @default(cuid())
+  levelId     String
+  level       Level            @relation(fields: [levelId], references: [id])
+  title       String
+  description String?
+  coverUrl    String?
+  order       Int              @default(0)
+  published   Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  modules     Module[]
+  enrollments CourseEnrollment[]
+}
+
+model Module {
+  id          String           @id @default(cuid())
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  order       Int              @default(0)
+  // A Module groups existing LearningLessons via a join table:
+  lessons     LessonsOnModule[]
+}
+
+model LessonsOnModule {
+  moduleId  String
+  module    Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    LearningLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  order     Int            @default(0)
+
+  @@id([moduleId, lessonId])
+}
+
+model CourseEnrollment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt  DateTime @default(now())
+  completedAt DateTime?
+
+  @@unique([userId, courseId])
 }

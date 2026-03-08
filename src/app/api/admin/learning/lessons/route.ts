@@ -21,6 +21,6 @@ export async function POST(req: Request) {
   const { categoryId, title, description, content, type, order } = await req.json();
   if (!categoryId || !title) return NextResponse.json({ message: 'Thiếu thông tin.' }, { status: 400 });
 
-  const lesson = await prisma.learningLesson.create({ data: { categoryId, title, description, content, type: type ?? 'text', order: order ?? 0 } });
+  const lesson = await prisma.learningLesson.create({ data: { categoryId, title, description, type: type ?? 'text', order: order ?? 0 } });
   return NextResponse.json(lesson, { status: 201 });
 }

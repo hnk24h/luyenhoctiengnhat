@@ -16,13 +16,7 @@ export async function GET(req: NextRequest) {
         include: {
           items: {
             orderBy: { order: 'asc' },
-            select: {
-              id: true,
-              japanese: true,
-              reading: true,
-              meaning: true,
-              type: true,
-            },
+            include: { meanings: { select: { language: true, meaning: true } } },
           },
         },
       },

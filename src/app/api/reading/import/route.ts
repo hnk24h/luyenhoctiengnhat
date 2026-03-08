@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 interface PassageJson {
   title:      string;
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
           type:      TYPES.has(p.type ?? '') ? p.type! : 'short',
           source:    p.source?.trim()    || null,
           sourceUrl: p.sourceUrl?.trim() || null,
-          tags:      p.tags?.length ? JSON.stringify(p.tags) : null,
+          tags:      p.tags?.length ? p.tags : Prisma.JsonNull,
           published: p.published !== false,
         },
       });

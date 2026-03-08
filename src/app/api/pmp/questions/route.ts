@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Difficulty } from '@prisma/client';
 
 /**
  * GET /api/pmp/questions
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
     where: {
       ...(area  ? { area }  : {}),
       ...(group ? { group } : {}),
-      ...(difficulty ? { difficulty } : {}),
+      ...(difficulty ? { difficulty: difficulty as Difficulty } : {}),
     },
     select: {
       id:         true,

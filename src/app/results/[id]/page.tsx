@@ -12,6 +12,7 @@ async function getSession(id: string) {
     include: {
       examSet: { include: { level: true, questions: { orderBy: { order: 'asc' } } } },
       user: { select: { name: true } },
+      answers: true,
     },
   });
 }
@@ -22,7 +23,9 @@ export default async function ResultsPage({ params }: Props) {
   const session = await getSession(params.id);
   if (!session) notFound();
 
-  const answers: Record<string, string> = JSON.parse(session.answers || '{}');
+  // Build answers map from ExamAnswer records
+  const answers: Record<string, string> = {};
+  session.answers.forEach(a => { answers[a.questionId] = a.answer; });
   const questions = session.examSet.questions;
   const skillInfo = SKILLS.find(s => s.key === session.examSet.skill);
 

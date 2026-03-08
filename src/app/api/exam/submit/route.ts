@@ -44,11 +44,21 @@ export async function POST(req: Request) {
     data: {
       userId,
       examSetId,
-      answers: JSON.stringify(answers),
       score,
       totalQ,
       correctQ,
       finishedAt: new Date(),
+      answers: {
+        create: examSet.questions.map(q => {
+          const userAns: string = answers[q.id] ?? '';
+          let correctAns: string | string[];
+          try { correctAns = JSON.parse(q.answer); } catch { correctAns = q.answer; }
+          const isCorrect = Array.isArray(correctAns)
+            ? correctAns.includes(userAns.trim())
+            : userAns.trim() === (correctAns as string).trim();
+          return { questionId: q.id, answer: userAns, isCorrect };
+        }),
+      },
     },
   });
 
@@ -75,5 +85,7 @@ export async function POST(req: Request) {
     });
   }
 
+  // Remove the manual scoring loop since it's now inline in ExamAnswer create
+  // Keep scoring variables from the loop above
   return NextResponse.json({ sessionId: examSession.id, score, correctQ, totalQ });
 }

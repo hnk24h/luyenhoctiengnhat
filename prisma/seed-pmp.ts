@@ -9,7 +9,7 @@
  *  - PMPExamQuestion (50 sample questions)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Difficulty } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -102,7 +102,7 @@ const PROC_DATA: ProcDef[] = [
 ];
 
 // ─── Sample Exam Questions ──────────────────────────────────
-type QDef = { area: string; group: string; content: string; optionA: string; optionB: string; optionC: string; optionD: string; answer: string; explain: string; difficulty: string };
+type QDef = { area: string; group: string; content: string; optionA: string; optionB: string; optionC: string; optionD: string; answer: string; explain: string; difficulty: Difficulty };
 const QUESTIONS: QDef[] = [
   // Integration
   { area: 'integration', group: 'initiating', content: 'Tài liệu nào chính thức phê duyệt sự tồn tại của dự án và trao quyền cho Project Manager?', optionA: 'Project Management Plan', optionB: 'Project Charter', optionC: 'Scope Statement', optionD: 'Business Case', answer: 'B', explain: 'Project Charter là tài liệu duy nhất chính thức phê duyệt dự án và trao quyền cho PM để sử dụng tài nguyên tổ chức.', difficulty: 'easy' },

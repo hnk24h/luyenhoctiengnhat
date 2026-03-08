@@ -5,7 +5,7 @@ import { FaHeadphones, FaLightbulb } from 'react-icons/fa6';
 
 interface Question {
   id: string; type: string; content: string;
-  options: string | null; answer: string; explain: string | null;
+  options: unknown; answer: string; explain: string | null;
   audioUrl: string | null; imageUrl: string | null; order: number;
 }
 
@@ -132,7 +132,7 @@ export default function AdminQuestionsClient({ examSetId, questions: initial }: 
       <h3 className="font-semibold text-gray-700 mb-3">Danh sách câu hỏi ({initial.length})</h3>
       <div className="space-y-3">
         {initial.map((q, idx) => {
-          const opts = q.options ? JSON.parse(q.options) as string[] : null;
+          const opts = q.options ? (q.options as unknown as string[]) : null;
           return (
             <div key={q.id} className="card border-l-4 border-l-gray-200">
               <div className="flex items-start justify-between">

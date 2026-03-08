@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       type:      data.type,
       source:    data.source?.trim() || null,
       sourceUrl: data.sourceUrl?.trim() || null,
-      tags:      data.tags ? JSON.stringify(data.tags) : null,
+      tags:      data.tags || null,
       published: data.published ?? true,
     },
   });

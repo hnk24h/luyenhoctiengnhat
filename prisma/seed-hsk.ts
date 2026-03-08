@@ -8,18 +8,18 @@
  *  - LearningCategory + LearningLesson + LearningItem (vocab) per level
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Subject } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 // ─── HSK Levels ─────────────────────────────────────────────
 const HSK_LEVELS = [
-  { code: 'HSK1', name: 'HSK 1 — Nhập môn',      description: 'Khoảng 150 từ vựng, giao tiếp cơ bản',         order: 10, subject: 'HSK' },
-  { code: 'HSK2', name: 'HSK 2 — Cơ bản',         description: 'Khoảng 300 từ vựng, giao tiếp thông thường',    order: 11, subject: 'HSK' },
-  { code: 'HSK3', name: 'HSK 3 — Sơ trung cấp',   description: 'Khoảng 600 từ vựng, xử lý hầu hết tình huống', order: 12, subject: 'HSK' },
-  { code: 'HSK4', name: 'HSK 4 — Trung cấp',       description: 'Khoảng 1200 từ vựng, giao tiếp lưu loát',      order: 13, subject: 'HSK' },
-  { code: 'HSK5', name: 'HSK 5 — Trung cao cấp',   description: 'Khoảng 2500 từ vựng, đọc báo tự nhiên',        order: 14, subject: 'HSK' },
-  { code: 'HSK6', name: 'HSK 6 — Cao cấp',         description: 'Khoảng 5000+ từ vựng, thành thạo như người bản ngữ', order: 15, subject: 'HSK' },
+  { code: 'HSK1', name: 'HSK 1 — Nhập môn',      description: 'Khoảng 150 từ vựng, giao tiếp cơ bản',         order: 10, subject: Subject.HSK },
+  { code: 'HSK2', name: 'HSK 2 — Cơ bản',         description: 'Khoảng 300 từ vựng, giao tiếp thông thường',    order: 11, subject: Subject.HSK },
+  { code: 'HSK3', name: 'HSK 3 — Sơ trung cấp',   description: 'Khoảng 600 từ vựng, xử lý hầu hết tình huống', order: 12, subject: Subject.HSK },
+  { code: 'HSK4', name: 'HSK 4 — Trung cấp',       description: 'Khoảng 1200 từ vựng, giao tiếp lưu loát',      order: 13, subject: Subject.HSK },
+  { code: 'HSK5', name: 'HSK 5 — Trung cao cấp',   description: 'Khoảng 2500 từ vựng, đọc báo tự nhiên',        order: 14, subject: Subject.HSK },
+  { code: 'HSK6', name: 'HSK 6 — Cao cấp',         description: 'Khoảng 5000+ từ vựng, thành thạo như người bản ngữ', order: 15, subject: Subject.HSK },
 ];
 
 // ─── Reading Passages ────────────────────────────────────────
@@ -510,10 +510,15 @@ async function main() {
     }
 
     let created = 0;
-    for (const [japanese, reading, meaning] of words) {
-      const existing = await prisma.learningItem.findFirst({ where: { lessonId: lesson.id, japanese } });
+    for (const [term, pronunciation, meaning] of words) {
+      const existing = await prisma.content.findFirst({ where: { lessonId: lesson.id, term } });
       if (!existing) {
-        await prisma.learningItem.create({ data: { lessonId: lesson.id, japanese, reading, meaning, type: 'vocab', order: 0 } });
+        await prisma.content.create({
+          data: {
+            lessonId: lesson.id, term, pronunciation, type: 'vocab', language: 'zh', order: 0,
+            meanings: { create: [{ language: 'vi', meaning }] },
+          },
+        });
         created++;
       }
     }
@@ -523,8 +528,8 @@ async function main() {
   // Summary
   const passageCount = await prisma.chinesePassage.count();
   console.log(`\n✅ Done! Total ChinesePassage rows: ${passageCount}`);
-  const itemCount = await prisma.learningItem.count();
-  console.log(`✅ Total LearningItem rows: ${itemCount}`);
+  const itemCount = await prisma.content.count();
+  console.log(`✅ Total Content rows: ${itemCount}`);
 }
 
 main()

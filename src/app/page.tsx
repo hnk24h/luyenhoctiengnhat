@@ -1,7 +1,28 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { FaHeadphones, FaMicrophone, FaBookOpen, FaPencil, FaMapPin, FaBook, FaCircleCheck } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 import { HomeIntentSelector } from '@/components/HomeIntentSelector';
+
+export const metadata: Metadata = {
+  alternates: { canonical: 'https://e-learn.ikagi.site' },
+};
+
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'IkagiLearn',
+  url: 'https://e-learn.ikagi.site',
+  description: 'Hệ thống học và luyện thi tiếng Nhật JLPT N5~N1 miễn phí.',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://e-learn.ikagi.site/vocab?q={search_term_string}',
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
 
 const LEVELS = [
   { code: 'N5', desc: 'Sơ cấp',        bg: '#DCFCE7', color: '#15803D', bar: '#4ADE80', pct: 20, jp: 'にほんご　はじめの　いっぽ' },
@@ -34,6 +55,11 @@ const STATS = [
 export default function HomePage() {
   return (
     <div>
+      {/* ── JSON-LD Structured Data ───────────────────── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       {/* ── Hero ─────────────────────────────────────── */}
       <section className="relative overflow-hidden py-20 px-4" style={{ background: 'var(--bg-surface)' }}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -55,8 +81,8 @@ export default function HomePage() {
             Học từ vựng, ngữ pháp, luyện 4 kỹ năng và thi thử với đề sát format JLPT.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link href="/learn" className="btn-primary px-8 py-3 text-base">Bắt đầu học →</Link>
-            <Link href="/levels" className="btn-secondary px-8 py-3 text-base">Thi thử ngay</Link>
+            <Link href="/ja/learn" className="btn-primary px-8 py-3 text-base">Bắt đầu học →</Link>
+            <Link href="/ja/levels" className="btn-secondary px-8 py-3 text-base">Thi thử ngay</Link>
           </div>
         </div>
       </section>
@@ -181,7 +207,7 @@ export default function HomePage() {
               style={{ background: '#fff', color: 'var(--primary)' }}>
               Đăng ký miễn phí →
             </Link>
-            <Link href="/learn" className="px-8 py-3 rounded-xl font-bold text-base text-white transition-all"
+            <Link href="/ja/learn" className="px-8 py-3 rounded-xl font-bold text-base text-white transition-all"
               style={{ border: '1.5px solid rgba(255,255,255,0.4)' }}>
               Học ngay
             </Link>

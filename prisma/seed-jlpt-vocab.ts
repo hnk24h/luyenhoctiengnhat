@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Seed JLPT reference vocabulary (N5–N1) into LearningItem via LearningCategory/LearningLesson
  * Each word has 1–2 example sentences.
  * Run: npx tsx prisma/seed-jlpt-vocab.ts
@@ -170,7 +170,7 @@ async function main() {
       category = await prisma.learningCategory.create({
         data: {
           levelId: level.id,
-          skill: 'tu_vung',
+          skill: 'vocab',
           name: `Từ vựng tham khảo ${levelCode}`,
           description: `Danh sách từ vựng chuẩn JLPT ${levelCode} theo giáo trình`,
           order: 10,
@@ -197,34 +197,33 @@ async function main() {
     // 4. Seed vocab items
     let created = 0;
     for (let i = 0; i < words.length; i++) {
-      const [japanese, reading, meaning, example, exampleReading, exampleMeaning, example2, exampleReading2, exampleMeaning2] = words[i];
-      const existing = await prisma.learningItem.findFirst({ where: { lessonId: lesson.id, japanese } });
+      const [term, pronunciation, meaning, example, exampleReading, exampleMeaning, example2, exampleReading2, exampleMeaning2] = words[i];
+      const existing = await prisma.content.findFirst({ where: { lessonId: lesson.id, term } });
       if (!existing) {
-        await prisma.learningItem.create({
+        await prisma.content.create({
           data: {
             lessonId: lesson.id,
             type: 'vocab',
-            japanese,
-            reading,
-            meaning,
-            example: example ?? null,
-            exampleReading: exampleReading ?? null,
-            exampleMeaning: exampleMeaning ?? null,
-            // store 2nd example in imageUrl field temporarily, or skip — keep in order field
+            language: 'ja',
+            term,
+            pronunciation,
             order: i,
+            meanings: { create: [{ language: 'vi', meaning }] },
+            ...(example ? {
+              examples: { create: [{ exampleText: example, translation: exampleMeaning ?? null, language: 'ja', translationLanguage: exampleMeaning ? 'vi' : null }] },
+            } : {}),
           },
         });
-        // If there's a 2nd example, store as a separate item with type 'example'
         if (example2) {
-          await prisma.learningItem.create({
+          await prisma.content.create({
             data: {
               lessonId: lesson.id,
               type: 'example',
-              japanese: example2,
-              reading: exampleReading2 ?? null,
-              meaning: exampleMeaning2 ?? '',
-              example: japanese, // reference back to parent word
+              language: 'ja',
+              term: example2,
+              pronunciation: exampleReading2 ?? null,
               order: i,
+              meanings: { create: [{ language: 'vi', meaning: exampleMeaning2 ?? '' }] },
             },
           });
         }
@@ -234,7 +233,7 @@ async function main() {
     console.log(`  ✓ ${levelCode}: ${created} words seeded`);
   }
 
-  const total = await prisma.learningItem.count({
+  const total = await prisma.content.count({
     where: { lesson: { category: { level: { subject: 'JLPT' }, name: { contains: 'tham khảo' } } } },
   });
   console.log(`\n✅ Done! Total JLPT reference vocab items: ${total}`);

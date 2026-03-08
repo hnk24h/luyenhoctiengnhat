@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           examSetId: targetSetId,
           type:     q.type     ?? 'tracnghiem',
           content:  q.content  ?? '',
-          options:  q.options  ? JSON.stringify(q.options) : null,
+          options:  q.options  ?? null,
           answer:   typeof q.answer === 'string' ? q.answer : JSON.stringify(q.answer),
           explain:  q.explain  ?? null,
           audioUrl: q.audioUrl ?? null,

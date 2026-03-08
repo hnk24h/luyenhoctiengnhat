@@ -55,7 +55,11 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
   const card = await prisma.flashcard.findFirst({
     where: { id: params.cardId, deck: { userId: user.id } },
-    include: { progress: true },
+    include: {
+      progress: {
+        where: { userId: user.id }, // FIXED: filter by userId after composite unique fix
+      },
+    },
   });
   if (!card) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: 'rating must be 0-3' }, { status: 400 });
   }
 
-  const existing = card.progress;
+  const existing = card.progress[0] ?? null;
   const { repetitions, interval, easeFactor, dueAt } = computeNextSRS(
     rating,
     existing?.repetitions ?? 0,
@@ -73,7 +77,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   );
 
   const progress = await prisma.flashcardProgress.upsert({
-    where: { cardId: params.cardId },
+    where: { userId_cardId: { userId: user.id, cardId: params.cardId } },
     update: {
       repetitions,
       interval,
@@ -81,7 +85,6 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       dueAt,
       lastReview: new Date(),
       totalReviews: { increment: 1 },
-      userId: user.id,
     },
     create: {
       cardId: params.cardId,

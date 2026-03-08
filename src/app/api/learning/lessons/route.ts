@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { Subject } from '@prisma/client';
 
 function isAdmin(session: any) {
   const role = session?.user?.role as string | undefined;
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   const lessons = await prisma.learningLesson.findMany({
     where: {
       ...(categoryId ? { categoryId } : {}),
-      ...(subject    ? { category: { level: { subject } } } : {}),
+      ...(subject    ? { category: { level: { subject: subject as Subject } } } : {}),
     },
     orderBy: { order: 'asc' },
     include: {
@@ -46,7 +47,6 @@ export async function POST(req: NextRequest) {
       categoryId,
       title:       title.trim(),
       description: description?.trim() || null,
-      content:     content?.trim()     || null,
       type:        type || 'text',
       order:       order ?? 0,
     },

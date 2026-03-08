@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { Subject } from '@prisma/client';
 
 /**
  * GET /api/jlpt/vocab?level=N5
@@ -10,29 +11,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const level = searchParams.get('level') || 'N5';
 
-  const items = await prisma.learningItem.findMany({
+  const items = await prisma.content.findMany({
     where: {
       type: 'vocab',
       lesson: {
         category: {
-          level: {
-            code: level,
-            subject: 'JLPT',
-          },
+          level: { code: level, subject: Subject.JLPT },
           name: { contains: 'tham khảo' },
         },
       },
     },
-    select: {
-      id: true,
-      japanese: true,
-      reading: true,
-      meaning: true,
-      example: true,
-      exampleReading: true,
-      exampleMeaning: true,
-      order: true,
-    },
+    include: { meanings: true, examples: true },
     orderBy: { order: 'asc' },
   });
 

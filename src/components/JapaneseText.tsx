@@ -36,8 +36,8 @@ interface TooltipState {
 interface Props {
   content:    string;       // plain Japanese text (newlines = paragraphs)
   passageId?: string;
-  savedWords?: string[];    // already-saved japanese words (to highlight)
-  onWordSaved?: (w: { japanese: string; reading?: string; meaning: string }) => void;
+  savedWords?: string[];    // already-saved term strings (to highlight)
+  onWordSaved?: (w: { term: string; contentId: string }) => void;
 }
 
 interface ColItem {
@@ -451,29 +451,30 @@ export function JapaneseText({ content, passageId, savedWords = [], onWordSaved 
   const handleSave = useCallback(async () => {
     if (!tooltip || !session) return;
     setSaving(true);
-    const meaning = tooltip.data?.found
-      ? (tooltip.data.meanings?.[0]?.defs ?? []).join('; ')
-      : tooltip.word;
+    const term = tooltip.data?.word || tooltip.word;
 
     const res = await fetch('/api/words', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        japanese: tooltip.data?.word || tooltip.word,
-        reading:  tooltip.data?.reading || null,
-        meaning:  meaning || '(no definition)',
-        context:  tooltip.context || null,
-        sourceId: passageId || null,
+        term,
+        context: tooltip.context || null,
       }),
     });
+
+    if (!res.ok) {
+      // Word not in learning system — show a brief message but don't crash
+      setSaving(false);
+      return;
+    }
+
     const wordData = await res.json();
     setSavedWordId(wordData.id ?? null);
 
-    const saved = tooltip.data?.word || tooltip.word;
-    setSavedSet(prev => new Set([...prev, saved]));
-    setJustSaved(saved);
+    setSavedSet(prev => new Set([...prev, term]));
+    setJustSaved(term);
     setTimeout(() => setJustSaved(null), 2500);
-    onWordSaved?.({ japanese: saved, reading: tooltip.data?.reading, meaning: meaning || '' });
+    onWordSaved?.({ term, contentId: wordData.contentId });
     setSaving(false);
   }, [tooltip, session, passageId, onWordSaved]);
 

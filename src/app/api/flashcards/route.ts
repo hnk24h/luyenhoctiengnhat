@@ -16,10 +16,6 @@ export async function GET() {
     where: { userId: user.id },
     include: {
       _count: { select: { cards: true } },
-      cards: {
-        include: { progress: true },
-        take: 0, // just for count via _count
-      },
     },
     orderBy: { updatedAt: 'desc' },
   });
@@ -32,8 +28,8 @@ export async function GET() {
         where: {
           deckId: deck.id,
           OR: [
-            { progress: null },
-            { progress: { dueAt: { lte: now }, userId: user.id } },
+            { progress: { none: {} } },
+            { progress: { some: { dueAt: { lte: now }, userId: user.id } } },
           ],
         },
       });

@@ -4,7 +4,7 @@
  *   or: npx tsx prisma/seed-reading.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -399,7 +399,7 @@ async function main() {
         type:      p.type,
         source:    p.source    ?? null,
         sourceUrl: (p as any).sourceUrl ?? null,
-        tags:      p.tags?.length ? JSON.stringify(p.tags) : null,
+        tags:      p.tags?.length ? p.tags : Prisma.JsonNull,
         published: true,
       },
     });

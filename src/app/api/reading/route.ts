@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       type:      p.type,
       source:    p.source    ?? undefined,
       sourceUrl: p.sourceUrl ?? undefined,
-      tags:      p.tags ? JSON.parse(p.tags) : undefined,
+      tags:      p.tags ?? undefined,
       published: p.published,
     }));
     return new NextResponse(JSON.stringify(exportData, null, 2), {
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       type:      type || 'short',
       source:    source?.trim() || null,
       sourceUrl: sourceUrl?.trim() || null,
-      tags:      tags ? JSON.stringify(tags) : null,
+      tags:      tags || null,
     },
   });
 

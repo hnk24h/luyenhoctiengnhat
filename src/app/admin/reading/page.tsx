@@ -99,7 +99,7 @@ export default function AdminReadingPage() {
       type:      p.type      ?? 'short',
       source:    p.source    ?? '',
       sourceUrl: p.sourceUrl ?? '',
-      tags:      p.tags ? JSON.parse(p.tags).join(', ') : '',
+      tags:      p.tags ? (p.tags as string[]).join(', ') : '',
       published: p.published !== false,
     });
     setEditId(id); setFormError(''); setShowModal(true);

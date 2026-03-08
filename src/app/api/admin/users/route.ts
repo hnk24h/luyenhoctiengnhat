@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import type { UserRole } from '@prisma/client';
 
 function adminOnly(session: any) {
   const role = session?.user?.role;
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
       { email: { contains: search, mode: 'insensitive' } },
     ];
   }
-  if (role) where.role = role;
+  if (role) where.role = role as UserRole;
 
   const [total, users] = await Promise.all([
     prisma.user.count({ where }),

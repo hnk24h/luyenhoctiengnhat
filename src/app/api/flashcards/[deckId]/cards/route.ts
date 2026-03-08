@@ -33,8 +33,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       imageUrl: imageUrl?.trim() || null,
       order:    count,
     },
-    include: { progress: true },
+    include: { progress: { where: { userId: user.id } } },
   });
 
-  return NextResponse.json(card, { status: 201 });
+  const normalized = { ...card, progress: card.progress[0] ?? null };
+  return NextResponse.json(normalized, { status: 201 });
 }

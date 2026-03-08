@@ -50,7 +50,6 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       title: validated.item.title,
       description: validated.item.summary,
       type: 'audio',
-      content: serializeListeningContent(validated.item),
     },
     include: { category: { include: { level: true } } },
   });

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { Language } from '@prisma/client';
 
 function isAdmin(session: any) {
   const role = session?.user?.role as string | undefined;
   return role === 'admin' || role === 'ADMIN';
 }
 
-const VALID_TYPES = ['vocab', 'kanji', 'grammar', 'example', 'phrase'];
+const VALID_TYPES = ['vocab', 'character', 'grammar', 'example', 'phrase', 'tone', 'idiom'];
 
 // POST /api/learning/lessons/[id]/import
 // Body: { format: 'json' | 'csv', data: string }
@@ -74,22 +75,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   rows.forEach((row, i) => {
     const line = `Dòng ${i + 1}`;
-    const japanese = (row.japanese ?? row['tiếng nhật'] ?? row.jp ?? '').trim();
-    const meaning  = (row.meaning  ?? row['nghĩa']      ?? row.vn ?? '').trim();
-    const reading  = (row.reading  ?? row['cách đọc']   ?? row.kana ?? '').trim();
-    const type     = (row.type     ?? row['loại']       ?? 'vocab').trim().toLowerCase();
+    const term         = (row.term ?? row.japanese ?? row['tiếng nhật'] ?? row.jp ?? '').trim();
+    const meaning      = (row.meaning  ?? row['nghĩa']      ?? row.vn ?? '').trim();
+    const pronunciation = (row.pronunciation ?? row.reading ?? row['cách đọc'] ?? row.kana ?? '').trim();
+    const type         = (row.type     ?? row['loại']       ?? 'vocab').trim().toLowerCase();
+    const language     = (row.language ?? '').trim() || 'ja';
     const example        = (row.example        ?? row['ví dụ']       ?? '').trim();
-    const exampleReading = (row.examplereading ?? row['đọc ví dụ']   ?? '').trim();
     const exampleMeaning = (row.examplemeaning ?? row['nghĩa ví dụ'] ?? '').trim();
-    const order    = parseInt(row.order ?? row['thứ tự'] ?? '0', 10) || 0;
+    const order        = parseInt(row.order ?? row['thứ tự'] ?? '0', 10) || 0;
 
-    if (!japanese) { errors.push(`${line}: thiếu "japanese"`); return; }
-    if (!meaning)  { errors.push(`${line}: thiếu "meaning"`);  return; }
+    if (!term)    { errors.push(`${line}: thiếu "term"`);    return; }
+    if (!meaning) { errors.push(`${line}: thiếu "meaning"`); return; }
     if (!VALID_TYPES.includes(type)) {
-      errors.push(`${line}: type "${type}" không hợp lệ (vocab|kanji|grammar|example|phrase)`); return;
+      errors.push(`${line}: type "${type}" không hợp lệ (vocab|character|grammar|example|phrase|tone|idiom)`); return;
     }
 
-    valid.push({ japanese, meaning, reading: reading || null, type, example: example || null, exampleReading: exampleReading || null, exampleMeaning: exampleMeaning || null, order });
+    valid.push({ term, meaning, pronunciation: pronunciation || null, type, language, example: example || null, exampleMeaning: exampleMeaning || null, order });
   });
 
   if (valid.length === 0) {
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // ── Get current max order ─────────────────────────────────────────────────────
 
-  const maxOrderRecord = await prisma.learningItem.findFirst({
+  const maxOrderRecord = await prisma.content.findFirst({
     where: { lessonId: params.id },
     orderBy: { order: 'desc' },
     select: { order: true },
@@ -107,21 +108,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // ── Bulk create ──────────────────────────────────────────────────────────────
 
-  await prisma.learningItem.createMany({
+  const createdItems = await prisma.content.createManyAndReturn({
     data: valid.map((v, i) => ({
-      lessonId:       params.id,
-      type:           v.type,
-      japanese:       v.japanese,
-      reading:        v.reading,
-      meaning:        v.meaning,
-      example:        v.example,
-      exampleReading: v.exampleReading,
-      exampleMeaning: v.exampleMeaning,
-      audioUrl:       null,
-      imageUrl:       null,
-      order:          v.order !== 0 ? v.order : baseOrder + i,
+      lessonId:      params.id,
+      type:          v.type,
+      language:      v.language,
+      term:          v.term,
+      pronunciation: v.pronunciation,
+      audioUrl:      null,
+      imageUrl:      null,
+      order:         v.order !== 0 ? v.order : baseOrder + i,
     })),
   });
+
+  await prisma.contentMeaning.createMany({
+    data: createdItems.map((c, idx) => ({ contentId: c.id, language: 'vi', meaning: valid[idx].meaning })),
+  });
+
+  const exampleData = createdItems
+    .map((c, idx) => ({ c, v: valid[idx] }))
+    .filter(({ v }) => v.example)
+    .map(({ c, v }) => ({ contentId: c.id, exampleText: v.example!, translation: v.exampleMeaning ?? null, language: v.language as Language, translationLanguage: v.exampleMeaning ? 'vi' as Language : null }));
+  if (exampleData.length > 0) await prisma.contentExample.createMany({ data: exampleData });
 
   return NextResponse.json({ imported: valid.length, skipped: errors.length, errors });
 }

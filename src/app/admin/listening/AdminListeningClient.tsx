@@ -317,7 +317,7 @@ export default function AdminListeningClient() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/listening" className="btn-secondary">
+          <Link href="/ja/listening" className="btn-secondary">
             <FaHeadphones size={12} /> Xem page nghe
           </Link>
           <a href="/samples/jlpt-listening-sample.json" download className="btn-secondary">

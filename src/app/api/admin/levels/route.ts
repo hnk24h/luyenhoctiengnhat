@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { Subject } from '@prisma/client';
 
 function adminOnly(session: any) {
   return !session || session.user?.role !== 'admin';
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const subject = searchParams.get('subject'); // 'JLPT' | 'HSK'
   const levels = await prisma.level.findMany({
-    where: subject ? { subject } : {},
+    where: subject ? { subject: subject as Subject } : {},
     orderBy: { order: 'asc' },
   });
   return NextResponse.json(levels);

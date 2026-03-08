@@ -36,9 +36,9 @@ export async function POST() {
     });
     await prisma.question.createMany({
       data: [
-        { examSetId: set.id, type: 'tracnghiem', content: 'Người phụ nữ đang làm gì?', options: JSON.stringify(['Nấu ăn', 'Đọc sách', 'Xem TV', 'Mua sắm']), answer: 'Đọc sách', explain: 'Từ audio cho biết người phụ nữ đang đọc sách.', order: 1 },
-        { examSetId: set.id, type: 'tracnghiem', content: 'Hai người đang nói chuyện ở đâu?', options: JSON.stringify(['Nhà hàng', 'Nhà ga', 'Công viên', 'Siêu thị']), answer: 'Nhà ga', explain: '「駅」(えき) có nghĩa là nhà ga.', order: 2 },
-        { examSetId: set.id, type: 'tracnghiem', content: 'Mấy giờ thì cuộc họp bắt đầu?', options: JSON.stringify(['9:00', '10:00', '14:00', '15:00']), answer: '10:00', order: 3 },
+        { examSetId: set.id, type: 'tracnghiem', content: 'Người phụ nữ đang làm gì?', options: ['Nấu ăn', 'Đọc sách', 'Xem TV', 'Mua sắm'], answer: 'Đọc sách', explain: 'Từ audio cho biết người phụ nữ đang đọc sách.', order: 1 },
+        { examSetId: set.id, type: 'tracnghiem', content: 'Hai người đang nói chuyện ở đâu?', options: ['Nhà hàng', 'Nhà ga', 'Công viên', 'Siêu thị'], answer: 'Nhà ga', explain: '「駅」(えき) có nghĩa là nhà ga.', order: 2 },
+        { examSetId: set.id, type: 'tracnghiem', content: 'Mấy giờ thì cuộc họp bắt đầu?', options: ['9:00', '10:00', '14:00', '15:00'], answer: '10:00', order: 3 },
       ],
     });
 

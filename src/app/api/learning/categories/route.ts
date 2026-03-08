@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import type { Skill } from '@prisma/client';
+import { Subject } from '@prisma/client';
 
 function isAdmin(session: any) {
   const role = session?.user?.role as string | undefined;
@@ -18,8 +20,8 @@ export async function GET(req: NextRequest) {
   const categories = await prisma.learningCategory.findMany({
     where: {
       ...(levelId ? { levelId } : {}),
-      ...(skill   ? { skill }   : {}),
-      ...(subject ? { level: { subject } } : {}),
+      ...(skill   ? { skill: skill as Skill }   : {}),
+      ...(subject ? { level: { subject: subject as Subject } } : {}),
     },
     orderBy: [{ levelId: 'asc' }, { skill: 'asc' }, { order: 'asc' }],
     include: {

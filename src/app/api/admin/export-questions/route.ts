@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     questions: examSet.questions.map(q => ({
       type: q.type,
       content: q.content,
-      options: q.options ? JSON.parse(q.options) : null,
+      options: q.options ?? null,
       answer: q.answer,
       explain: q.explain,
       audioUrl: q.audioUrl,
