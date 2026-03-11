@@ -67,7 +67,7 @@ export default function AdminReadingPage() {
 
   // Auth guard
   useEffect(() => {
-    if (status === 'unauthenticated') { router.push('/login'); return; }
+    if (status === 'unauthenticated') { router.push('/auth/login'); return; }
     if (status === 'authenticated') {
       const role = (session?.user as any)?.role;
       if (role !== 'admin' && role !== 'ADMIN') router.push('/');

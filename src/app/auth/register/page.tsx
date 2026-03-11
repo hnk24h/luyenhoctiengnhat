@@ -27,7 +27,7 @@ export default function RegisterPage() {
       body: JSON.stringify({ name, email, password }),
     });
     const data = await res.json();
-    if (res.ok) { router.push('/login?registered=1'); }
+    if (res.ok) { router.push('/auth/login?registered=1'); }
     else { setError(data.message || 'Đăng ký thất bại.'); }
     setLoading(false);
   }
@@ -73,7 +73,7 @@ export default function RegisterPage() {
 
         <p className="text-sm text-center mt-4" style={{ color: 'var(--text-muted)' }}>
           Đã có tài khoản?{' '}
-          <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
+          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
             Đăng nhập
           </Link>
         </p>

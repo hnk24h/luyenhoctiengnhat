@@ -77,7 +77,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
   }
 
   async function markComplete() {
-    if (!isLoggedIn) { router.push('/login'); return; }
+    if (!isLoggedIn) { router.push('/auth/login'); return; }
     setMarking(true);
     const res = await fetch('/api/learn/progress', {
       method: 'POST',

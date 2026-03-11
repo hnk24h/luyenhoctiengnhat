@@ -502,7 +502,7 @@ function MindmapInner({ category, lessons, level, skill }: Props) {
   const divider = <div style={{ width: 1, height: 16, background: T.border }} />;
 
   return (
-    <div style={{ width: '100%', height: 'calc(100vh - 56px)', position: 'relative', background: T.bg }}>
+    <div style={{ width: '100%', height: 'calc(100vh - 64px)', position: 'relative', background: T.bg }}>
 
       {/*  Top bar  */}
       <div style={{

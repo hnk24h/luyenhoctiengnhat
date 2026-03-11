@@ -203,7 +203,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-white mb-3">Sẵn sàng bắt đầu hành trình?</h2>
           <p className="text-white/70 text-sm mb-7">Học miễn phí, tiến trình lưu tự động.</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link href="/register" className="px-8 py-3 rounded-xl font-bold text-base transition-all hover:opacity-90"
+            <Link href="/auth/register" className="px-8 py-3 rounded-xl font-bold text-base transition-all hover:opacity-90"
               style={{ background: '#fff', color: 'var(--primary)' }}>
               Đăng ký miễn phí →
             </Link>

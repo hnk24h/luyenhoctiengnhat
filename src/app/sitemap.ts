@@ -10,8 +10,8 @@ const STATIC: { url: string; priority: number; changeFrequency: MetadataRoute.Si
   { url: '/listening',priority: 0.8,  changeFrequency: 'weekly' },
   { url: '/vocab',    priority: 0.8,  changeFrequency: 'weekly' },
   { url: '/flashcards',priority: 0.7, changeFrequency: 'weekly' },
-  { url: '/login',    priority: 0.4,  changeFrequency: 'monthly' },
-  { url: '/register', priority: 0.4,  changeFrequency: 'monthly' },
+  { url: '/auth/login',    priority: 0.4,  changeFrequency: 'monthly' },
+  { url: '/auth/register', priority: 0.4,  changeFrequency: 'monthly' },
 ];
 
 // JLPT level pages

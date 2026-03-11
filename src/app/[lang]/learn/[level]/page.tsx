@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
@@ -6,9 +6,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Subject } from '@prisma/client';
 import {
-  FaCircleCheck, FaBookOpen, FaRuler, FaArrowRight,
-  FaGraduationCap, FaLayerGroup,
+  FaBookOpen, FaRuler,
+  FaGraduationCap, FaFire,
 } from 'react-icons/fa6';
+import LearnLevelClient, { type CategoryData } from './LearnLevelClient';
 
 interface Props {
   params: { lang: string; level: string };
@@ -270,29 +271,50 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
   const grammarCats = level.learningCategories.filter(c => c.skill === 'grammar');
   const legacyCats  = level.learningCategories.filter(c => !['vocab', 'grammar'].includes(c.skill));
   const hasNewContent = vocabCats.length > 0 || grammarCats.length > 0;
-  const activeCats    = activeTab === 'grammar' ? grammarCats : vocabCats;
 
-  const allLessons = activeCats.flatMap(cat =>
-    cat.lessons.map(l => ({ ...l, catId: cat.id, catSkill: cat.skill }))
-  );
+  // Compute progress across all lessons (both tabs) for the hero
+  const allLessons = [...vocabCats, ...grammarCats].flatMap(cat => cat.lessons);
   const totalLessons     = allLessons.length;
   const completedLessons = userId
     ? allLessons.filter(l => (l.progress as any[])?.some((p: any) => p.completed)).length
     : 0;
   const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-  // SVG circular progress
+  // SVG circular progress ring constants
   const R    = 36;
   const circ = 2 * Math.PI * R;
   const dash = circ - (progressPct / 100) * circ;
+
+  // Build client-safe category data (no raw prisma progress arrays)
+  function toClientCats(cats: typeof vocabCats): CategoryData[] {
+    return cats.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description,
+      skill: cat.skill,
+      icon: cat.icon ?? null,
+      lessons: cat.lessons.map(l => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        type: l.type,
+        order: l.order,
+        itemCount: l._count.items,
+        isCompleted: userId
+          ? (l.progress as any[])?.some((p: any) => p.completed)
+          : false,
+      })),
+    }));
+  }
+  const clientVocabCats   = toClientCats(vocabCats);
+  const clientGrammarCats = toClientCats(grammarCats);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
 
       {/* ══════════════ HERO ══════════════ */}
-      <div className="relative overflow-hidden" style={{ background: meta.heroGrad, minHeight: 280 }}>
+      <div className="relative overflow-hidden" style={{ background: meta.heroGrad, minHeight: 240 }}>
 
-        {/* Kanji / Hanzi decorative watermarks */}
         {meta.decors.map(({ char, x, y, rot, size }, i) => (
           <span key={i} aria-hidden className="absolute select-none pointer-events-none"
             style={{ left: x, top: y, transform: `rotate(${rot})`, fontSize: size,
@@ -301,372 +323,128 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
           </span>
         ))}
 
-        {/* Japanese: Mt. Fuji + wave silhouette */}
         {isJapanese && (
           <svg aria-hidden className="absolute bottom-0 left-0 w-full pointer-events-none"
-            style={{ height: 72, opacity: 0.09 }} viewBox="0 0 1400 72"
-            preserveAspectRatio="xMidYMax slice">
-            {/* rolling wave */}
+            style={{ height: 72, opacity: 0.09 }} viewBox="0 0 1400 72" preserveAspectRatio="xMidYMax slice">
             <path d="M0,72 L0,42 Q175,14 350,42 Q525,70 700,42 Q875,14 1050,42 Q1225,70 1400,42 L1400,72Z" fill="white"/>
-            {/* mountain silhouette */}
             <path d="M530,72 L700,10 L870,72Z" fill="white"/>
-            {/* snow cap */}
             <path d="M672,28 L700,10 L728,28 Q700,34 672,28Z" fill="white" opacity="0.7"/>
           </svg>
         )}
-
-        {/* Chinese: cloud band at bottom */}
         {isChinese && (
           <svg aria-hidden className="absolute bottom-0 left-0 w-full pointer-events-none"
-            style={{ height: 64, opacity: 0.09 }} viewBox="0 0 1400 64"
-            preserveAspectRatio="xMidYMax slice">
+            style={{ height: 64, opacity: 0.09 }} viewBox="0 0 1400 64" preserveAspectRatio="xMidYMax slice">
             <path d="M0,64 L0,38 Q100,18 200,30 Q300,44 400,28 Q500,12 600,28 Q700,44 800,28 Q900,12 1000,28 Q1100,44 1200,30 Q1300,18 1400,38 L1400,64Z" fill="white"/>
-            {/* decorative cloud bumps */}
             <ellipse cx="200" cy="30" rx="40" ry="18" fill="white" opacity="0.5"/>
             <ellipse cx="600" cy="26" rx="50" ry="20" fill="white" opacity="0.5"/>
             <ellipse cx="1000" cy="26" rx="45" ry="18" fill="white" opacity="0.5"/>
           </svg>
         )}
 
-        {/* Hero content */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6"
-          style={{ paddingTop: 36, paddingBottom: 48 }}>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6" style={{ paddingTop: 28, paddingBottom: 40 }}>
 
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-sm mb-8"
-            style={{ color: 'rgba(255,255,255,.7)' }}>
+          <nav className="flex items-center gap-1.5 text-sm mb-5" style={{ color: 'rgba(255,255,255,.7)' }}>
             <Link href={`/${params.lang}/learn`} className="hover:text-white transition-colors">Học</Link>
             <span className="opacity-50">›</span>
             <span style={{ color: 'rgba(255,255,255,.95)', fontWeight: 600 }}>{level.code}</span>
           </nav>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-
-            {/* Level badge + info */}
-            <div className="flex items-start gap-5 flex-1 min-w-0">
-              {/* Big level badge */}
-              <div className="flex-shrink-0 flex items-center justify-center rounded-2xl font-black"
-                style={{ width: 84, height: 84, minWidth: 84,
-                  background: 'rgba(255,255,255,.16)',
-                  backdropFilter: 'blur(10px)',
-                  border: '2px solid rgba(255,255,255,.32)',
-                  color: '#fff',
-                  fontSize: level.code.length > 3 ? 20 : 28,
-                  letterSpacing: '-1px',
-                  boxShadow: '0 8px 28px rgba(0,0,0,.22)',
-                }}>
-                {level.code}
-              </div>
-
-              <div className="min-w-0">
-                {/* Subject + level tag */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: 'rgba(255,255,255,.18)', color: 'rgba(255,255,255,.95)', letterSpacing: '0.04em' }}>
-                    {isChinese ? 'HSK' : 'JLPT'} · {meta.desc}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h1 className="text-3xl font-extrabold text-white mb-3" style={{ lineHeight: 1.15, letterSpacing: '-0.5px' }}>
-                  {isJapanese ? '日本語' : isChinese ? '中文' : level.name}
-                  <span className="ml-2 opacity-70" style={{ fontWeight: 400, fontSize: '1.4rem' }}>{level.code}</span>
-                </h1>
-
-                {/* Cultural quote card */}
-                <div className="inline-flex flex-col gap-1 px-3.5 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(0,0,0,.22)', backdropFilter: 'blur(6px)', maxWidth: 460 }}>
-                  <span className="text-base font-bold" style={{ color: '#fff', fontStyle: 'normal', letterSpacing: '0.03em' }}>
-                    「{meta.quote}」
-                  </span>
-                  {meta.quoteRomaji && (
-                    <span className="text-xs italic" style={{ color: 'rgba(255,255,255,.72)' }}>
-                      {meta.quoteRomaji}
-                    </span>
-                  )}
-                  <span className="text-xs" style={{ color: 'rgba(255,255,255,.82)' }}>
-                    — {meta.quoteVi}
-                  </span>
-                </div>
-              </div>
+          <div className="flex items-center gap-5">
+            {/* Level badge */}
+            <div className="flex-shrink-0 flex items-center justify-center rounded-2xl font-black"
+              style={{ width: 72, height: 72, minWidth: 72,
+                background: 'rgba(255,255,255,.16)', backdropFilter: 'blur(10px)',
+                border: '2px solid rgba(255,255,255,.32)', color: '#fff',
+                fontSize: level.code.length > 3 ? 18 : 26, letterSpacing: '-1px',
+                boxShadow: '0 8px 28px rgba(0,0,0,.22)' }}>
+              {level.code}
             </div>
 
-            {/* Circular progress ring (logged-in only) */}
-            {userId && totalLessons > 0 && (
-              <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
-                <svg width={96} height={96} viewBox="0 0 96 96">
-                  {/* Background track */}
-                  <circle cx="48" cy="48" r={R} fill="none"
-                    stroke="rgba(255,255,255,.2)" strokeWidth="5.5"/>
-                  {/* Progress fill */}
-                  <circle cx="48" cy="48" r={R} fill="none"
-                    stroke="rgba(255,255,255,.92)" strokeWidth="5.5"
-                    strokeDasharray={circ}
-                    strokeDashoffset={dash}
-                    strokeLinecap="round"
-                    transform="rotate(-90 48 48)"/>
-                  {/* Center label */}
-                  <text x="48" y="44" textAnchor="middle" fill="white"
-                    fontWeight="bold" fontSize="17">{progressPct}%</text>
-                  <text x="48" y="58" textAnchor="middle" fill="rgba(255,255,255,.75)"
-                    fontSize="8.5">hoàn thành</text>
-                </svg>
-                <div className="text-center text-xs font-medium" style={{ color: 'rgba(255,255,255,.8)' }}>
-                  {completedLessons}/{totalLessons} bài
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Stats row */}
-          <div className="flex flex-wrap items-center gap-2 mt-6">
-            {vocabCats.length > 0 && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium"
-                style={{ background: 'rgba(255,255,255,.14)', color: 'rgba(255,255,255,.92)' }}>
-                <FaBookOpen size={13}/>
-                <span>{vocabCats.reduce((s, c) => s + c.lessons.length, 0)} bài từ vựng</span>
-              </div>
-            )}
-            {grammarCats.length > 0 && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium"
-                style={{ background: 'rgba(255,255,255,.14)', color: 'rgba(255,255,255,.92)' }}>
-                <FaRuler size={13}/>
-                <span>{grammarCats.reduce((s, c) => s + c.lessons.length, 0)} bài ngữ pháp</span>
-              </div>
-            )}
-            {textbook && (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm"
-                style={{ background: 'rgba(255,255,255,.10)', color: 'rgba(255,255,255,.80)' }}>
-                <FaGraduationCap size={13}/>
-                <span className="hidden sm:inline">
-                  {activeTab === 'vocab' ? textbook.vocab : textbook.grammar}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,.18)', color: 'rgba(255,255,255,.95)' }}>
+                  {isChinese ? 'HSK' : 'JLPT'} · {meta.desc}
                 </span>
-                <span className="sm:hidden">Giáo trình</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════ CONTENT ══════════════ */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-7 pb-14">
-
-        {/* ── Tab navigation ── */}
-        <div className="flex gap-1 mb-7 p-1 rounded-2xl"
-          style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
-          {(['vocab', 'grammar'] as const).map(tab => {
-            const count = tab === 'vocab'
-              ? vocabCats.reduce((s, c) => s + c.lessons.length, 0)
-              : grammarCats.reduce((s, c) => s + c.lessons.length, 0);
-            const active = activeTab === tab;
-            return (
-              <Link key={tab}
-                href={`/${params.lang}/learn/${level.code}?tab=${tab}`}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all"
-                style={active
-                  ? { background: meta.accent, color: '#fff', boxShadow: `0 2px 12px rgba(${meta.accentRgb},.35)` }
-                  : { color: 'var(--text-secondary)' }}>
-                {tab === 'vocab' ? <FaBookOpen size={13}/> : <FaRuler size={13}/>}
-                {tab === 'vocab' ? 'Từ vựng' : 'Ngữ pháp'}
-                {count > 0 && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full"
-                    style={active
-                      ? { background: 'rgba(255,255,255,.24)', color: '#fff' }
-                      : { background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
-                    {count}
+                {userId && totalLessons > 0 && (
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1"
+                    style={{ background: 'rgba(255,255,255,.14)', color: 'rgba(255,255,255,.9)' }}>
+                    <FaFire size={10} style={{ color: '#FCD34D' }} />
+                    {completedLessons}/{totalLessons} bài · {progressPct}%
                   </span>
                 )}
-              </Link>
-            );
-          })}
+              </div>
+              <div className="inline-flex flex-col gap-0.5 px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(0,0,0,.2)', backdropFilter: 'blur(6px)' }}>
+                <span className="text-sm font-bold" style={{ color: '#fff' }}>「{meta.quote}」</span>
+                <span className="text-[11px]" style={{ color: 'rgba(255,255,255,.75)' }}>— {meta.quoteVi}</span>
+              </div>
+            </div>
+
+            {/* Circular progress */}
+            {userId && totalLessons > 0 && (
+              <div className="flex-shrink-0 hidden sm:block">
+                <svg width={80} height={80} viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="5.5"/>
+                  <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,.92)" strokeWidth="5.5"
+                    strokeDasharray={circ} strokeDashoffset={dash}
+                    strokeLinecap="round" transform="rotate(-90 48 48)"/>
+                  <text x="48" y="44" textAnchor="middle" fill="white" fontWeight="bold" fontSize="17">{progressPct}%</text>
+                  <text x="48" y="58" textAnchor="middle" fill="rgba(255,255,255,.7)" fontSize="8">hoàn thành</text>
+                </svg>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* ── Category sections ── */}
-        {activeCats.length > 0 ? (
-          <div className="space-y-9">
-            {activeCats.map((cat) => {
-              const catTotal     = cat.lessons.length;
-              const catCompleted = userId
-                ? cat.lessons.filter(l => (l.progress as any[])?.some((p: any) => p.completed)).length
-                : 0;
-              const catPct = catTotal > 0 ? Math.round((catCompleted / catTotal) * 100) : 0;
-
-              return (
-                <div key={cat.id}>
-                  {/* Category header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 font-bold"
-                      style={{
-                        background: `rgba(${meta.accentRgb},.1)`,
-                        color: meta.accent,
-                        border: `1.5px solid rgba(${meta.accentRgb},.18)`,
-                      }}>
-                      {cat.icon ? cat.icon : <FaLayerGroup size={17}/>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>
-                        {cat.name}
-                      </h2>
-                      {cat.description && (
-                        <p className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>
-                          {cat.description}
-                        </p>
-                      )}
-                    </div>
-                    {/* Per-category progress */}
-                    {userId && catTotal > 0 && (
-                      <div className="flex-shrink-0 flex items-center gap-2 hidden sm:flex">
-                        <div className="h-1.5 w-24 rounded-full overflow-hidden"
-                          style={{ background: 'var(--bg-muted)' }}>
-                          <div className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${catPct}%`,
-                              background: catPct === 100
-                                ? '#10B981'
-                                : `linear-gradient(90deg, ${meta.accent}, rgba(${meta.accentRgb},.6))`,
-                            }}/>
-                        </div>
-                        <span className="text-xs font-bold tabular-nums"
-                          style={{ color: catPct === 100 ? '#059669' : meta.accent, minWidth: 34 }}>
-                          {catPct}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Accent rule under header */}
-                  <div className="h-px mb-3 rounded-full"
-                    style={{ background: `linear-gradient(90deg, rgba(${meta.accentRgb},.35) 0%, transparent 70%)` }}/>
-
-                  {/* Lesson list */}
-                  <div className="space-y-2">
-                    {cat.lessons.map((lesson, idx) => {
-                      const isCompleted  = userId && (lesson.progress as any[])?.some((p: any) => p.completed);
-                      const hasProgress  = userId && !!( (lesson.progress as any[])?.length > 0);
-                      const isInProgress = hasProgress && !isCompleted;
-                      const href = `/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}/${lesson.id}`;
-
-                      return (
-                        <Link key={lesson.id} href={href}
-                          className="group flex items-center gap-3 rounded-xl transition-all hover:shadow-sm"
-                          style={{
-                            padding: '12px 16px',
-                            background: isCompleted
-                              ? `rgba(16,185,129,.07)`
-                              : isInProgress
-                                ? `rgba(${meta.accentRgb},.05)`
-                                : 'var(--bg-surface)',
-                            border: `1.5px solid ${
-                              isCompleted  ? 'rgba(16,185,129,.25)' :
-                              isInProgress ? `rgba(${meta.accentRgb},.22)` :
-                              'var(--border)'
-                            }`,
-                          }}>
-
-                          {/* Step indicator */}
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-                            style={
-                              isCompleted  ? { background: '#D1FAE5', color: '#065F46' } :
-                              isInProgress ? { background: `rgba(${meta.accentRgb},.15)`, color: meta.accent } :
-                              { background: 'var(--bg-muted)', color: 'var(--text-muted)' }
-                            }>
-                            {isCompleted
-                              ? <FaCircleCheck size={16}/>
-                              : <span style={{ fontSize: 11, fontWeight: 700 }}>
-                                  {String(idx + 1).padStart(2, '0')}
-                                </span>
-                            }
-                          </div>
-
-                          {/* Title + Description */}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm leading-snug"
-                              style={{ color: isCompleted ? '#065F46' : 'var(--text-primary)' }}>
-                              {lesson.title}
-                            </div>
-                            {lesson.description && (
-                              <div className="text-xs mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>
-                                {lesson.description}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Item count badge */}
-                          {lesson._count.items > 0 && (
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-                              style={{
-                                background: isCompleted
-                                  ? 'rgba(16,185,129,.14)'
-                                  : `rgba(${meta.accentRgb},.12)`,
-                                color: isCompleted ? '#059669' : meta.accent,
-                              }}>
-                              {lesson._count.items} mục
-                            </span>
-                          )}
-
-                          {/* Arrow */}
-                          <FaArrowRight size={12} className="flex-shrink-0 transition-transform group-hover:translate-x-1"
-                            style={{
-                              color: isCompleted ? '#10B981' : meta.accent,
-                              opacity: isCompleted ? 0.7 : 0.4,
-                            }}/>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* Empty state */
-          <div className="text-center py-16 rounded-2xl"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="text-5xl mb-4">{activeTab === 'vocab' ? '📖' : '📐'}</div>
-            <div className="font-bold text-base mb-1" style={{ color: 'var(--text-primary)' }}>
-              Chưa có nội dung {activeTab === 'vocab' ? 'từ vựng' : 'ngữ pháp'} cho {level.code}
-            </div>
-            <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-              Chạy seed để tạo nội dung học tập.
-            </p>
-            <Link href="/admin/seed" className="text-sm underline font-medium"
-              style={{ color: meta.accent }}>
-              Admin → Seed →
-            </Link>
-          </div>
-        )}
-
-        {/* ── Legacy skill-based content (nghe/noi/doc/viet) ── */}
-        {!hasNewContent && legacyCats.length > 0 && (
-          <div className="mt-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ color: 'var(--text-muted)' }}>
-              Kỹ năng khác
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {legacyCats.map(cat => (
-                <Link key={cat.id}
-                  href={`/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}`}
-                  className="card-hover border flex items-center gap-4">
-                  <div className="text-3xl flex-shrink-0">{cat.icon ?? '📂'}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm mb-0.5">{cat.name}</div>
-                    {cat.description && (
-                      <p className="text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                        {cat.description}
-                      </p>
-                    )}
-                    <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      {cat.lessons.length} bài học
-                    </div>
-                  </div>
-                  <FaArrowRight size={13} style={{ opacity: 0.4, flexShrink: 0 }}/>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* ══════════════ SIDEBAR + CONTENT ══════════════ */}
+      <LearnLevelClient
+        vocabCats={clientVocabCats}
+        grammarCats={clientGrammarCats}
+        defaultTab={activeTab}
+        accentColor={meta.accent}
+        accentRgb={meta.accentRgb}
+        lang={params.lang}
+        levelCode={level.code}
+        userId={userId}
+      />
+
+      {/* ── Textbook reference (server-rendered) ── */}
+      {textbook && (
+        <div className="px-4 sm:px-6 pb-6" style={{ marginLeft: 272 }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
+            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
+            <FaGraduationCap size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {activeTab === 'vocab' ? textbook.vocab : textbook.grammar}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Legacy skill-based content ── */}
+      {!hasNewContent && legacyCats.length > 0 && (
+        <div className="px-4 sm:px-6 pb-10">
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Kỹ năng khác</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {legacyCats.map(cat => (
+              <Link key={cat.id} href={`/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}`}
+                className="card-hover border flex items-center gap-4">
+                <div className="text-3xl flex-shrink-0">{cat.icon ?? '📂'}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm mb-0.5">{cat.name}</div>
+                  {cat.description && (
+                    <p className="text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{cat.description}</p>
+                  )}
+                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{cat.lessons.length} bài học</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

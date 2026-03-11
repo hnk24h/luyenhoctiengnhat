@@ -89,6 +89,13 @@ function PageContent() {
 
   useEffect(() => { stopPlayback(); }, [selectedPractice?.id]);
 
+  // ── Apply speed change to currently-playing audio in real time ───────────
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
   function stopPlayback() {
     playTokenRef.current += 1;
     synthRef.current?.cancel();

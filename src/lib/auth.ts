@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
-  pages: { signIn: '/login' },
+  pages: { signIn: '/auth/login' },
   providers: [
     CredentialsProvider({
       name: 'Credentials',

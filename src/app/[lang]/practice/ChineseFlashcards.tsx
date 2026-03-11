@@ -17,7 +17,7 @@ type ApiItem = {
   meanings: { id: string; language: string; meaning: string }[];
 };
 
-export default function ChineseFlashcardsPage() {
+export function ChineseFlashcardsContent() {
   const [selectedLevel, setSelectedLevel] = useState('HSK1');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ export default function ChineseFlashcardsPage() {
       <div className="border-b" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 mb-3">
-            <Link href="/chinese" className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <Link href="/zh" className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
               <FaArrowLeft size={12} /> Tiếng Trung
             </Link>
             <span style={{ color: 'var(--text-muted)' }}>›</span>

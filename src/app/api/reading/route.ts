@@ -3,14 +3,37 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-// GET /api/reading?level=N5&type=short — public list of passages
-// GET /api/reading?export=1&admin=1    — admin full export (includes content)
+// GET /api/reading?level=N5&type=short&lang=ja — public list of passages
+// GET /api/reading?level=HSK1&lang=zh            — Chinese reading list
+// GET /api/reading?export=1&admin=1              — admin full export (includes content)
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const level      = searchParams.get('level')  || undefined;
   const type       = searchParams.get('type')   || undefined;
   const admin      = searchParams.get('admin')  === '1';
   const doExport   = searchParams.get('export') === '1';
+  const lang       = searchParams.get('lang')   ?? 'ja';
+
+  // ── Chinese reading branch ──────────────────────────────────────────────
+  if (lang === 'zh' && !doExport && !admin) {
+    const zhPassages = await prisma.chinesePassage.findMany({
+      where: { ...(level ? { level } : {}) },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, titleVi: true, level: true, topic: true, content: true, createdAt: true },
+    });
+    return NextResponse.json(zhPassages.map(p => ({
+      id: p.id,
+      title: p.title,
+      titleVi: p.titleVi ?? null,
+      summary: null,
+      level: p.level,
+      type: 'short',
+      source: null,
+      tags: p.topic ? JSON.stringify([p.topic]) : null,
+      charCount: p.content.length,
+      createdAt: p.createdAt.toISOString(),
+    })));
+  }
 
   // Admins can see all passages including unpublished
   const session = (admin || doExport) ? await getServerSession(authOptions) : null;
@@ -30,20 +53,18 @@ export async function GET(req: NextRequest) {
       ...(type  ? { type  } : {}),
     },
     orderBy: { createdAt: 'desc' },
-    // for export include full content; for listing exclude it
-    ...(doExport ? {} : {
-      select: {
-        id: true, title: true, titleVi: true,
-        summary: true, level: true, type: true,
-        source: true, tags: true, createdAt: true,
-        content: false,
-      },
-    }),
+    select: {
+      id: true, title: true, titleVi: true,
+      summary: true, level: true, type: true,
+      source: true, sourceUrl: true, tags: true,
+      published: true, createdAt: true,
+      content: true, // needed for charCount + export
+    },
   });
 
   // For export: return clean JSON without DB internals
   if (doExport) {
-    const exportData = passages.map((p: any) => ({
+    const exportData = passages.map(p => ({
       title:     p.title,
       titleVi:   p.titleVi   ?? undefined,
       content:   p.content,
@@ -63,13 +84,19 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Attach character count by re-fetching minimal content length
-  const withMeta = await Promise.all(
-    (passages as any[]).map(async (p) => {
-      const full = await prisma.readingPassage.findUnique({ where: { id: p.id }, select: { content: true } });
-      return { ...p, charCount: full?.content.length ?? 0 };
-    })
-  );
+  // Strip content from listing response; expose charCount instead
+  const withMeta = passages.map(p => ({
+    id:        p.id,
+    title:     p.title,
+    titleVi:   p.titleVi,
+    summary:   p.summary,
+    level:     p.level,
+    type:      p.type,
+    source:    p.source,
+    tags:      p.tags,
+    createdAt: p.createdAt,
+    charCount: p.content.length,
+  }));
 
   return NextResponse.json(withMeta);
 }

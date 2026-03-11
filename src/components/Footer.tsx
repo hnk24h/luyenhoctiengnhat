@@ -16,8 +16,8 @@ const LINKS = {
     { label: 'Tiến trình', href: '/dashboard' },
   ],
   'Tài khoản': [
-    { label: 'Đăng nhập', href: '/login' },
-    { label: 'Đăng ký miễn phí', href: '/register' },
+    { label: 'Đăng nhập', href: '/auth/login' },
+    { label: 'Đăng ký miễn phí', href: '/auth/register' },
     { label: 'Từ vựng đã lưu', href: '/vocab' },
   ],
 };
@@ -37,7 +37,7 @@ const FEATURE_PILLS = [
 export function Footer() {
   return (
     <footer className="site-footer">
-      <div className="max-w-6xl mx-auto px-4 py-10 md:py-12">
+      <div className="mx-auto px-4 py-10 md:py-12 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
         <div className="site-footer-hero mb-8 md:mb-10">
           <div className="grid lg:grid-cols-[1.3fr_.9fr] gap-6 items-center">
             <div>
@@ -85,7 +85,7 @@ export function Footer() {
                 ))}
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
-                <Link href="/register" className="btn-primary text-xs py-2 px-3.5 rounded-2xl">Tạo tài khoản</Link>
+                <Link href="/auth/register" className="btn-primary text-xs py-2 px-3.5 rounded-2xl">Tạo tài khoản</Link>
                 <Link href="/ja/learn" className="btn-secondary text-xs py-2 px-3.5 rounded-2xl">Bắt đầu học</Link>
               </div>
             </div>

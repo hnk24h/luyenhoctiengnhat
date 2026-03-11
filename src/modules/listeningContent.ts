@@ -5,6 +5,7 @@ export type ListeningMondai = 'Mondai 1' | 'Mondai 2' | 'Mondai 3' | 'Mondai 4';
 export interface ListeningSegment {
   speaker: string;
   text: string;
+  pinyin?: string;
 }
 
 export interface ListeningPractice {

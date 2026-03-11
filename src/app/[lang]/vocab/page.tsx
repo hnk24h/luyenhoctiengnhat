@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaBookmark, FaTrash, FaPlus, FaArrowLeft, FaLayerGroup,
@@ -42,14 +42,37 @@ const PALETTE = [
   '#8B5CF6','#EC4899','#14B8A6','#F97316','#6366F1',
 ];
 
-// ─── JLPT Reference Vocab ─────────────────────────────────────────────────────
+// ─── Per-language vocab config ───────────────────────────────────────────────
 
-const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
-const LEVEL_COLORS: Record<string, string> = {
-  N5: '#48BB78', N4: '#4299E1', N3: '#ECC94B', N2: '#ED8936', N1: '#F56565',
+type VocabLangConfig = {
+  levels: string[];
+  levelColors: Record<string, string>;
+  levelLabels: Record<string, string>;
+  apiUrl: (level: string) => string;
+  font: string;
+  meaningIcon: string;
+  defaultLevel: string;
 };
-const LEVEL_LABELS: Record<string, string> = {
-  N5: 'Sơ cấp', N4: 'Sơ trung cấp', N3: 'Trung cấp', N2: 'Trung cao cấp', N1: 'Cao cấp',
+
+const VOCAB_LANG_CONFIG: Record<string, VocabLangConfig> = {
+  ja: {
+    levels: ['N5', 'N4', 'N3', 'N2', 'N1'],
+    levelColors: { N5: '#48BB78', N4: '#4299E1', N3: '#ECC94B', N2: '#ED8936', N1: '#F56565' },
+    levelLabels: { N5: 'Sơ cấp', N4: 'Sơ trung cấp', N3: 'Trung cấp', N2: 'Trung cao cấp', N1: 'Cao cấp' },
+    apiUrl:  (level) => `/api/jlpt/vocab?level=${level}`,
+    font: 'Noto Serif JP, serif',
+    meaningIcon: '意',
+    defaultLevel: 'N5',
+  },
+  zh: {
+    levels: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6'],
+    levelColors: { HSK1: '#48BB78', HSK2: '#4299E1', HSK3: '#9F7AEA', HSK4: '#ED8936', HSK5: '#F56565', HSK6: '#D53F8C' },
+    levelLabels: { HSK1: 'Nhập môn', HSK2: 'Cơ bản', HSK3: 'Sơ trung cấp', HSK4: 'Trung cấp', HSK5: 'Trung cao cấp', HSK6: 'Cao cấp' },
+    apiUrl: (level) => `/api/chinese/vocab?level=${level}`,
+    font: 'Noto Serif SC, serif',
+    meaningIcon: '义',
+    defaultLevel: 'HSK1',
+  },
 };
 
 type VocabRefContentMeaning = { id: string; language: string; meaning: string };
@@ -57,7 +80,7 @@ type VocabRefContentExample = { id: string; exampleText: string; translation: st
 type VocabRefItem = {
   id: string; term: string; pronunciation: string | null;
   meanings: VocabRefContentMeaning[];
-  examples: VocabRefContentExample[];
+  examples?: VocabRefContentExample[];
 };
 
 function CardSkeleton() {
@@ -67,8 +90,9 @@ function CardSkeleton() {
   );
 }
 
-function VocabCard({ item, color, flipped, onFlip }: {
+function VocabCard({ item, color, flipped, onFlip, font, meaningIcon }: {
   item: VocabRefItem; color: string; flipped: boolean; onFlip: () => void;
+  font: string; meaningIcon: string;
 }) {
   return (
     <button onClick={onFlip}
@@ -81,7 +105,7 @@ function VocabCard({ item, color, flipped, onFlip }: {
       {!flipped ? (
         <div className="flex flex-col items-center justify-center h-full gap-1.5 py-2">
           <span className="text-2xl font-bold leading-tight text-center"
-            style={{ fontFamily: 'Noto Serif JP, serif', color: 'var(--text-primary)' }}>
+            style={{ fontFamily: font, color: 'var(--text-primary)' }}>
             {item.term}
           </span>
           {item.pronunciation && (
@@ -92,7 +116,7 @@ function VocabCard({ item, color, flipped, onFlip }: {
       ) : (
         <div className="flex flex-col gap-2 h-full">
           <div className="flex items-start gap-1.5">
-            <span className="text-xs font-bold shrink-0 mt-0.5" style={{ color }}>意</span>
+            <span className="text-xs font-bold shrink-0 mt-0.5" style={{ color }}>{meaningIcon}</span>
             <span className="text-sm font-bold leading-snug" style={{ color: 'var(--text-primary)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
           </div>
           {item.pronunciation && <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</div>}
@@ -249,14 +273,21 @@ function CollectionSidebar({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function VocabPage() {
+function VocabContent() {
   const { status } = useSession();
   const router = useRouter();
   const routeParams = useParams();
   const lang = (routeParams?.lang as string) ?? 'ja';
+  const langCfg = VOCAB_LANG_CONFIG[lang] ?? VOCAB_LANG_CONFIG.ja;
+  const searchParams = useSearchParams();
 
   // ── Tab ───────────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'mine' | 'reference'>('mine');
+  const [activeTab, setActiveTab] = useState<'mine' | 'reference' | 'topics'>(() => {
+    const t = searchParams.get('tab');
+    if (t === 'reference') return 'reference';
+    if (t === 'topics') return 'topics';
+    return 'mine';
+  });
 
   // ── My vocab state ────────────────────────────────────────────────────────────
   const [words,        setWords]        = useState<Word[]>([]);
@@ -270,7 +301,7 @@ export default function VocabPage() {
   const [sheetOpen,    setSheetOpen]    = useState(false);
 
   // ── Reference vocab state ─────────────────────────────────────────────────────
-  const [refLevel,   setRefLevel]   = useState('N5');
+  const [refLevel,   setRefLevel]   = useState(langCfg.defaultLevel);
   const [refSearch,  setRefSearch]  = useState('');
   const [refItems,   setRefItems]   = useState<VocabRefItem[]>([]);
   const [refLoading, setRefLoading] = useState(false);
@@ -381,12 +412,12 @@ export default function VocabPage() {
   const fetchRefVocab = useCallback(async (level: string) => {
     setRefLoading(true);
     try {
-      const res = await fetch(`/api/jlpt/vocab?level=${level}`);
+      const res = await fetch(langCfg.apiUrl(level));
       const data: VocabRefItem[] = await res.json();
       setRefItems(Array.isArray(data) ? data : []);
     } catch { setRefItems([]); }
     finally { setRefLoading(false); }
-  }, []);
+  }, [langCfg]);
 
   useEffect(() => {
     fetchRefVocab(refLevel);
@@ -420,7 +451,7 @@ export default function VocabPage() {
     );
   }, [refItems, refSearch]);
 
-  const refColor = LEVEL_COLORS[refLevel] ?? '#6C5CE7';
+  const refColor = langCfg.levelColors[refLevel] ?? '#6C5CE7';
   const allRefFlipped = refFiltered.length > 0 && refFlipped.size === refFiltered.length;
 
   function toggleRefFlip(id: string) {
@@ -451,18 +482,72 @@ export default function VocabPage() {
           style={activeTab === 'reference'
             ? { background: 'var(--primary)', color: '#fff' }
             : { color: 'var(--text-muted)' }}>
-          <FaBookOpen size={13} /> Tham khảo JLPT
+          <FaBookOpen size={13} /> Theo cấp độ
+        </button>
+        <button onClick={() => setActiveTab('topics')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          style={activeTab === 'topics'
+            ? { background: 'var(--primary)', color: '#fff' }
+            : { color: 'var(--text-muted)' }}>
+          <FaLayerGroup size={13} /> Theo chủ đề
         </button>
         <button onClick={() => setActiveTab('mine')}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
           style={activeTab === 'mine'
             ? { background: 'var(--primary)', color: '#fff' }
             : { color: 'var(--text-muted)' }}>
-          <FaBookmark size={13} /> Từ vựng của tôi
+          <FaBookmark size={13} /> Của tôi
         </button>
       </div>
 
-      {activeTab === 'mine' ? (
+      {activeTab === 'topics' ? (
+      /* ─── Topics tab ─── */
+      <>
+        {status === 'unauthenticated' ? (
+          <div className="card text-center py-14">
+            <div className="text-5xl mb-3 opacity-40">🔐</div>
+            <p className="font-semibold mb-3" style={{ color: 'var(--text-base)' }}>Đăng nhập để xem chủ đề của bạn</p>
+            <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
+          </div>
+        ) : loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-10 h-10 rounded-full border-4 animate-spin"
+              style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Chủ đề từ vựng</h2>
+              <button onClick={() => setActiveTab('mine')}
+                className="btn-secondary text-xs py-1.5 px-3 rounded-xl">
+                + Tạo chủ đề mới
+              </button>
+            </div>
+            {collections.length === 0 ? (
+              <div className="card text-center py-12">
+                <div className="text-4xl mb-3 opacity-30">📂</div>
+                <p className="font-semibold" style={{ color: 'var(--text-muted)' }}>Chưa có chủ đề nào</p>
+                <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>Tạo chủ đề để gộp từ vựng theo nhóm</p>
+                <button onClick={() => setActiveTab('mine')} className="btn-primary text-sm">Tạo chủ đề đầu tiên</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {collections.map(col => (
+                  <button key={col.id}
+                    onClick={() => { setActiveColId(col.id); setActiveTab('mine'); }}
+                    className="rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                    <div className="w-8 h-8 rounded-full mb-2.5" style={{ background: col.color }} />
+                    <div className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{col.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{col.wordCount} từ</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </>
+      ) : activeTab === 'mine' ? (
       /* ─── My vocab tab ─── */
       <>
       {loading ? (
@@ -474,7 +559,7 @@ export default function VocabPage() {
         <div className="card text-center py-14">
           <div className="text-5xl mb-3 opacity-40">🔐</div>
           <p className="font-semibold mb-3" style={{ color: 'var(--text-base)' }}>Đăng nhập để xem từ vựng của bạn</p>
-          <Link href="/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
+          <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
         </div>
       ) : (
       <>
@@ -712,11 +797,11 @@ export default function VocabPage() {
         {/* Level tabs + search */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
-            {JLPT_LEVELS.map(lvl => (
+            {langCfg.levels.map(lvl => (
               <button key={lvl} onClick={() => setRefLevel(lvl)}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
                 style={refLevel === lvl
-                  ? { background: LEVEL_COLORS[lvl], color: '#fff', boxShadow: `0 2px 8px ${LEVEL_COLORS[lvl]}60` }
+                  ? { background: langCfg.levelColors[lvl], color: '#fff', boxShadow: `0 2px 8px ${langCfg.levelColors[lvl]}60` }
                   : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
                 {lvl}
               </button>
@@ -743,7 +828,7 @@ export default function VocabPage() {
               </span>
             </h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {LEVEL_LABELS[refLevel]} — {refFiltered.length} từ
+              {langCfg.levelLabels[refLevel]} — {refFiltered.length} từ
             </p>
           </div>
           {refFiltered.length > 0 && (
@@ -771,6 +856,7 @@ export default function VocabPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {refFiltered.map(item => (
               <VocabCard key={item.id} item={item} color={refColor}
+                font={langCfg.font} meaningIcon={langCfg.meaningIcon}
                 flipped={refFlipped.has(item.id)} onFlip={() => toggleRefFlip(item.id)} />
             ))}
           </div>
@@ -780,4 +866,8 @@ export default function VocabPage() {
 
     </main>
   );
+}
+
+export default function VocabPage() {
+  return <VocabContent />;
 }

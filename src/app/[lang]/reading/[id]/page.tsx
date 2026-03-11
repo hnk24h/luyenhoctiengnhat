@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   FaArrowLeft, FaBookmark, FaNewspaper, FaAlignLeft,
   FaAlignJustify, FaArrowUpRightFromSquare, FaBook,
-  FaGraduationCap, FaListUl,
+  FaGraduationCap, FaListUl, FaChevronRight,
 } from 'react-icons/fa6';
 import { JapaneseText } from '@/components/JapaneseText';
 
@@ -15,14 +15,22 @@ interface Passage {
   content: string; summary: string | null; level: string;
   type: string; source: string | null; sourceUrl: string | null;
   tags: string | null; createdAt: string;
+  pinyin?: string | null;
+  translation?: string | null;
 }
 
 const LEVEL_META: Record<string, { bg: string; color: string }> = {
-  N5: { bg: '#DCFCE7', color: '#15803D' },
-  N4: { bg: '#DBEAFE', color: '#1D4ED8' },
-  N3: { bg: '#FEF9C3', color: '#92400E' },
-  N2: { bg: '#FFEDD5', color: '#C2410C' },
-  N1: { bg: '#FFE4E6', color: '#BE123C' },
+  N5:   { bg: '#DCFCE7', color: '#15803D' },
+  N4:   { bg: '#DBEAFE', color: '#1D4ED8' },
+  N3:   { bg: '#FEF9C3', color: '#92400E' },
+  N2:   { bg: '#FFEDD5', color: '#C2410C' },
+  N1:   { bg: '#FFE4E6', color: '#BE123C' },
+  HSK1: { bg: '#DCFCE7', color: '#15803D' },
+  HSK2: { bg: '#DBEAFE', color: '#1D4ED8' },
+  HSK3: { bg: '#FEF9C3', color: '#92400E' },
+  HSK4: { bg: '#FFEDD5', color: '#C2410C' },
+  HSK5: { bg: '#F3E8FF', color: '#6B21A8' },
+  HSK6: { bg: '#FFE4E6', color: '#BE123C' },
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -284,22 +292,24 @@ function GrammarAnalysisSection({ passage, layout = 'grid' }: { passage: Passage
 
 export default function ReadingDetailPage({ params }: { params: { lang: string; id: string } }) {
   const { data: session } = useSession();
-  const [passage,    setPassage]    = useState<Passage | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [savedWords, setSavedWords] = useState<string[]>([]);
-  const [savedCount, setSavedCount] = useState(0);
-  const [fontSize,   setFontSize]   = useState(18); // px
+  const [passage,       setPassage]       = useState<Passage | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [savedWords,    setSavedWords]    = useState<string[]>([]);
+  const [savedCount,    setSavedCount]    = useState(0);
+  const [fontSize,      setFontSize]      = useState(18);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const isChinese = params.lang === 'zh';
 
   // Load passage
   useEffect(() => {
-    fetch(`/api/reading/${params.id}`)
+    fetch(`/api/reading/${params.id}?lang=${params.lang}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { setPassage(d); setLoading(false); });
-  }, [params.id]);
+  }, [params.id, params.lang]);
 
-  // Load user's saved words (to highlight already-saved)
+  // Load user's saved words (JLPT only — Chinese reading has no word-click feature)
   useEffect(() => {
-    if (!session) return;
+    if (!session || isChinese) return;
     fetch('/api/words')
       .then(r => r.ok ? r.json() : [])
       .then((words: { content: { term: string } }[]) =>
@@ -402,25 +412,52 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
                 </button>
               ))}
             </div>
+            {!isChinese && (
             <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
               style={{ background: '#FEF9C3', color: '#92400E' }}>
               💡 Click vào từ để tra nghĩa{session && ' và lưu'}
             </div>
+            )}
           </div>
 
           {/* Article body */}
           <div className="card"
-            style={{ fontSize, lineHeight: 2.1, fontFamily: '"Noto Sans JP", serif' }}>
-            <JapaneseText
-              content={passage.content}
-              passageId={passage.id}
-              savedWords={savedWords}
-              onWordSaved={handleWordSaved}
-            />
+            style={{ fontSize, lineHeight: 2.1, fontFamily: isChinese ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
+            {isChinese ? (
+              <div>
+                {passage.content.split('\n').filter(Boolean).map((para, i) => (
+                  <p key={i} style={{ marginBottom: '1em', color: 'var(--text-base)' }}>{para}</p>
+                ))}
+              </div>
+            ) : (
+              <JapaneseText
+                content={passage.content}
+                passageId={passage.id}
+                savedWords={savedWords}
+                onWordSaved={handleWordSaved}
+              />
+            )}
           </div>
 
-          {/* Saved words banner */}
-          {savedCount > 0 && (
+          {/* Translation toggle — Chinese only */}
+          {isChinese && passage.translation && (
+            <div className="mt-4 rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+              <button onClick={() => setShowTranslation(p => !p)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
+                style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                Bản dịch tiếng Việt
+                <FaChevronRight size={11} className={showTranslation ? 'rotate-90 transition-transform' : 'transition-transform'} />
+              </button>
+              {showTranslation && (
+                <div className="px-4 pb-4 pt-2" style={{ background: 'var(--bg-surface)' }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{passage.translation}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Saved words banner — JLPT only */}
+          {!isChinese && savedCount > 0 && (
             <div className="card mt-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-base)' }}>
                 <FaBookmark size={13} style={{ color: 'var(--primary)' }} />
@@ -437,8 +474,8 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
         {/* ── RIGHT: Sidebar ── */}
         <div className="w-full lg:w-80 xl:w-96 shrink-0 lg:sticky lg:top-4 flex flex-col gap-4">
 
-          {/* Saved words count pill */}
-          {savedCount > 0 && (
+          {/* Saved words count pill — JLPT only */}
+          {!isChinese && savedCount > 0 && (
             <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
               style={{ background: 'var(--primary)', color: 'white' }}>
               <FaBookmark size={14} />
@@ -451,13 +488,15 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
             </div>
           )}
 
-          {/* Grammar analysis */}
+          {/* Grammar analysis — JLPT only */}
+          {!isChinese && (
           <div className="card">
             <GrammarAnalysisSection passage={passage} layout="sidebar" />
           </div>
+          )}
 
-          {/* Vocabulary hint — session saved words */}
-          {savedWords.length > 0 && (
+          {/* Vocabulary hint — session saved words, JLPT only */}
+          {!isChinese && savedWords.length > 0 && (
             <div className="card">
               <div className="flex items-center gap-2 mb-3">
                 <FaListUl size={13} style={{ color: 'var(--primary)' }} />

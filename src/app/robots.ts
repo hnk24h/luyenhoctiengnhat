@@ -14,8 +14,8 @@ export default function robots(): MetadataRoute.Robots {
           '/listening',
           '/vocab',
           '/flashcards',
-          '/login',
-          '/register',
+          '/auth/login',
+          '/auth/register',
         ],
         disallow: [
           '/admin',

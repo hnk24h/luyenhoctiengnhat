@@ -94,7 +94,7 @@ export default function AdminUsersPage() {
 
   // ── Auth guard ──
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login');
+    if (status === 'unauthenticated') router.push('/auth/login');
     if (status === 'authenticated') {
       const role = (session?.user as any)?.role;
       if (role !== 'admin' && role !== 'ADMIN') router.push('/');

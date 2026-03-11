@@ -89,7 +89,7 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
   }, [params.deckId]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login');
+    if (status === 'unauthenticated') router.push('/auth/login');
     if (status === 'authenticated') loadDeck();
   }, [status, loadDeck, router]);
 

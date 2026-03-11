@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaPlay, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGlobe } from 'react-icons/fa6';
+import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 import { useTheme, type AppearanceMode } from '@/context/ThemeContext';
 
@@ -13,22 +13,22 @@ type NavLink = { href: string; label: string; icon: IconType; authRequired?: boo
 
 const JLPT_NAV_LINKS: NavLink[] = [
   { href: '/ja/learn',     label: 'Cấp độ',    icon: FaBookOpen },
-  { href: '/ja/listening', label: 'Luyện nghe', icon: FaHeadphones },
   { href: '/ja/levels',    label: 'Luyện thi',  icon: FaPencil },
+  { href: '/ja/listening', label: 'Luyện nghe', icon: FaHeadphones },
+  { href: '/ja/vocab',     label: 'Từ vựng',    icon: FaBookmark },
   { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
   { href: '/ja/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
-  { href: '/ja/vocab',     label: 'Từ vựng',    icon: FaBookmark },
   { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar,   authRequired: true },
 ];
 
 const CHINESE_NAV_LINKS: NavLink[] = [
-  { href: '/zh',           label: 'Tổng quan',  icon: FaBookOpen },
-  { href: '/zh/learn',     label: 'Cấp độ',     icon: FaCompass },
-  { href: '/zh/grammar',   label: 'Ngữ pháp',   icon: FaBookOpen },
+  { href: '/zh/learn',     label: 'Cấp độ',    icon: FaBookOpen },
+  { href: '/zh/levels',    label: 'Luyện thi',  icon: FaPencil },
   { href: '/zh/listening', label: 'Luyện nghe', icon: FaHeadphones },
-  { href: '/zh/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
-  { href: '/zh/vocab',     label: 'Từ vựng',    icon: FaBookmark,  authRequired: true },
+  { href: '/zh/vocab',     label: 'Từ vựng',    icon: FaBookmark },
   { href: '/zh/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
+  { href: '/zh/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
+  { href: '/zh/grammar',   label: 'Ngữ pháp',   icon: FaCompass },
 ];
 
 const PMP_NAV_LINKS: NavLink[] = [
@@ -46,24 +46,47 @@ const SUBJECTS = [
     desc: 'PMBOK 6th · Chứng chỉ PMP' },
 ] as const;
 
-// legacy alias kept for isActive checks below
-const NAV_LINKS = JLPT_NAV_LINKS;
-
 const KNOWN_LANGS = new Set(['ja', 'zh', 'ko', 'vi', 'en']);
+
+type LevelMeta = { code: string; label: string; desc: string; color: string };
+const LANG_LEVELS: Record<string, LevelMeta[]> = {
+  ja: [
+    { code: 'N5', label: 'N5', desc: 'Sơ cấp',       color: '#15803D' },
+    { code: 'N4', label: 'N4', desc: 'Sơ trung cấp', color: '#1D4ED8' },
+    { code: 'N3', label: 'N3', desc: 'Trung cấp',    color: '#92400E' },
+    { code: 'N2', label: 'N2', desc: 'Trung cao cấp',color: '#C2410C' },
+    { code: 'N1', label: 'N1', desc: 'Cao cấp',      color: '#BE123C' },
+  ],
+  zh: [
+    { code: 'HSK1', label: 'HSK 1', desc: 'Nhập môn',     color: '#15803D' },
+    { code: 'HSK2', label: 'HSK 2', desc: 'Cơ bản',        color: '#1D4ED8' },
+    { code: 'HSK3', label: 'HSK 3', desc: 'Sơ trung cấp',  color: '#92400E' },
+    { code: 'HSK4', label: 'HSK 4', desc: 'Trung cấp',     color: '#C2410C' },
+    { code: 'HSK5', label: 'HSK 5', desc: 'Trung cao cấp', color: '#EA580C' },
+    { code: 'HSK6', label: 'HSK 6', desc: 'Cao cấp',       color: '#BE123C' },
+  ],
+};
 
 export function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [exploreOpen, setExploreOpen] = useState(false);
-  const [appearanceOpen, setAppearanceOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [modulesOpen, setModulesOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam' | null>(null);
   const { appearance, resolvedAppearance, setAppearance } = useTheme();
-  const exploreMenuRef = useRef<HTMLDivElement | null>(null);
-  const appearanceMenuRef = useRef<HTMLDivElement | null>(null);
-  const profileMenuRef = useRef<HTMLDivElement | null>(null);
-  const modulesMenuRef = useRef<HTMLDivElement | null>(null);
+  const navMenuRef = useRef<HTMLElement | null>(null);
+
+  const modulesOpen    = openMenu === 'modules';
+  const exploreOpen    = openMenu === 'explore';
+  const appearanceOpen = openMenu === 'appearance';
+  const profileOpen    = openMenu === 'profile';
+  const learnOpen      = openMenu === 'learn';
+  const listeningOpen  = openMenu === 'listening';
+  const vocabOpen      = openMenu === 'vocab';
+  const examOpen       = openMenu === 'exam';
+
+  function toggleMenu(name: 'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam') {
+    setOpenMenu(prev => (prev === name ? null : name));
+  }
 
   // Detect current language from the first URL segment (ISO 639-1)
   const langSegment = pathname.split('/')[1] ?? '';
@@ -76,33 +99,29 @@ export function Navbar() {
 
   const isAdmin = (session?.user as any)?.role === 'admin';
 
-  function isActive(href: string) {
-    return pathname === href || pathname.startsWith(href + '/');
-  }
+  const isActive = useMemo(
+    () => (href: string) => pathname === href || pathname.startsWith(href + '/'),
+    [pathname]
+  );
 
   const visibleLinks = activeNavLinks.filter(l => !l.authRequired || session);
   const profileLinks: { href: string; label: string; icon: IconType }[] = [
     // ...(session ? [{ href: '/dashboard', label: 'Tiến trình', icon: FaPencil }] : []),
     ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: FaGear }] : []),
   ];
-  const primaryLinks = useMemo(
-    () => visibleLinks.filter(link => {
-      if (currentLang === 'ja') {
-        return ['/ja/learn', '/ja/listening', '/ja/reading', '/ja/vocab', '/ja/practice'].includes(link.href);
-      }
-      if (currentLang === 'zh') {
-        return ['/zh', '/zh/grammar', '/zh/listening', '/zh/reading', '/zh/vocab'].includes(link.href);
-      }
-      return true;
-    }).slice(0, 5),
-    [visibleLinks, currentLang]
-  );
+  const primaryLinks = useMemo(() => {
+    if (currentLang === 'en') return visibleLinks;
+    const primaryHrefs = new Set([
+      `/${currentLang}/learn`,
+      `/${currentLang}/levels`,
+      `/${currentLang}/listening`,
+      `/${currentLang}/vocab`,
+    ]);
+    return visibleLinks.filter(l => primaryHrefs.has(l.href));
+  }, [visibleLinks, currentLang]);
   const exploreLinks = useMemo(
-    () => visibleLinks.filter(link => {
-      if (currentLang === 'ja' && session && link.href === '/ja/levels') return false;
-      return !primaryLinks.some(primary => primary.href === link.href);
-    }),
-    [primaryLinks, session, visibleLinks, currentLang]
+    () => visibleLinks.filter(link => !primaryLinks.some(primary => primary.href === link.href)),
+    [primaryLinks, visibleLinks]
   );
   const appearanceOptions: { id: AppearanceMode; label: string; icon: IconType }[] = [
     { id: 'light', label: 'Sáng', icon: FaSun },
@@ -117,277 +136,415 @@ export function Navbar() {
 
   useEffect(() => {
     setMobileOpen(false);
-    setExploreOpen(false);
-    setAppearanceOpen(false);
-    setProfileOpen(false);
-    setModulesOpen(false);
+    setOpenMenu(null);
   }, [pathname]);
 
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent | PointerEvent) {
-      const target = event.target as Node | null;
-
-      if (exploreMenuRef.current && target && !exploreMenuRef.current.contains(target)) {
-        setExploreOpen(false);
-      }
-      if (appearanceMenuRef.current && target && !appearanceMenuRef.current.contains(target)) {
-        setAppearanceOpen(false);
-      }
-      if (profileMenuRef.current && target && !profileMenuRef.current.contains(target)) {
-        setProfileOpen(false);
-      }
-      if (modulesMenuRef.current && target && !modulesMenuRef.current.contains(target)) {
-        setModulesOpen(false);
+    function handlePointerDown(e: PointerEvent) {
+      if (navMenuRef.current && !navMenuRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
       }
     }
-
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenMenu(null);
+    }
     document.addEventListener('pointerdown', handlePointerDown);
-
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
   return (
     <>
-      <header style={{ background: 'color-mix(in srgb, var(--bg-surface) 84%, transparent)', borderBottom: '1px solid var(--border)' }}
+      <header ref={navMenuRef}
+        style={{ background: 'color-mix(in srgb, var(--bg-surface) 90%, transparent)', borderBottom: '1px solid var(--border)' }}
         className="sticky top-0 z-50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex h-16 items-center justify-between gap-3">
+        <div className="mx-auto px-4 sm:px-6 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
+          <div className="flex h-14 items-center gap-3">
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 shrink-0 group" onClick={() => setMobileOpen(false)}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-2xl text-white text-base font-bold shadow-lg transition-transform group-hover:scale-105"
-                style={{ background: currentSubjectMeta.color, boxShadow: `0 4px 14px ${currentSubjectMeta.color}55` }}>
-                {currentLang === 'ja' ? '日' : currentLang === 'zh' ? '中' : '📊'}
-              </span>
-              <span className="flex flex-col leading-none">
-                <span className="font-bold text-sm tracking-tight" style={{ color: 'var(--text-primary)' }}>Luyện Thi</span>
-                <span className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{currentSubjectMeta.flag} {currentSubjectMeta.label}</span>
-              </span>
-            </Link>
+            {/* ── Logo + language switcher ── */}
+            <div className="flex items-center gap-1 shrink-0">
+              <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-sm font-bold shadow-sm transition-transform group-hover:scale-105"
+                  style={{ background: currentSubjectMeta.color }}>
+                  {currentLang === 'ja' ? '日' : currentLang === 'zh' ? '中' : '📊'}
+                </span>
+                <span className="hidden sm:flex flex-col leading-none gap-0.5">
+                  <span className="font-bold text-[13px] tracking-tight" style={{ color: 'var(--text-primary)' }}>LuyệnThi</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{currentSubjectMeta.flag} {currentSubjectMeta.label}</span>
+                </span>
+              </Link>
+              {/* Language switcher */}
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => toggleMenu('modules')}
+                  aria-expanded={modulesOpen}
+                  aria-haspopup="true"
+                  className="flex items-center justify-center w-5 h-5 rounded-md transition-all hover:bg-[var(--bg-muted)] ml-0.5"
+                  style={{ color: modulesOpen ? 'var(--primary)' : 'var(--text-muted)' }}>
+                  <FaChevronDown size={9} style={{ transform: modulesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                </button>
+                {modulesOpen && (
+                  <div className="absolute top-full mt-2 left-0 w-64 rounded-2xl border p-2 shadow-xl z-50"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn môn học</div>
+                    {SUBJECTS.map(sub => (
+                      <Link key={sub.id} href={sub.href}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={{ color: 'var(--text-secondary)' }}>
+                        <span className="text-lg">{sub.flag}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{sub.label}</div>
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{sub.desc}</div>
+                        </div>
+                        {currentLang === sub.id && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sub.color }} />}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-            {/* Desktop navigation */}
-            <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
-              <nav
-                className="flex items-center gap-1 rounded-2xl border p-1.5 shadow-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-
-                {/* Module switcher */}
-                <div ref={modulesMenuRef} className="relative">
-                  <button
-                    onClick={() => { setModulesOpen(o => !o); setExploreOpen(false); setAppearanceOpen(false); }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-                    style={modulesOpen
-                      ? { background: 'var(--bg-muted)', color: 'var(--text-primary)' }
-                      : { color: 'var(--text-secondary)' }}>
-                    <span>{currentSubjectMeta.flag}</span>
-                    <span className="hidden lg:inline">{currentSubjectMeta.label}</span>
-                    <FaChevronDown size={10} style={{ transform: modulesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                  </button>
-                  {modulesOpen && (
-                    <div className="absolute top-[calc(100%+10px)] left-0 w-64 rounded-2xl border p-2 shadow-2xl z-50"
-                      style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                      <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn môn học</div>
-                      {SUBJECTS.map(sub => (
-                        <Link key={sub.id} href={sub.href}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                          style={currentLang === sub.id
-                            ? { background: 'var(--bg-muted)', color: 'var(--text-primary)', fontWeight: 700 }
-                            : { color: 'var(--text-secondary)' }}>
-                          <span className="text-base">{sub.flag}</span>
-                          <div>
-                            <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{sub.label}</div>
-                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              {sub.desc}
-                            </div>
-                          </div>
-                          {currentLang === sub.id && <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full font-bold text-white" style={{ background: sub.color }}>▶</span>}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="h-5 w-px mx-1 shrink-0" style={{ background: 'var(--border)' }} />
-
+            {/* ── Desktop navigation ── */}
+            <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
               {primaryLinks.map(link => {
                 const active = isActive(link.href);
+                const isLearnLink     = link.href === `/${currentLang}/learn`;
+                const isListeningLink = link.href === `/${currentLang}/listening`;
+                const isVocabLink     = link.href === `/${currentLang}/vocab`;
+                const isExamLink      = link.href === `/${currentLang}/levels`;
+                const levels = LANG_LEVELS[currentLang];
+
+                const activeStyle   = { background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--primary)', fontWeight: 600 } as const;
+                const inactiveStyle = { color: 'var(--text-secondary)' } as const;
+
+                if (isVocabLink) {
+                  const vocabBase = `/${currentLang}/vocab`;
+                  const vocabActive = pathname.startsWith(vocabBase);
+                  const VOCAB_SUBMENU = [
+                    { href: `${vocabBase}?tab=reference`, label: 'Theo cấp độ', icon: FaBookOpen },
+                    { href: `${vocabBase}?tab=topics`,    label: 'Theo chủ đề',  icon: FaLayerGroup },
+                    { href: `${vocabBase}?tab=mine`,      label: 'Của tôi',       icon: FaBookmark },
+                  ];
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('vocab')}
+                        aria-expanded={vocabOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={vocabOpen || vocabActive ? activeStyle : inactiveStyle}>
+                        <link.icon size={13} />
+                        <span>Từ vựng</span>
+                        <FaChevronDown size={9} style={{ transform: vocabOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {vocabOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          {VOCAB_SUBMENU.map(item => (
+                            <Link key={item.href} href={item.href}
+                              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                              style={{ color: 'var(--text-secondary)' }}>
+                              <span className="flex items-center gap-2.5">
+                                <item.icon size={13} />
+                                <span>{item.label}</span>
+                              </span>
+                              <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (isListeningLink) {
+                  const listeningBase = `/${currentLang}/listening`;
+                  const listeningActive = pathname.startsWith(listeningBase);
+                  const LISTENING_SUBMENU = [
+                    { href: listeningBase,                    label: 'Nghe theo giáo trình', icon: FaGraduationCap, mode: '' },
+                    { href: `${listeningBase}?mode=dialogue`, label: 'Nghe hội thoại',       icon: FaComments,      mode: 'dialogue' },
+                    { href: `${listeningBase}?mode=random`,   label: 'Nghe ngẫu nhiên',      icon: FaShuffle,       mode: 'random' },
+                  ];
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('listening')}
+                        aria-expanded={listeningOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={listeningOpen || listeningActive ? activeStyle : inactiveStyle}>
+                        <FaHeadphones size={13} />
+                        <span>Luyện nghe</span>
+                        <FaChevronDown size={9} style={{ transform: listeningOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {listeningOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          {LISTENING_SUBMENU.map(item => {
+                            const itemActive = item.mode === '' ? pathname === listeningBase : false;
+                            return (
+                              <Link key={item.href} href={item.href}
+                                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                                style={itemActive
+                                  ? { color: 'var(--primary)', fontWeight: 600 }
+                                  : { color: 'var(--text-secondary)' }}>
+                                <span className="flex items-center gap-2.5">
+                                  <item.icon size={13} />
+                                  <span>{item.label}</span>
+                                </span>
+                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (isExamLink && levels) {
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('exam')}
+                        aria-expanded={examOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={examOpen || pathname.startsWith(`/${currentLang}/levels`) ? activeStyle : inactiveStyle}>
+                        <link.icon size={13} />
+                        <span>Luyện thi</span>
+                        <FaChevronDown size={9} style={{ transform: examOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {examOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn cấp độ</div>
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/levels/${level.code}`;
+                            const levelActive = isActive(levelHref);
+                            return (
+                              <Link key={level.code} href={levelHref}
+                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                                style={levelActive
+                                  ? { color: 'var(--primary)', fontWeight: 600 }
+                                  : { color: 'var(--text-secondary)' }}>
+                                <span className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg text-white min-w-[36px] text-center" style={{ background: level.color }}>{level.label}</span>
+                                  <span>{level.desc}</span>
+                                </span>
+                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                              </Link>
+                            );
+                          })}
+                          <Link href={`/${currentLang}/levels`}
+                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                            Xem tổng quan
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (isLearnLink && levels) {
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('learn')}
+                        aria-expanded={learnOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={learnOpen || pathname.startsWith(`/${currentLang}/learn/`) ? activeStyle : inactiveStyle}>
+                        <link.icon size={13} />
+                        <span>{link.label}</span>
+                        <FaChevronDown size={9} style={{ transform: learnOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {learnOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn cấp độ</div>
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/learn/${level.code}`;
+                            const levelActive = isActive(levelHref);
+                            return (
+                              <Link key={level.code} href={levelHref}
+                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                                style={levelActive
+                                  ? { color: 'var(--primary)', fontWeight: 600 }
+                                  : { color: 'var(--text-secondary)' }}>
+                                <span className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg text-white min-w-[36px] text-center" style={{ background: level.color }}>{level.label}</span>
+                                  <span>{level.desc}</span>
+                                </span>
+                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                              </Link>
+                            );
+                          })}
+                          <Link href={`/${currentLang}/learn`}
+                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                            Xem tổng quan
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
                 return (
                   <Link key={link.href} href={link.href}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-150"
-                    style={active
-                      ? { background: 'var(--primary)', color: '#fff' }
-                      : { color: 'var(--text-secondary)' }}>
-                    <link.icon size={14} />
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                    style={active ? activeStyle : inactiveStyle}>
+                    <link.icon size={13} />
                     <span>{link.label}</span>
                   </Link>
                 );
               })}
-                <div ref={exploreMenuRef} className="relative ml-1">
+
+              {exploreLinks.length > 0 && (
+                <div className="relative">
                   <button
-                    onClick={() => {
-                      setExploreOpen(open => !open);
-                      setAppearanceOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all"
-                    style={isActive(`/${currentLang}/reading`) || isActive(`/${currentLang}/practice`) || isActive(`/${currentLang}/vocab`) || (!session && isActive(`/${currentLang}/levels`)) || exploreOpen
-                      ? { background: 'var(--bg-muted)', color: 'var(--text-primary)' }
+                    onClick={() => toggleMenu('explore')}
+                    aria-expanded={exploreOpen}
+                    aria-haspopup="true"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                    style={exploreOpen || exploreLinks.some(l => isActive(l.href))
+                      ? { color: 'var(--text-primary)', fontWeight: 600 }
                       : { color: 'var(--text-secondary)' }}>
-                    <FaCompass size={14} />
-                    <span>Khám phá</span>
-                    <FaChevronDown size={11} style={{ transform: exploreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                    <FaCompass size={13} />
+                    <span>Thêm</span>
+                    <FaChevronDown size={9} style={{ transform: exploreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
                   </button>
                   {exploreOpen && (
-                    <div className="absolute top-[calc(100%+10px)] left-0 w-72 rounded-2xl border p-2 shadow-2xl"
+                    <div className="absolute top-full mt-2 right-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
                       style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                      <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>
-                        Điều hướng nhanh
-                      </div>
                       {exploreLinks.map(link => {
                         const active = isActive(link.href);
                         return (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="flex items-center justify-between gap-3 px-3 py-3 rounded-xl transition-all"
+                          <Link key={link.href} href={link.href}
+                            className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
                             style={active
-                              ? { background: 'var(--primary-light)', color: 'var(--primary)' }
+                              ? { color: 'var(--primary)', fontWeight: 600 }
                               : { color: 'var(--text-secondary)' }}>
-                            <span className="flex items-center gap-3">
-                              <link.icon size={14} />
-                              <span className="text-sm font-medium">{link.label}</span>
+                            <span className="flex items-center gap-2.5">
+                              <link.icon size={13} />
+                              <span>{link.label}</span>
                             </span>
-                            <FaArrowRight size={11} style={{ opacity: 0.6 }} />
+                            <FaArrowRight size={10} style={{ opacity: 0.4 }} />
                           </Link>
                         );
                       })}
                     </div>
                   )}
                 </div>
-              </nav>
-            </div>
+              )}
+            </nav>
 
-            {/* Right side */}
-            <div className="flex items-center gap-2 shrink-0">
-              <div ref={appearanceMenuRef} className="hidden md:block relative">
+            {/* ── Right controls ── */}
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto md:ml-0">
+              {/* Theme toggle */}
+              <div className="hidden md:block relative">
                 <button
-                  onClick={() => {
-                    setAppearanceOpen(open => !open);
-                    setExploreOpen(false);
-                  }}
-                  className="flex items-center justify-center w-10 h-10 rounded-2xl border transition-all"
-                  style={{
-                    borderColor: appearanceOpen ? 'var(--primary)' : 'var(--border)',
-                    background: appearanceOpen ? 'var(--primary-light)' : 'var(--bg-surface)',
-                    color: appearanceOpen ? 'var(--primary)' : 'var(--text-secondary)',
-                  }}
-                  aria-label="Đổi chế độ giao diện">
+                  onClick={() => toggleMenu('appearance')}
+                  aria-expanded={appearanceOpen}
+                  aria-haspopup="true"
+                  className="flex items-center justify-center w-9 h-9 rounded-xl transition-all hover:bg-[var(--bg-muted)]"
+                  style={{ color: appearanceOpen ? 'var(--primary)' : 'var(--text-muted)' }}
+                  aria-label="Đổi giao diện">
                   {currentAppearanceIcon({ size: 15 })}
                 </button>
                 {appearanceOpen && (
-                  <div className="absolute top-[calc(100%+10px)] right-0 w-48 rounded-2xl border p-2 shadow-2xl"
+                  <div className="absolute top-full mt-2 right-0 w-44 rounded-2xl border p-2 shadow-xl z-50"
                     style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                    <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>
-                      Giao diện
-                    </div>
                     {appearanceOptions.map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => setAppearance(option.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                      <button key={option.id} onClick={() => setAppearance(option.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
                         style={appearance === option.id
-                          ? { background: 'var(--primary-light)', color: 'var(--primary)' }
+                          ? { color: 'var(--primary)', fontWeight: 600 }
                           : { color: 'var(--text-secondary)' }}>
                         <option.icon size={14} />
                         <span>{option.label}</span>
+                        {appearance === option.id && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: 'var(--primary)' }} />}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
+
               {session ? (
-                <>
-                  {/* <Link href="/learn"
-                    className="hidden xl:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-semibold transition-all"
-                    style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                    <FaPlay size={10} /> Tiếp tục học
-                  </Link> */}
-                  <div ref={profileMenuRef} className="hidden lg:block relative">
-                    <button
-                      onClick={() => {
-                        setProfileOpen(open => !open);
-                        setAppearanceOpen(false);
-                        setExploreOpen(false);
-                      }}
-                      className="flex items-center gap-2 text-sm rounded-2xl border px-2.5 py-1.5 transition-all"
-                      style={{
-                        color: profileOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        borderColor: profileOpen ? 'var(--primary)' : 'var(--border)',
-                        background: profileOpen ? 'var(--primary-light)' : 'var(--bg-surface)',
-                      }}>
-                      <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                        style={{ background: 'var(--primary)' }}>
-                        {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
-                      </span>
-                      <span className="hidden 2xl:inline max-w-[100px] truncate">{session.user?.name}</span>
-                      <FaChevronDown size={11} style={{ transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                    </button>
-                    {profileOpen && (
-                      <div className="absolute top-[calc(100%+10px)] right-0 w-60 rounded-2xl border p-2 shadow-2xl"
-                        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                        <div className="px-3 py-2 border-b mb-2" style={{ borderColor: 'var(--border)' }}>
-                          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</div>
-                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{session.user?.email}</div>
+                <div className="relative hidden md:block">
+                  <button
+                    onClick={() => toggleMenu('profile')}
+                    aria-expanded={profileOpen}
+                    aria-haspopup="true"
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all hover:bg-[var(--bg-muted)]"
+                    style={{ color: profileOpen ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ background: 'var(--primary)' }}>
+                      {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
+                    </span>
+                    <span className="hidden lg:block text-sm font-medium max-w-[90px] truncate" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</span>
+                    <FaChevronDown size={10} style={{ transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                  </button>
+                  {profileOpen && (
+                    <div className="absolute top-full mt-2 right-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
+                      style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                      <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1 border-b" style={{ borderColor: 'var(--border)' }}>
+                        <span className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                          style={{ background: 'var(--primary)' }}>
+                          {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</div>
+                          <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{session.user?.email}</div>
                         </div>
-                        <Link
-                          href="/dashboard"
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                          style={isActive('/dashboard')
-                            ? { background: 'var(--primary-light)', color: 'var(--primary)' }
-                            : { color: 'var(--text-secondary)' }}>
-                          <FaChartBar size={14} />
-                          <span>Tiến trình</span>
+                      </div>
+                      <Link href="/dashboard"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={isActive('/dashboard') ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}>
+                        <FaChartBar size={13} />
+                        <span>Tiến trình</span>
+                      </Link>
+                      {profileLinks.map(link => (
+                        <Link key={link.href} href={link.href}
+                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                          style={isActive(link.href) ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--text-secondary)' }}>
+                          <link.icon size={13} />
+                          <span>{link.label}</span>
                         </Link>
-                        {profileLinks.map(link => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                            style={isActive(link.href)
-                              ? { background: 'var(--primary-light)', color: 'var(--primary)' }
-                              : { color: 'var(--text-secondary)' }}>
-                            <link.icon size={14} />
-                            <span>{link.label}</span>
-                          </Link>
-                        ))}
+                      ))}
+                      <div className="mt-1.5 pt-1.5 border-t" style={{ borderColor: 'var(--border)' }}>
                         <button onClick={() => signOut()}
-                          className="w-full mt-1 btn-secondary text-xs py-2 px-3.5 rounded-2xl justify-center">
+                          className="w-full flex items-center justify-center px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                          style={{ color: 'var(--text-muted)' }}>
                           Đăng xuất
                         </button>
                       </div>
-                    )}
-                  </div>
-                </>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
-                  <Link href="/login" className="hidden md:inline-flex btn-ghost text-sm py-2 px-3 rounded-2xl">Đăng nhập</Link>
-                  <Link href="/register"
-                    className="hidden md:inline-flex text-sm py-2 px-4 rounded-2xl font-bold text-white transition-all hover:opacity-90"
-                    style={{ background: 'var(--primary)', boxShadow: '0 2px 10px rgba(61,58,140,.35)' }}>
+                  <Link href="/auth/login"
+                    className="hidden md:inline-flex items-center px-3 py-1.5 rounded-xl text-sm font-medium transition-all hover:bg-[var(--bg-muted)]"
+                    style={{ color: 'var(--text-secondary)' }}>
+                    Đăng nhập
+                  </Link>
+                  <Link href="/auth/register"
+                    className="hidden md:inline-flex items-center px-4 py-1.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                    style={{ background: 'var(--primary)' }}>
                     Đăng ký
                   </Link>
                 </>
               )}
 
-              {/* Hamburger — mobile only */}
+              {/* Hamburger */}
               <button
                 onClick={() => setMobileOpen(o => !o)}
-                className="md:hidden flex items-center justify-center w-10 h-10 rounded-2xl transition-all border"
+                className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all"
                 style={{
-                  color: 'var(--text-primary)',
-                  background: mobileOpen ? 'var(--primary-light)' : 'var(--bg-surface)',
-                  borderColor: mobileOpen ? 'var(--primary)' : 'var(--border)',
+                  color: mobileOpen ? 'var(--primary)' : 'var(--text-primary)',
+                  background: mobileOpen ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
                 }}
                 aria-label="Menu">
                 {mobileOpen ? <FaXmark size={16} /> : <FaBars size={16} />}
@@ -399,19 +556,19 @@ export function Navbar() {
         {/* Mobile dropdown */}
         {mobileOpen && (
           <div className="md:hidden border-t" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
-              {/* Mobile module switcher */}
-              <div className="rounded-2xl border p-2" style={{ borderColor: 'var(--border)' }}>
-                <div className="text-xs font-semibold uppercase tracking-[0.14em] mb-2 px-1" style={{ color: 'var(--text-muted)' }}>Chọn môn học</div>
-                <div className="grid grid-cols-3 gap-1.5">
+            <div className="mx-auto px-4 py-4 flex flex-col gap-4 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
+              {/* Module switcher */}
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Môn học</div>
+                <div className="grid grid-cols-3 gap-2">
                   {SUBJECTS.map(sub => (
                     <Link key={sub.id} href={sub.href} onClick={() => setMobileOpen(false)}
-                      className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-all text-center"
+                      className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all text-center"
                       style={currentLang === sub.id
                         ? { background: sub.color, color: '#fff' }
                         : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                      <span className="text-base">{sub.flag}</span>
-                      <span>{sub.id}</span>
+                      <span className="text-xl">{sub.flag}</span>
+                      <span className="text-[11px] leading-tight">{sub.label}</span>
                     </Link>
                   ))}
                 </div>
@@ -420,60 +577,151 @@ export function Navbar() {
               <div className="grid grid-cols-2 gap-2">
                 {primaryLinks.map(link => {
                   const active = isActive(link.href);
+                  const isLearnLink     = link.href === `/${currentLang}/learn`;
+                  const isListeningLink = link.href === `/${currentLang}/listening`;
+                  const isVocabLink     = link.href === `/${currentLang}/vocab`;
+                  const isExamLink      = link.href === `/${currentLang}/levels`;
+                  const levels = LANG_LEVELS[currentLang];
+                  if (isVocabLink) {
+                    const vocabBase = `/${currentLang}/vocab`;
+                    const VOCAB_SUBMENU = [
+                      { href: `${vocabBase}?tab=reference`, label: 'Theo cấp độ', icon: FaBookOpen },
+                      { href: `${vocabBase}?tab=topics`,    label: 'Theo chủ đề',  icon: FaLayerGroup },
+                      { href: `${vocabBase}?tab=mine`,      label: 'Của tôi',       icon: FaBookmark },
+                    ];
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Từ vựng</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {VOCAB_SUBMENU.map(item => (
+                            <Link key={item.href} href={item.href}
+                              onClick={() => setMobileOpen(false)}
+                              className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all text-center"
+                              style={{ background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
+                              <item.icon size={15} />
+                              <span className="leading-tight">{item.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isListeningLink) {
+                    const listeningBase = `/${currentLang}/listening`;
+                    const LISTENING_SUBMENU = [
+                      { href: listeningBase,                    label: 'Giáo trình', icon: FaGraduationCap },
+                      { href: `${listeningBase}?mode=dialogue`, label: 'Hội thoại',  icon: FaComments },
+                      { href: `${listeningBase}?mode=random`,   label: 'Ngẫu nhiên', icon: FaShuffle },
+                    ];
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Luyện nghe</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {LISTENING_SUBMENU.map(item => (
+                            <Link key={item.href} href={item.href}
+                              onClick={() => setMobileOpen(false)}
+                              className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-all text-center"
+                              style={{ background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
+                              <item.icon size={15} />
+                              <span className="leading-tight">{item.label.replace('Nghe ', '')}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isExamLink && levels) {
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Luyện thi</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/levels/${level.code}`;
+                            const levelActive = isActive(levelHref);
+                            return (
+                              <Link key={level.code} href={levelHref} onClick={() => setMobileOpen(false)}
+                                className="flex flex-col items-center gap-0.5 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
+                                style={levelActive
+                                  ? { background: level.color, color: '#fff' }
+                                  : { background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
+                                <span>{level.label}</span>
+                                <span className="font-normal text-[10px] opacity-70">{level.desc}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isLearnLink && levels) {
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Cấp độ</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/learn/${level.code}`;
+                            const levelActive = isActive(levelHref);
+                            return (
+                              <Link key={level.code} href={levelHref} onClick={() => setMobileOpen(false)}
+                                className="flex flex-col items-center gap-0.5 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
+                                style={levelActive
+                                  ? { background: level.color, color: '#fff' }
+                                  : { background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
+                                <span>{level.label}</span>
+                                <span className="font-normal text-[10px] opacity-70">{level.desc}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
-                    <Link key={link.href} href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold transition-all"
+                    <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-medium transition-all"
                       style={active
-                        ? { background: 'var(--primary)', color: '#fff' }
+                        ? { background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--primary)', fontWeight: 600 }
                         : { background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
-                      <link.icon size={15} />
+                      <link.icon size={14} />
                       {link.label}
                     </Link>
                   );
                 })}
               </div>
 
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.14em] mb-2 px-1" style={{ color: 'var(--text-muted)' }}>
-                  Khám phá
+              {exploreLinks.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Khám phá</div>
+                  <div className="flex flex-col gap-0.5">
+                    {exploreLinks.map(link => {
+                      const active = isActive(link.href);
+                      return (
+                        <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                          style={active ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--text-primary)' }}>
+                          <span className="flex items-center gap-3">
+                            <link.icon size={14} />
+                            {link.label}
+                          </span>
+                          <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1">
-              {exploreLinks.map(link => {
-                const active = isActive(link.href);
-                return (
-                  <Link key={link.href} href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-between gap-3 px-3 py-3 rounded-2xl text-sm font-medium transition-all"
-                    style={active
-                      ? { background: 'var(--primary-light)', color: 'var(--primary)' }
-                      : { color: 'var(--text-primary)' }}>
-                    <span className="flex items-center gap-3">
-                      <link.icon size={15} />
-                      {link.label}
-                    </span>
-                    <FaArrowRight size={11} style={{ opacity: 0.55 }} />
-                  </Link>
-                );
-              })}
-                </div>
-              </div>
+              )}
 
               <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-                <div className="mb-3 px-1">
-                  <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
-                    Giao diện
-                  </div>
+                <div className="mb-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Giao diện</div>
                   <div className="grid grid-cols-3 gap-2">
                     {appearanceOptions.map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => setAppearance(option.id)}
-                        className="flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-xl text-xs font-semibold transition-all"
+                      <button key={option.id} onClick={() => setAppearance(option.id)}
+                        className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-xs font-semibold transition-all"
                         style={appearance === option.id
                           ? { background: 'var(--primary)', color: '#fff' }
                           : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                        <option.icon size={13} />
+                        <option.icon size={14} />
                         <span>{option.label}</span>
                       </button>
                     ))}
@@ -481,49 +729,47 @@ export function Navbar() {
                 </div>
                 {session ? (
                   <div className="rounded-2xl border px-3 py-3" style={{ borderColor: 'var(--border)' }}>
-                    <div className="flex items-center gap-2 text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <span className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
                         style={{ background: 'var(--primary)' }}>
                         {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
                       </span>
                       <div className="min-w-0">
-                        <div className="truncate max-w-[180px]" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</div>
-                        <div className="text-xs truncate max-w-[180px]" style={{ color: 'var(--text-muted)' }}>{session.user?.email}</div>
+                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</div>
+                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{session.user?.email}</div>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 mb-3">
+                    <div className="flex flex-col gap-0.5 mb-2">
                       <Link href="/dashboard" onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                        style={isActive('/dashboard')
-                          ? { background: 'var(--primary-light)', color: 'var(--primary)' }
-                          : { color: 'var(--text-primary)' }}>
-                        <FaUser size={15} />
+                        className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={isActive('/dashboard') ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--text-primary)' }}>
+                        <FaUser size={13} />
                         Hồ sơ & tiến trình
                       </Link>
                       {profileLinks.map(link => (
                         <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                          style={isActive(link.href)
-                            ? { background: 'var(--primary-light)', color: 'var(--primary)' }
-                            : { color: 'var(--text-primary)' }}>
-                          <link.icon size={15} />
+                          className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                          style={isActive(link.href) ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--text-primary)' }}>
+                          <link.icon size={13} />
                           {link.label}
                         </Link>
                       ))}
                     </div>
                     <button onClick={() => { signOut(); setMobileOpen(false); }}
-                      className="btn-secondary text-xs py-1.5 px-3 shrink-0 w-full justify-center">
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                      style={{ color: 'var(--text-muted)' }}>
                       Đăng xuất
                     </button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <Link href="/login" onClick={() => setMobileOpen(false)}
-                      className="flex-1 text-center btn-ghost text-sm py-2.5 rounded-2xl">
+                    <Link href="/auth/login" onClick={() => setMobileOpen(false)}
+                      className="flex-1 text-center py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-[var(--bg-muted)]"
+                      style={{ color: 'var(--text-secondary)' }}>
                       Đăng nhập
                     </Link>
-                    <Link href="/register" onClick={() => setMobileOpen(false)}
-                      className="flex-1 text-center text-sm py-2.5 rounded-2xl font-bold text-white transition-all"
+                    <Link href="/auth/register" onClick={() => setMobileOpen(false)}
+                      className="flex-1 text-center text-sm py-2.5 rounded-xl font-semibold text-white transition-all hover:opacity-90"
                       style={{ background: 'var(--primary)' }}>
                       Đăng ký
                     </Link>

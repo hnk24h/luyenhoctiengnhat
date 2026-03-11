@@ -272,7 +272,7 @@ export function ExamDeadlinePlanner({
                     <FaFloppyDisk size={12} /> {isPending ? 'Đang lưu...' : 'Lưu kế hoạch'}
                   </button>
                 ) : (
-                  <Link href="/login" className="btn-secondary inline-flex items-center gap-2 px-5 py-3 text-sm">
+                  <Link href="/auth/login" className="btn-secondary inline-flex items-center gap-2 px-5 py-3 text-sm">
                     <FaFloppyDisk size={12} /> Đăng nhập để lưu kế hoạch
                   </Link>
                 )}

@@ -24,22 +24,15 @@ const nextConfig = {
       // PMP / English (old /pmp/* → /en/pmp/*)
       { source: '/pmp',               destination: '/en/pmp',       permanent: true },
       { source: '/pmp/:path*',        destination: '/en/pmp/:path*',permanent: true },
+      // Auth pages moved to /auth/*
+      { source: '/login',             destination: '/auth/login',   permanent: true },
+      { source: '/register',          destination: '/auth/register',permanent: true },
     ];
   },
 
   // ── Internal rewrites: new ISO paths → legacy page files (browser URL unchanged) ──
   async rewrites() {
     return [
-      // /zh/* → serve from legacy /chinese/* pages (until unified)
-      { source: '/zh',                destination: '/chinese' },
-      { source: '/zh/vocab',          destination: '/chinese/vocab' },
-      { source: '/zh/vocab/:path*',   destination: '/chinese/vocab/:path*' },
-      { source: '/zh/grammar',        destination: '/chinese/grammar' },
-      { source: '/zh/grammar/:path*', destination: '/chinese/grammar/:path*' },
-      { source: '/zh/listening',      destination: '/chinese/listening' },
-      { source: '/zh/listening/:p*',  destination: '/chinese/listening/:p*' },
-      { source: '/zh/practice',       destination: '/chinese/flashcards' },
-      { source: '/zh/practice/:p*',   destination: '/chinese/flashcards/:p*' },
       // /en/pmp/* → serve from /pmp/* pages
       { source: '/en/pmp',            destination: '/pmp' },
       { source: '/en/pmp/:path*',     destination: '/pmp/:path*' },

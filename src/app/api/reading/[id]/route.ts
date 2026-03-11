@@ -5,8 +5,31 @@ import { prisma } from '@/lib/db';
 
 interface Ctx { params: { id: string } }
 
-// GET /api/reading/[id] — public single passage
-export async function GET(_: NextRequest, { params }: Ctx) {
+// GET /api/reading/[id]?lang=ja|zh — public single passage
+export async function GET(req: NextRequest, { params }: Ctx) {
+  const lang = req.nextUrl.searchParams.get('lang') ?? 'ja';
+
+  // ── Chinese passage branch ───────────────────────────────────────────────
+  if (lang === 'zh') {
+    const passage = await prisma.chinesePassage.findUnique({ where: { id: params.id } });
+    if (!passage) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({
+      id: passage.id,
+      title: passage.title,
+      titleVi: passage.titleVi ?? null,
+      content: passage.content,
+      summary: null,
+      level: passage.level,
+      type: 'short',
+      source: null,
+      sourceUrl: null,
+      tags: passage.topic ? JSON.stringify([passage.topic]) : null,
+      createdAt: passage.createdAt.toISOString(),
+      pinyin: passage.pinyin ?? null,
+      translation: passage.translation ?? null,
+    });
+  }
+
   const passage = await prisma.readingPassage.findUnique({ where: { id: params.id } });
   if (!passage || !passage.published) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(passage);

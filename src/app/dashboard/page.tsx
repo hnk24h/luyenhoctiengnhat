@@ -222,7 +222,7 @@ function getWeakSkill(progress: ExamProgressItem[]): WeakSkillSummary | null {
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-  if (!session) redirect('/login');
+  if (!session) redirect('/auth/login');
 
   const userId = (session.user as any).id as string;
   const now = new Date();

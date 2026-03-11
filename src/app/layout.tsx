@@ -83,10 +83,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${inter.variable}`} suppressHydrationWarning>
-      <body className={notoSansJP.className}>
+      <body className={notoSansJP.className} style={{ background: 'var(--bg-base)', color: 'var(--text-base)' }}>
         <Providers>
           <Navbar />
-          <main className="min-h-screen" style={{ background: 'var(--bg-base)' }}>{children}</main>
+          <main className="min-h-screen pt-2" style={{ background: 'var(--bg-base)' }}>
+            <div className="mx-auto w-full" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
+              {children}
+            </div>
+          </main>
           <Footer />
         </Providers>
       </body>

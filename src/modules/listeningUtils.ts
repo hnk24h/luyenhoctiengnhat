@@ -9,6 +9,7 @@ type ListeningLessonRecord = LearningLesson & {
 
 interface ListeningContentPayload {
   mondai?: string;
+  titleVi?: string;
   summary?: string;
   situation?: string;
   durationSec?: number;
@@ -57,8 +58,10 @@ function normalizeTranscript(raw: unknown): ListeningSegment[] {
         ? (segment as { text: string }).text.trim()
         : '';
 
+      const raw = segment as Record<string, unknown>;
+      const pinyin = typeof raw.pinyin === 'string' ? raw.pinyin.trim() || undefined : undefined;
       if (!speaker || !text) return null;
-      return { speaker, text };
+      return { speaker, text, ...(pinyin ? { pinyin } : {}) };
     })
     .filter((segment): segment is ListeningSegment => Boolean(segment));
 }
@@ -82,6 +85,7 @@ export function parseListeningContent(content: string | null | undefined): Liste
         : undefined,
       answer: typeof parsed.answer === 'string' ? parsed.answer.trim() : undefined,
       explanation: typeof parsed.explanation === 'string' ? parsed.explanation.trim() : undefined,
+      titleVi: typeof parsed.titleVi === 'string' ? parsed.titleVi.trim() || undefined : undefined,
       audioUrl: typeof parsed.audioUrl === 'string' ? parsed.audioUrl.trim() || null : null,
       transcript: normalizeTranscript(parsed.transcript),
     };
@@ -157,6 +161,49 @@ export function validateListeningImportItem(input: unknown): { ok: true; item: L
       audioUrl: typeof payload.audioUrl === 'string' ? payload.audioUrl.trim() || null : null,
       transcript,
     },
+  };
+}
+
+// ─── Unified type for shared listening page (all languages) ──────────────────
+export interface UnifiedListeningPractice {
+  id: string;
+  lang: string;
+  level: string;
+  category: string;      // mondai (JLPT) or type (HSK) — used for filtering
+  title: string;
+  titleVi: string | null;
+  summary: string;
+  situation: string;
+  durationSec: number;
+  focus: string;
+  question: string;
+  options: string[];
+  answer: string;
+  explanation: string;
+  audioUrl: string | null;
+  segments: ListeningSegment[];
+}
+
+export function mapLessonToUnified(record: ListeningLessonRecord, lang: string): UnifiedListeningPractice | null {
+  const parsed = parseListeningContent(record.content);
+  if (!parsed?.question || !parsed.answer || !parsed.options?.length || !parsed.transcript?.length) return null;
+  return {
+    id: record.id,
+    lang,
+    level: record.category.level.code,
+    category: parsed.mondai ?? 'Bài nghe',
+    title: record.title,
+    titleVi: parsed.titleVi ?? null,
+    summary: parsed.summary || record.description || '',
+    situation: parsed.situation || '',
+    durationSec: parsed.durationSec ?? estimateDuration(parsed.transcript),
+    focus: parsed.focus || '',
+    question: parsed.question,
+    options: parsed.options,
+    answer: parsed.answer,
+    explanation: parsed.explanation || '',
+    audioUrl: parsed.audioUrl ?? null,
+    segments: parsed.transcript,
   };
 }
 

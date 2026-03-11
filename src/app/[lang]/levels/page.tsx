@@ -16,30 +16,59 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
-import { SKILLS } from '@/lib/utils';
 import { ExamDeadlinePlanner } from '@/components/ExamDeadlinePlanner';
 
-const LEVEL_INFO: Record<string, { desc: string; color: string; badge: string }> = {
-  N5: { desc: 'Sơ cấp', color: 'border-green-400 bg-green-50', badge: 'bg-green-100 text-green-700' },
-  N4: { desc: 'Sơ trung cấp', color: 'border-blue-400 bg-blue-50', badge: 'bg-blue-100 text-blue-700' },
-  N3: { desc: 'Trung cấp', color: 'border-yellow-400 bg-yellow-50', badge: 'bg-yellow-100 text-yellow-700' },
-  N2: { desc: 'Trung cao cấp', color: 'border-orange-400 bg-orange-50', badge: 'bg-orange-100 text-orange-700' },
-  N1: { desc: 'Cao cấp', color: 'border-red-400 bg-red-50', badge: 'bg-red-100 text-red-700' },
+const LEVEL_META: Record<string, {
+  desc: string; color: string; light: string;
+  vocab: string; kanji: string; tip: string;
+}> = {
+  N5: { desc: 'Sơ cấp',        color: '#16A34A', light: '#F0FDF4', vocab: '~800 từ',   kanji: '100 Kanji',  tip: 'Phù hợp người mới bắt đầu' },
+  N4: { desc: 'Sơ trung cấp',  color: '#2563EB', light: '#EFF6FF', vocab: '~1500 từ',  kanji: '300 Kanji',  tip: 'Giao tiếp cơ bản hàng ngày' },
+  N3: { desc: 'Trung cấp',     color: '#D97706', light: '#FFFBEB', vocab: '~3750 từ',  kanji: '650 Kanji',  tip: 'Đọc báo, xem phim đơn giản' },
+  N2: { desc: 'Trung cao cấp', color: '#EA580C', light: '#FFF7ED', vocab: '~6000 từ',  kanji: '1000 Kanji', tip: 'Yêu cầu nhiều doanh nghiệp Nhật' },
+  N1: { desc: 'Cao cấp',       color: '#DC2626', light: '#FFF1F2', vocab: '~10000 từ', kanji: '2000 Kanji', tip: 'Trình độ gần như người bản xứ' },
 };
 
-async function getLevels() {
+const SKILL_META: Record<string, { label: string; icon: string; color: string }> = {
+  nghe: { label: 'Nghe',    icon: '🎧', color: '#2563EB' },
+  doc:  { label: 'Đọc',     icon: '📖', color: '#D97706' },
+  viet: { label: 'Ngữ pháp', icon: '✏️', color: '#7C3AED' },
+  noi:  { label: 'Từ vựng', icon: '💬', color: '#059669' },
+};
+
+export default async function LevelsPage({ params }: { params: { lang: string } }) {
+  const session = await getServerSession(authOptions);
+  const userId  = (session?.user as { id?: string } | undefined)?.id;
+
   const levels = await prisma.level.findMany({
     orderBy: { order: 'asc' },
-    include: { _count: { select: { examSets: true } } },
+    include: {
+      _count: { select: { examSets: true } },
+      examSets: { select: { skill: true } },
+    },
   });
-  return levels;
-}
 
-export default async function LevelsPage() {
-  const [levels, session] = await Promise.all([
-    getLevels(),
-    getServerSession(authOptions),
-  ]);
+  // User progress: count of completed exam sets per level
+  const progressByLevel: Record<string, { done: number; total: number; bestAvg: number | null }> = {};
+  if (userId && levels.length) {
+    const progressRows = await prisma.userProgress.findMany({
+      where: {
+        userId,
+        examSet: { levelId: { in: levels.map(l => l.id) } },
+      },
+      select: { attempts: true, bestScore: true, examSet: { select: { levelId: true } } },
+    });
+    for (const l of levels) {
+      const rows = progressRows.filter(r => r.examSet.levelId === l.id);
+      const done = rows.filter(r => r.attempts > 0).length;
+      const scored = rows.filter(r => r.bestScore != null);
+      progressByLevel[l.id] = {
+        done,
+        total: l._count.examSets,
+        bestAvg: scored.length ? scored.reduce((s, r) => s + r.bestScore!, 0) / scored.length : null,
+      };
+    }
+  }
 
   const savedPlan = session?.user?.email
     ? await prisma.userExamPlan.findFirst({
@@ -57,54 +86,159 @@ export default async function LevelsPage() {
       })
     : null;
 
+  const lang = params.lang ?? 'ja';
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Chọn cấp độ</h1>
-      <p className="text-gray-500 mb-8">Chọn cấp độ JLPT phù hợp để bắt đầu luyện thi</p>
+    <div className="px-4 py-8" style={{ maxWidth: 860, margin: '0 auto' }}>
 
-      <ExamDeadlinePlanner
-        levels={levels.map((level) => ({
-          code: level.code,
-          name: level.name,
-          description: level.description,
-          examSetCount: level._count.examSets,
-        }))}
-        canSave={Boolean(session)}
-        savedPlan={savedPlan ? {
-          ...savedPlan,
-          examDate: savedPlan.examDate.toISOString().slice(0, 10),
-          updatedAt: savedPlan.updatedAt.toISOString(),
-        } : null}
-      />
+      {/* ── Page header ── */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+          <span>🇯🇵</span>
+          <span>JLPT N5 → N1</span>
+          <span>·</span>
+          <span>Đề thi thử</span>
+        </div>
+        <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+          Luyện thi JLPT
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          Format sát đề thi thật · Có giải thích đáp án · Lưu tiến trình cá nhân
+        </p>
+      </div>
 
+      {/* ── Level cards ── */}
       {levels.length === 0 ? (
-        <div className="card text-center text-gray-400 py-16">
-          Chưa có cấp độ nào. Admin hãy thêm cấp độ trong trang quản trị.
+        <div className="rounded-2xl border p-16 text-center text-sm" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+          Chưa có cấp độ nào.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div className="flex flex-col gap-3 mb-10">
           {levels.map(l => {
-            const info = LEVEL_INFO[l.code] ?? { desc: '', color: '', badge: '' };
+            const meta = LEVEL_META[l.code] ?? { desc: '', color: '#6B7280', light: '#F9FAFB', vocab: '', kanji: '', tip: '' };
+            const prog = progressByLevel[l.id];
+            const pct  = prog && prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+
+            // Skill chips: unique skills with counts
+            const skillCounts: Record<string, number> = {};
+            for (const es of l.examSets) {
+              skillCounts[es.skill] = (skillCounts[es.skill] ?? 0) + 1;
+            }
+
             return (
-              <Link key={l.id} href={`/levels/${l.code}`}
-                className={`card border-2 text-center hover:shadow-lg transition cursor-pointer ${info.color}`}>
-                <div className="text-3xl font-bold text-gray-900 mb-1">{l.code}</div>
-                <div className={`text-xs px-2 py-1 rounded-full ${info.badge} inline-block mb-1`}>{info.desc}</div>
-                {l.description && <p className="text-xs text-gray-500 mt-1">{l.description}</p>}
+              <Link key={l.id} href={`/${lang}/levels/${l.code}`}
+                className="group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:shadow-md"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+
+                {/* Level badge */}
+                <div className="shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl font-extrabold text-white text-xl"
+                  style={{ background: meta.color }}>
+                  {l.code}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{l.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                      style={{ background: meta.light, color: meta.color }}>
+                      {meta.desc}
+                    </span>
+                  </div>
+                  <p className="text-xs mb-2 hidden sm:block" style={{ color: 'var(--text-muted)' }}>{meta.tip}</p>
+
+                  {/* Stats row */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                      📚 {meta.vocab}
+                    </span>
+                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                      🔠 {meta.kanji}
+                    </span>
+                    <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                      📝 {l._count.examSets} đề
+                    </span>
+                    {/* Skill chips */}
+                    <div className="flex gap-1">
+                      {Object.entries(skillCounts).map(([skill, count]) => {
+                        const sm = SKILL_META[skill];
+                        if (!sm) return null;
+                        return (
+                          <span key={skill} className="text-[11px] px-1.5 py-0.5 rounded-lg font-medium"
+                            style={{ background: `${sm.color}18`, color: sm.color }}>
+                            {sm.icon} {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Progress bar (logged in) */}
+                  {prog && prog.total > 0 && (
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+                        <div className="h-1.5 rounded-full transition-all"
+                          style={{ width: `${pct}%`, background: meta.color }} />
+                      </div>
+                      <span className="text-[11px] font-semibold shrink-0" style={{ color: meta.color }}>
+                        {prog.done}/{prog.total}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* CTA arrow */}
+                <div className="shrink-0 flex items-center gap-1.5 text-sm font-semibold transition-all"
+                  style={{ color: meta.color }}>
+                  <span className="hidden sm:inline">Vào luyện thi</span>
+                  <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                  </svg>
+                </div>
               </Link>
             );
           })}
         </div>
       )}
 
-      <div className="mt-12">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Luyện thi theo kỹ năng</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {SKILLS.map(skill => (
-            <div key={skill.key} className="card text-center">
-              <div className="text-3xl mb-1">{skill.icon}</div>
-              <div className="font-semibold">{skill.label}</div>
-              <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${skill.color}`}>{skill.key}</span>
+      {/* ── Deadline planner ── */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-lg">📅</span>
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Kế hoạch luyện thi</h2>
+        </div>
+        <ExamDeadlinePlanner
+          levels={levels.map((level) => ({
+            code: level.code,
+            name: level.name,
+            description: level.description,
+            examSetCount: level._count.examSets,
+          }))}
+          canSave={Boolean(session)}
+          savedPlan={savedPlan ? {
+            ...savedPlan,
+            examDate: savedPlan.examDate.toISOString().slice(0, 10),
+            updatedAt: savedPlan.updatedAt.toISOString(),
+          } : null}
+        />
+      </div>
+
+      {/* ── Tips ── */}
+      <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+        <div className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>💡 Mẹo luyện thi hiệu quả</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { icon: '🎯', title: 'Bắt đầu từ cấp độ dễ', body: 'Dù đích là N2, hãy chạy thử N5 để quen format' },
+            { icon: '🔁', title: 'Luyện mỗi ngày 20 phút', body: 'Đều đặn quan trọng hơn học cấp tập trước thi' },
+            { icon: '📊', title: 'Xem lại đáp án sai', body: 'Đọc giải thích để hiểu bản chất, không chỉ học thuộc' },
+            { icon: '⏱️', title: 'Làm đề có giới hạn thời gian', body: 'Luyện quản lý thời gian sát với điều kiện thi thật' },
+          ].map(tip => (
+            <div key={tip.title} className="flex gap-3">
+              <span className="text-xl shrink-0">{tip.icon}</span>
+              <div>
+                <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{tip.title}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{tip.body}</div>
+              </div>
             </div>
           ))}
         </div>

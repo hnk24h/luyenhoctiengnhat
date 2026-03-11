@@ -63,7 +63,7 @@ export default function LoginPage() {
 
         <p className="text-sm text-center mt-4" style={{ color: 'var(--text-muted)' }}>
           Chưa có tài khoản?{' '}
-          <Link href="/register" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
+          <Link href="/auth/register" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
             Đăng ký ngay
           </Link>
         </p>
