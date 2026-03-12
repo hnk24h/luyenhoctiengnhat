@@ -617,7 +617,7 @@ function ReadingPageContent() {
           </div>
         ) : !loadedPassage ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <div className="text-5xl opacity-30">📖</div>
+            <div className="opacity-40"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
             <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
               {listLoading ? 'Đang tải danh sách...' : 'Chọn một bài đọc từ danh sách'}
             </p>
@@ -788,7 +788,7 @@ function ReadingPageContent() {
         </div>
       ) : passages.length === 0 ? (
         <div className="card text-center py-16">
-          <div className="text-5xl mb-4 opacity-30">📖</div>
+          <div className="mb-4 opacity-40"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
           <p className="font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Chưa có bài đọc nào</p>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Thử chọn bộ lọc khác</p>
         </div>

@@ -207,7 +207,7 @@ export default function GrammarPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <div className="text-5xl mb-3 opacity-30">📖</div>
+            <div className="mb-3 opacity-50"><FaBookOpen size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
             <p className="font-semibold" style={{ color: 'var(--text-secondary)' }}>{search ? 'Không tìm thấy mẫu ngữ pháp phù hợp.' : 'Không có dữ liệu.'}</p>
             {search && <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Thử từ khóa khác.</p>}
           </div>

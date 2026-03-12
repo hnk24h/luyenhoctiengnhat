@@ -707,7 +707,7 @@ function VocabContent() {
           {/* Word list */}
           {filtered.length === 0 ? (
             <div className="card text-center py-14">
-              <div className="text-5xl mb-3 opacity-30">📚</div>
+              <div className="mb-3 opacity-50"><FaBookOpen size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
               <p className="font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
                 {search ? 'Không tìm thấy từ nào' : activeColId ? 'Chủ đề này chưa có từ nào' : 'Chưa có từ nào được lưu'}
               </p>

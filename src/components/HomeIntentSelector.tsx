@@ -80,7 +80,7 @@ function formatDateInput(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export function HomeIntentSelector() {
+export function HomeIntentSelector({ lang = 'ja' }: { lang?: string }) {
   const [intent, setIntent] = useState<IntentKey>('beginner');
   const [selectedLevel, setSelectedLevel] = useState<LevelCode>('N5');
   const [selectedSkill, setSelectedSkill] = useState<SkillKey>('nghe');
@@ -90,7 +90,7 @@ export function HomeIntentSelector() {
   const recommendation = useMemo(() => {
     if (intent === 'beginner') {
       return {
-        href: '/learn/N5',
+        href: `/${lang}/learn/N5`,
         title: 'Bắt đầu từ lộ trình N5',
         description: 'Đi từ các bài nền tảng, sau đó nối sang nghe, đọc và thi thử.',
         bullets: ['Học theo từng chủ đề nhỏ', 'Giảm cảm giác quá tải lúc mới bắt đầu', 'Dễ hình thành thói quen học hàng ngày'],
@@ -99,7 +99,7 @@ export function HomeIntentSelector() {
 
     if (intent === 'level') {
       return {
-        href: `/learn/${selectedLevel}`,
+        href: `/${lang}/learn/${selectedLevel}`,
         title: `Đi thẳng vào level ${selectedLevel}`,
         description: 'Phù hợp khi bạn đã biết trình độ hiện tại hoặc đang học theo giáo trình tương ứng.',
         bullets: ['Bỏ qua bước dò đường', 'Xem ngay chủ đề theo level', 'Kết hợp học bài và luyện đề cùng cấp độ'],
@@ -109,7 +109,7 @@ export function HomeIntentSelector() {
     if (intent === 'skill') {
       const skill = SKILL_OPTIONS.find((item) => item.key === selectedSkill) ?? SKILL_OPTIONS[0];
       return {
-        href: skill.href,
+        href: `/${lang}${skill.href}`,
         title: `Tập trung luyện ${skill.label}`,
         description: 'Phù hợp khi bạn muốn cải thiện nhanh một kỹ năng cụ thể thay vì học toàn lộ trình.',
         bullets: ['Học theo đúng điểm yếu hiện tại', 'Giảm phân tán khi thời gian ít', 'Dễ quay lại học mỗi ngày'],
@@ -117,12 +117,12 @@ export function HomeIntentSelector() {
     }
 
     return {
-      href: `/levels?planLevel=${deadlineLevel}&examDate=${deadlineDate}#deadline-planner`,
+      href: `/${lang}/levels?planLevel=${deadlineLevel}&examDate=${deadlineDate}#deadline-planner`,
       title: 'Lập kế hoạch ôn thi theo deadline',
       description: 'Chọn ngày thi dự kiến, level mục tiêu và nhận nhịp luyện đề theo tuần.',
       bullets: ['Biết mình còn bao nhiêu tuần', 'Ước lượng số đề nên làm mỗi tuần', 'Có đường đi rõ hơn trước kỳ thi'],
     };
-  }, [deadlineDate, deadlineLevel, intent, selectedLevel, selectedSkill]);
+  }, [deadlineDate, deadlineLevel, intent, lang, selectedLevel, selectedSkill]);
 
   return (
     <section className="py-14 px-4" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>

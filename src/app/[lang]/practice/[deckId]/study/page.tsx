@@ -364,8 +364,8 @@ export default function StudyPage({ params }: { params: { deckId: string } }) {
           {/* Start button */}
           {pool.length === 0 ? (
             <div className="text-center py-2">
-              <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                {cardSource === 'due' ? 'Không có thẻ nào cần ôn hôm nay ✅' : 'Bộ thẻ chưa có thẻ nào'}
+              <p className="text-sm mb-4 flex items-center justify-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                {cardSource === 'due' ? <><FaCheck size={12} style={{ color: '#16A34A' }}/> Không có thẻ nào cần ôn hôm nay</> : 'Bộ thẻ chưa có thẻ nào'}
               </p>
               <Link href={`/flashcards/${deck.id}`} className="btn-secondary inline-flex items-center gap-2">
                 <FaArrowLeft size={12} /> Quay lại

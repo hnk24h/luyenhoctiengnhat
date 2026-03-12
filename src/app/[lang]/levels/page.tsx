@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Thi Thử JLPT',
@@ -17,6 +18,11 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 import { ExamDeadlinePlanner } from '@/components/ExamDeadlinePlanner';
+import {
+  FaHeadphones, FaBookOpen, FaPencil, FaComments,
+  FaCalendarDays, FaLightbulb, FaBullseye, FaRepeat,
+  FaChartBar, FaStopwatch, FaFont, FaFileLines,
+} from 'react-icons/fa6';
 
 const LEVEL_META: Record<string, {
   desc: string; color: string; light: string;
@@ -29,11 +35,11 @@ const LEVEL_META: Record<string, {
   N1: { desc: 'Cao cấp',       color: '#DC2626', light: '#FFF1F2', vocab: '~10000 từ', kanji: '2000 Kanji', tip: 'Trình độ gần như người bản xứ' },
 };
 
-const SKILL_META: Record<string, { label: string; icon: string; color: string }> = {
-  nghe: { label: 'Nghe',    icon: '🎧', color: '#2563EB' },
-  doc:  { label: 'Đọc',     icon: '📖', color: '#D97706' },
-  viet: { label: 'Ngữ pháp', icon: '✏️', color: '#7C3AED' },
-  noi:  { label: 'Từ vựng', icon: '💬', color: '#059669' },
+const SKILL_META: Record<string, { label: string; icon: ReactNode; color: string }> = {
+  nghe: { label: 'Nghe',    icon: <FaHeadphones size={10}/>, color: '#2563EB' },
+  doc:  { label: 'Đọc',     icon: <FaBookOpen   size={10}/>, color: '#D97706' },
+  viet: { label: 'Ngữ pháp', icon: <FaPencil    size={10}/>, color: '#7C3AED' },
+  noi:  { label: 'Từ vựng', icon: <FaComments   size={10}/>, color: '#059669' },
 };
 
 export default async function LevelsPage({ params }: { params: { lang: string } }) {
@@ -150,13 +156,13 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                   {/* Stats row */}
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                      📚 {meta.vocab}
+                      <FaBookOpen size={10}/> {meta.vocab}
                     </span>
                     <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                      🔠 {meta.kanji}
+                      <FaFont size={10}/> {meta.kanji}
                     </span>
                     <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                      📝 {l._count.examSets} đề
+                      <FaFileLines size={10}/> {l._count.examSets} đề
                     </span>
                     {/* Skill chips */}
                     <div className="flex gap-1">
@@ -164,7 +170,7 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                         const sm = SKILL_META[skill];
                         if (!sm) return null;
                         return (
-                          <span key={skill} className="text-[11px] px-1.5 py-0.5 rounded-lg font-medium"
+                          <span key={skill} className="text-[11px] px-1.5 py-0.5 rounded-lg font-medium inline-flex items-center gap-1"
                             style={{ background: `${sm.color}18`, color: sm.color }}>
                             {sm.icon} {count}
                           </span>
@@ -204,7 +210,7 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
       {/* ── Deadline planner ── */}
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-lg">📅</span>
+          <FaCalendarDays size={18} style={{ color: 'var(--text-muted)' }}/>
           <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Kế hoạch luyện thi</h2>
         </div>
         <ExamDeadlinePlanner
@@ -225,16 +231,16 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
 
       {/* ── Tips ── */}
       <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-        <div className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>💡 Mẹo luyện thi hiệu quả</div>
+        <div className="flex items-center gap-2 text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}><FaLightbulb size={14}/> Mẹo luyện thi hiệu quả</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { icon: '🎯', title: 'Bắt đầu từ cấp độ dễ', body: 'Dù đích là N2, hãy chạy thử N5 để quen format' },
-            { icon: '🔁', title: 'Luyện mỗi ngày 20 phút', body: 'Đều đặn quan trọng hơn học cấp tập trước thi' },
-            { icon: '📊', title: 'Xem lại đáp án sai', body: 'Đọc giải thích để hiểu bản chất, không chỉ học thuộc' },
-            { icon: '⏱️', title: 'Làm đề có giới hạn thời gian', body: 'Luyện quản lý thời gian sát với điều kiện thi thật' },
+            { icon: <FaBullseye  size={18}/>, title: 'Bắt đầu từ cấp độ dễ', body: 'Dù đích là N2, hãy chạy thử N5 để quen format' },
+            { icon: <FaRepeat    size={18}/>, title: 'Luyện mỗi ngày 20 phút', body: 'Đều đặn quan trọng hơn học cấp tập trước thi' },
+            { icon: <FaChartBar  size={18}/>, title: 'Xem lại đáp án sai', body: 'Đọc giải thích để hiểu bản chất, không chỉ học thuộc' },
+            { icon: <FaStopwatch size={18}/>, title: 'Làm đề có giới hạn thời gian', body: 'Luyện quản lý thời gian sát với điều kiện thi thật' },
           ].map(tip => (
             <div key={tip.title} className="flex gap-3">
-              <span className="text-xl shrink-0">{tip.icon}</span>
+              <span className="shrink-0" style={{ color: 'var(--text-muted)' }}>{tip.icon}</span>
               <div>
                 <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{tip.title}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{tip.body}</div>

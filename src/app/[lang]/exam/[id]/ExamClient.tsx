@@ -5,7 +5,7 @@ import { SKILLS, formatDuration } from '@/lib/utils';
 import { SkillIcon } from '@/components/SkillIcon';
 import {
   FaHeadphones, FaCircleCheck, FaClock, FaPlay, FaChevronLeft,
-  FaChevronRight, FaMap, FaXmark,
+  FaChevronRight, FaMap, FaXmark, FaPencil, FaFileLines,
 } from 'react-icons/fa6';
 
 interface Question {
@@ -95,15 +95,15 @@ function StartScreen({
               </span>
             )}
             {fillCount > 0 && (
-              <span className="text-xs px-2.5 py-1 rounded-full"
+              <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
                 style={{ background: '#F0FDF4', color: '#15803D' }}>
-                ✏️ {fillCount} điền từ
+                <FaPencil size={10}/> {fillCount} điền từ
               </span>
             )}
             {lisCount > 0 && (
-              <span className="text-xs px-2.5 py-1 rounded-full"
+              <span className="text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"
                 style={{ background: '#FFF7ED', color: '#C2410C' }}>
-                🎧 {lisCount} nghe
+                <FaHeadphones size={10}/> {lisCount} nghe
               </span>
             )}
           </div>
@@ -284,19 +284,19 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
               </div>
               <div className="flex items-center gap-2">
                 {q.type === 'nghe' || q.audioUrl ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1"
                     style={{ background: '#FFF7ED', color: '#C2410C' }}>
-                    🎧 Nghe
+                    <FaHeadphones size={10}/> Nghe
                   </span>
                 ) : q.type === 'dien_tu' ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1"
                     style={{ background: '#F0FDF4', color: '#15803D' }}>
-                    ✏️ Điền từ
+                    <FaPencil size={10}/> Điền từ
                   </span>
                 ) : (
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1"
                     style={{ background: '#EEF2FF', color: '#4338CA' }}>
-                    📝 Trắc nghiệm
+                    <FaFileLines size={10}/> Trắc nghiệm
                   </span>
                 )}
                 {answers[q.id] && (

@@ -7,6 +7,7 @@ import {
   FaHeadphones, FaCirclePlay, FaStop, FaVolumeHigh,
   FaClock, FaCheck, FaWaveSquare, FaRegFileLines, FaChevronRight,
   FaBookmark, FaKeyboard, FaPlay, FaPause, FaMusic,
+  FaTrophy, FaThumbsUp, FaDumbbell, FaBook,
 } from 'react-icons/fa6';
 
 // ─── Unified practice type (matches /api/listening?lang= response) ────────────
@@ -744,7 +745,7 @@ function ListeningPageContent() {
                                 <div>
                                   <div className="font-bold text-base mb-0.5"
                                     style={{ color: dictationResult.score >= 80 ? '#15803D' : dictationResult.score >= 50 ? '#92400E' : '#BE123C' }}>
-                                    {dictationResult.score >= 90 ? '🎉 Xuất sắc!' : dictationResult.score >= 70 ? '👍 Khá tốt!' : dictationResult.score >= 50 ? '💪 Cố gắng thêm' : '📚 Cần luyện thêm'}
+                                    {dictationResult.score >= 90 ? <><FaTrophy size={14} color="#F59E0B"/> Xuất sắc!</> : dictationResult.score >= 70 ? <><FaThumbsUp size={14} color="#10B981"/> Khá tốt!</> : dictationResult.score >= 50 ? <><FaDumbbell size={14} color="#D97706"/> Cố gắng thêm</> : <><FaBook size={14} color="#6B7280"/> Cần luyện thêm</>}
                                   </div>
                                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                     {dictationResult.tokens.filter(t => t.correct).length}/{dictationResult.tokens.length} ký tự đúng
@@ -787,7 +788,7 @@ function ListeningPageContent() {
                 );
               })() : (
                 <div className="card text-center py-16">
-                  <div className="text-5xl mb-4 opacity-25">🎧</div>
+                  <div className="mb-4 opacity-40"><FaHeadphones size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
                   <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>Không có bài nghe phù hợp.</p>
                 </div>
               )}

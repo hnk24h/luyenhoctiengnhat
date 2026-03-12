@@ -38,9 +38,9 @@ const PMP_NAV_LINKS: NavLink[] = [
 ];
 
 const SUBJECTS = [
-  { id: 'ja', label: 'Tiếng Nhật',  flag: '🇯🇵', href: '/ja/learn', color: '#6C5CE7',
+  { id: 'ja', label: 'Tiếng Nhật',  flag: '🇯🇵', href: '/ja', color: '#6C5CE7',
     desc: 'N5 → N1 · Học tiếng Nhật' },
-  { id: 'zh', label: 'Tiếng Trung', flag: '🇨🇳', href: '/zh/learn',  color: '#DC2626',
+  { id: 'zh', label: 'Tiếng Trung', flag: '🇨🇳', href: '/zh',  color: '#DC2626',
     desc: 'HSK1 → HSK6 · Học tiếng Trung' },
   { id: 'en', label: 'PMP PMBOK',   flag: '📊',  href: '/en/pmp',   color: '#2B6CB0',
     desc: 'PMBOK 6th · Chứng chỉ PMP' },

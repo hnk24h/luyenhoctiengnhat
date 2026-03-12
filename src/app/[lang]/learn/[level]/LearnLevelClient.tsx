@@ -396,7 +396,7 @@ export default function LearnLevelClient({
             </div>
           ) : !lessonData ? (
             <div className="flex flex-col items-center justify-center py-24 gap-2">
-              <div className="text-4xl mb-2">📚</div>
+              <div className="mb-2 opacity-40"><FaBookOpen size={44} style={{ color: 'var(--text-muted)' }}/></div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
                 Chọn một bài học từ danh sách bên trái
               </p>

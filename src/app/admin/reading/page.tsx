@@ -230,7 +230,7 @@ export default function AdminReadingPage() {
         <div className="card animate-pulse" style={{ height: 200 }} />
       ) : filtered.length === 0 ? (
         <div className="card text-center py-14">
-          <div className="text-5xl opacity-20 mb-3">📖</div>
+          <div className="opacity-30 mb-3"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
           <p style={{ color: 'var(--text-muted)' }}>Chưa có bài đọc nào.</p>
           <div className="flex gap-2 justify-center mt-4">
             <button onClick={openCreate} className="btn-primary text-sm flex items-center gap-1.5">
