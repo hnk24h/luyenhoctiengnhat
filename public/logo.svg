@@ -1,0 +1,33 @@
+<svg width="180" height="48" viewBox="0 0 180 48" fill="none"
+  xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IkagiLearn">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="white" stop-opacity="1"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip">
+      <rect width="48" height="48" rx="13"/>
+    </clipPath>
+  </defs>
+  <!-- Mark background -->
+  <rect width="48" height="48" rx="13" fill="url(#bg)"/>
+  <!-- 4 Ikigai circles -->
+  <g clip-path="url(#clip)">
+    <circle cx="24" cy="15" r="12" fill="white" fill-opacity="0.38"/>
+    <circle cx="33" cy="24" r="12" fill="white" fill-opacity="0.38"/>
+    <circle cx="24" cy="33" r="12" fill="white" fill-opacity="0.38"/>
+    <circle cx="15" cy="24" r="12" fill="white" fill-opacity="0.38"/>
+  </g>
+  <!-- Center sweet-spot -->
+  <circle cx="24" cy="24" r="7" fill="url(#glow)"/>
+  <circle cx="24" cy="24" r="3" fill="white"/>
+  <!-- Wordmark -->
+  <text x="60" y="20" font-family="system-ui,-apple-system,sans-serif"
+    font-size="16" font-weight="800" fill="#0F0D1A" letter-spacing="-0.4">Ikagi</text>
+  <text x="60" y="39" font-family="system-ui,-apple-system,sans-serif"
+    font-size="14" font-weight="700" fill="#7C3AED" letter-spacing="-0.2">Learn</text>
+</svg>

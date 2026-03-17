@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
-  const { title, description, content, type, order } = body;
+  const { title, description, content, type, order, requiredTier } = body;
 
   const updated = await prisma.learningLesson.update({
     where: { id: params.id },
@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(content     !== undefined ? { content: content || null }       : {}),
       ...(type        !== undefined ? { type }                           : {}),
       ...(order       !== undefined ? { order }                          : {}),
+      ...(requiredTier !== undefined ? { requiredTier }                  : {}),
     },
     include: {
       _count: { select: { items: true } },

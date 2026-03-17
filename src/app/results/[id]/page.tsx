@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { getSkillLabel, SKILLS } from '@/lib/utils';
-import { FaTrophy, FaBook, FaHeadphones, FaLightbulb } from 'react-icons/fa6';
+import { FaTrophy, FaBook, FaLightbulb } from 'react-icons/fa6';
+import { AudioPlayer } from '@/components/AudioPlayer';
 
 interface Props { params: { id: string } }
 
@@ -83,9 +84,8 @@ export default async function ResultsPage({ params }: Props) {
               </div>
 
               {q.audioUrl && (
-                <div className="mb-2 p-2 bg-blue-50 rounded flex items-center gap-2">
-                  <FaHeadphones size={14} className="text-blue-500 shrink-0"/>
-                  <audio controls src={q.audioUrl} className="h-7 flex-1" />
+                <div className="mb-3">
+                  <AudioPlayer src={q.audioUrl} />
                 </div>
               )}
               {q.imageUrl && (

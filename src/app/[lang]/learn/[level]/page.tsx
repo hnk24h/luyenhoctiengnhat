@@ -1,15 +1,17 @@
 ﻿import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Subject } from '@prisma/client';
 import {
   FaBookOpen, FaRuler,
-  FaGraduationCap, FaFire,
+  FaGraduationCap, FaArrowLeft, FaChevronRight,
 } from 'react-icons/fa6';
-import LearnLevelClient, { type CategoryData } from './LearnLevelClient';
+import LevelPostsSection, { type LevelPostData } from '@/components/LevelPostsSection';
+import LearningPathMap, { type PathLesson } from '@/components/LearningPathMap';
 
 interface Props {
   params: { lang: string; level: string };
@@ -221,25 +223,28 @@ const TEXTBOOK_META: Record<string, { vocab: string; grammar: string }> = {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-async function getLevelData(code: string, userId?: string) {
-  return prisma.level.findUnique({
-    where: { code: code.toUpperCase() },
-    include: {
-      learningCategories: {
-        include: {
-          lessons: {
-            orderBy: { order: 'asc' },
-            include: {
-              _count: { select: { items: true } },
-              progress: userId ? { where: { userId } } : false,
+/** ✅ S1: Structural level data — cached 1 hour, same for all users.
+ *  Progress is fetched separately as a lightweight user-specific query. */
+const getCachedLevelStructure = unstable_cache(
+  (code: string) =>
+    prisma.level.findUnique({
+      where: { code: code.toUpperCase() },
+      include: {
+        learningCategories: {
+          include: {
+            lessons: {
+              orderBy: { order: 'asc' },
+              include: { _count: { select: { items: true } } },
+              // No progress here — fetched separately per user
             },
           },
+          orderBy: [{ skill: 'asc' }, { order: 'asc' }],
         },
-        orderBy: [{ skill: 'asc' }, { order: 'asc' }],
       },
-    },
-  });
-}
+    }),
+  ['level-structure'],
+  { revalidate: 3600, tags: ['level-structure'] },
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -249,8 +254,19 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
   const session = await getServerSession(authOptions);
   const userId  = (session?.user as any)?.id as string | undefined;
 
-  const level = await getLevelData(params.level, userId);
+  // ✅ S1: Structural data from cache — fast, shared across all users
+  const level = await getCachedLevelStructure(params.level);
   if (!level) notFound();
+
+  // ✅ S1: Progress — lightweight per-user query (only completed lesson IDs)
+  const allLessonIds = level.learningCategories.flatMap(c => c.lessons.map(l => l.id));
+  const progressRows = userId && allLessonIds.length > 0
+    ? await prisma.lessonProgress.findMany({
+        where: { userId, lessonId: { in: allLessonIds } },
+        select: { lessonId: true, completed: true },
+      })
+    : [];
+  const completedSet = new Set(progressRows.filter(p => p.completed).map(p => p.lessonId));
 
   const isJapanese = level.subject === Subject.JLPT;
   const isChinese  = level.subject === Subject.HSK;
@@ -265,19 +281,14 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
   };
 
   const textbook  = TEXTBOOK_META[level.code as keyof typeof TEXTBOOK_META];
-  const activeTab = searchParams?.tab === 'grammar' ? 'grammar' : 'vocab';
 
   const vocabCats   = level.learningCategories.filter(c => c.skill === 'vocab');
   const grammarCats = level.learningCategories.filter(c => c.skill === 'grammar');
-  const legacyCats  = level.learningCategories.filter(c => !['vocab', 'grammar'].includes(c.skill));
-  const hasNewContent = vocabCats.length > 0 || grammarCats.length > 0;
 
   // Compute progress across all lessons (both tabs) for the hero
-  const allLessons = [...vocabCats, ...grammarCats].flatMap(cat => cat.lessons);
+  const allLessons       = [...vocabCats, ...grammarCats].flatMap(cat => cat.lessons);
   const totalLessons     = allLessons.length;
-  const completedLessons = userId
-    ? allLessons.filter(l => (l.progress as any[])?.some((p: any) => p.completed)).length
-    : 0;
+  const completedLessons = allLessons.filter(l => completedSet.has(l.id)).length;
   const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   // SVG circular progress ring constants
@@ -285,166 +296,260 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
   const circ = 2 * Math.PI * R;
   const dash = circ - (progressPct / 100) * circ;
 
-  // Build client-safe category data (no raw prisma progress arrays)
-  function toClientCats(cats: typeof vocabCats): CategoryData[] {
-    return cats.map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      description: cat.description,
-      skill: cat.skill,
-      icon: cat.icon ?? null,
-      lessons: cat.lessons.map(l => ({
-        id: l.id,
-        title: l.title,
-        description: l.description,
-        type: l.type,
-        order: l.order,
-        itemCount: l._count.items,
-        isCompleted: userId
-          ? (l.progress as any[])?.some((p: any) => p.completed)
-          : false,
-      })),
-    }));
-  }
-  const clientVocabCats   = toClientCats(vocabCats);
-  const clientGrammarCats = toClientCats(grammarCats);
+  const vocabLessonCount   = vocabCats.flatMap(c => c.lessons).length;
+  const grammarLessonCount = grammarCats.flatMap(c => c.lessons).length;
+
+  // Flat lesson list for the learning path map
+  const roadmapLessons: PathLesson[] = [
+    ...vocabCats.flatMap(cat => cat.lessons.map(l => ({
+      id: l.id, title: l.title, description: l.description,
+      type: 'vocab', itemCount: l._count.items, isCompleted: completedSet.has(l.id),
+    }))),
+    ...grammarCats.flatMap(cat => cat.lessons.map(l => ({
+      id: l.id, title: l.title, description: l.description,
+      type: 'grammar', itemCount: l._count.items, isCompleted: completedSet.has(l.id),
+    }))),
+  ];
+
+  // Community posts for this level
+  const rawPosts = await prisma.levelPost.findMany({
+    where: { levelCode: level.code },
+    orderBy: { createdAt: 'desc' },
+    take: 30,
+    select: { id: true, content: true, createdAt: true, user: { select: { name: true } } },
+  });
+  const posts: LevelPostData[] = rawPosts.map(p => ({
+    id: p.id, content: p.content, userName: p.user.name,
+    createdAt: p.createdAt.toISOString(),
+  }));
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
 
-      {/* ══════════════ HERO ══════════════ */}
-      <div className="relative overflow-hidden" style={{ background: meta.heroGrad, minHeight: 240 }}>
-
-        {meta.decors.map(({ char, x, y, rot, size }, i) => (
-          <span key={i} aria-hidden className="absolute select-none pointer-events-none"
-            style={{ left: x, top: y, transform: `rotate(${rot})`, fontSize: size,
-              opacity: 0.09, color: '#fff', fontWeight: 900, lineHeight: 1 }}>
-            {char}
+      {/* ══════════════ HERO OVERVIEW ══════════════ */}
+      <div className="relative overflow-hidden" style={{ background: meta.heroGrad }}>
+        {/* Decorative kanji */}
+        {meta.decors.map((d, i) => (
+          <span key={i} className="absolute select-none pointer-events-none font-black"
+            style={{ left: d.x, top: d.y, transform: `rotate(${d.rot})`, fontSize: d.size,
+                     color: 'rgba(255,255,255,0.055)', lineHeight: 1, zIndex: 0 }}>
+            {d.char}
           </span>
         ))}
 
-        {isJapanese && (
-          <svg aria-hidden className="absolute bottom-0 left-0 w-full pointer-events-none"
-            style={{ height: 72, opacity: 0.09 }} viewBox="0 0 1400 72" preserveAspectRatio="xMidYMax slice">
-            <path d="M0,72 L0,42 Q175,14 350,42 Q525,70 700,42 Q875,14 1050,42 Q1225,70 1400,42 L1400,72Z" fill="white"/>
-            <path d="M530,72 L700,10 L870,72Z" fill="white"/>
-            <path d="M672,28 L700,10 L728,28 Q700,34 672,28Z" fill="white" opacity="0.7"/>
-          </svg>
-        )}
-        {isChinese && (
-          <svg aria-hidden className="absolute bottom-0 left-0 w-full pointer-events-none"
-            style={{ height: 64, opacity: 0.09 }} viewBox="0 0 1400 64" preserveAspectRatio="xMidYMax slice">
-            <path d="M0,64 L0,38 Q100,18 200,30 Q300,44 400,28 Q500,12 600,28 Q700,44 800,28 Q900,12 1000,28 Q1100,44 1200,30 Q1300,18 1400,38 L1400,64Z" fill="white"/>
-            <ellipse cx="200" cy="30" rx="40" ry="18" fill="white" opacity="0.5"/>
-            <ellipse cx="600" cy="26" rx="50" ry="20" fill="white" opacity="0.5"/>
-            <ellipse cx="1000" cy="26" rx="45" ry="18" fill="white" opacity="0.5"/>
-          </svg>
-        )}
-
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6" style={{ paddingTop: 28, paddingBottom: 40 }}>
-
+        <div className="relative z-10 px-4 sm:px-8 py-8 max-w-5xl">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-sm mb-5" style={{ color: 'rgba(255,255,255,.7)' }}>
-            <Link href={`/${params.lang}/learn`} className="hover:text-white transition-colors">Học</Link>
-            <span className="opacity-50">›</span>
-            <span style={{ color: 'rgba(255,255,255,.95)', fontWeight: 600 }}>{level.code}</span>
-          </nav>
+          <div className="flex items-center gap-1.5 mb-5 text-xs font-medium"
+            style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <Link href={`/${params.lang}/learn`}
+              className="flex items-center gap-1 hover:text-white transition-colors">
+              <FaArrowLeft size={9} /> Học
+            </Link>
+            <FaChevronRight size={7} />
+            <span className="text-white font-bold">{level.code}</span>
+          </div>
 
-          <div className="flex items-center gap-5">
-            {/* Level badge */}
-            <div className="flex-shrink-0 flex items-center justify-center rounded-2xl font-black"
-              style={{ width: 72, height: 72, minWidth: 72,
-                background: 'rgba(255,255,255,.16)', backdropFilter: 'blur(10px)',
-                border: '2px solid rgba(255,255,255,.32)', color: '#fff',
-                fontSize: level.code.length > 3 ? 18 : 26, letterSpacing: '-1px',
-                boxShadow: '0 8px 28px rgba(0,0,0,.22)' }}>
-              {level.code}
-            </div>
+          <div className="flex items-start justify-between gap-6 flex-wrap">
+            {/* Left: level info */}
+            <div className="flex flex-col gap-4 flex-1 min-w-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.3)',
+                           boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                  {level.code}
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                    {level.name}
+                  </h1>
+                  <p className="text-sm font-semibold mt-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    {meta.desc}
+                  </p>
+                  {level.description && (
+                    <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      {level.description}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,.18)', color: 'rgba(255,255,255,.95)' }}>
-                  {isChinese ? 'HSK' : 'JLPT'} · {meta.desc}
-                </span>
-                {userId && totalLessons > 0 && (
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                    style={{ background: 'rgba(255,255,255,.14)', color: 'rgba(255,255,255,.9)' }}>
-                    <FaFire size={10} style={{ color: '#FCD34D' }} />
-                    {completedLessons}/{totalLessons} bài · {progressPct}%
+              {/* Quote */}
+              <div className="pl-4 border-l-2 border-white/30">
+                <p className="text-base sm:text-lg font-bold text-white italic leading-snug">
+                  {meta.quote}
+                </p>
+                <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  {meta.quoteRomaji}
+                </p>
+                <p className="text-xs mt-0.5 font-medium" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  {meta.quoteVi}
+                </p>
+              </div>
+
+              {/* Stats pills */}
+              <div className="flex flex-wrap gap-2">
+                {vocabLessonCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                    style={{ background: 'rgba(255,255,255,0.16)' }}>
+                    <FaBookOpen size={10} /> {vocabLessonCount} bài từ vựng
+                  </span>
+                )}
+                {grammarLessonCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                    style={{ background: 'rgba(255,255,255,0.16)' }}>
+                    <FaRuler size={10} /> {grammarLessonCount} bài ngữ pháp
+                  </span>
+                )}
+                {textbook && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white"
+                    style={{ background: 'rgba(255,255,255,0.16)' }}>
+                    <FaGraduationCap size={10} /> {textbook.vocab}
                   </span>
                 )}
               </div>
-              <div className="inline-flex flex-col gap-0.5 px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(0,0,0,.2)', backdropFilter: 'blur(6px)' }}>
-                <span className="text-sm font-bold" style={{ color: '#fff' }}>「{meta.quote}」</span>
-                <span className="text-[11px]" style={{ color: 'rgba(255,255,255,.75)' }}>— {meta.quoteVi}</span>
+
+              {/* CTA */}
+              <div className="flex gap-2.5 flex-wrap">
+                <Link href={`/${params.lang}/learn/${level.code}/lessons?tab=vocab`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-105"
+                  style={{ background: 'white', color: meta.accent,
+                           boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
+                  <FaBookOpen size={12} /> Học Từ Vựng
+                </Link>
+                <Link href={`/${params.lang}/learn/${level.code}/lessons?tab=grammar`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-105 border"
+                  style={{ borderColor: 'rgba(255,255,255,0.35)',
+                           background: 'rgba(255,255,255,0.14)', color: 'white' }}>
+                  <FaRuler size={12} /> Ngữ Pháp
+                </Link>
               </div>
             </div>
 
-            {/* Circular progress */}
-            {userId && totalLessons > 0 && (
-              <div className="flex-shrink-0 hidden sm:block">
-                <svg width={80} height={80} viewBox="0 0 96 96">
-                  <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="5.5"/>
-                  <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,.92)" strokeWidth="5.5"
-                    strokeDasharray={circ} strokeDashoffset={dash}
-                    strokeLinecap="round" transform="rotate(-90 48 48)"/>
-                  <text x="48" y="44" textAnchor="middle" fill="white" fontWeight="bold" fontSize="17">{progressPct}%</text>
-                  <text x="48" y="58" textAnchor="middle" fill="rgba(255,255,255,.7)" fontSize="8">hoàn thành</text>
-                </svg>
+            {/* Right: Progress ring (only if logged in) */}
+            {userId && (
+              <div className="shrink-0 flex flex-col items-center gap-2 self-start">
+                <div className="relative w-28 h-28">
+                  <svg width="112" height="112" viewBox="0 0 96 96"
+                    style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx="48" cy="48" r={R} fill="none" strokeWidth="7"
+                      stroke="rgba(255,255,255,0.2)" />
+                    <circle cx="48" cy="48" r={R} fill="none" strokeWidth="7"
+                      stroke="white" strokeDasharray={circ} strokeDashoffset={dash}
+                      strokeLinecap="round"
+                      style={{ transition: 'stroke-dashoffset 1s ease' }} />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                    <span className="text-2xl font-black text-white">{progressPct}%</span>
+                    <span className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                      hoàn thành
+                    </span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-white">{completedLessons}/{totalLessons}</p>
+                  <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.6)' }}>bài học</p>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ══════════════ SIDEBAR + CONTENT ══════════════ */}
-      <LearnLevelClient
-        vocabCats={clientVocabCats}
-        grammarCats={clientGrammarCats}
-        defaultTab={activeTab}
-        accentColor={meta.accent}
-        accentRgb={meta.accentRgb}
-        lang={params.lang}
-        levelCode={level.code}
-        userId={userId}
-      />
+      {/* ══════════════ STATS + 2-COL CONTENT ══════════════ */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-      {/* ── Textbook reference (server-rendered) ── */}
-      {textbook && (
-        <div className="px-4 sm:px-6 pb-6" style={{ marginLeft: 272 }}>
-          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
-            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
-            <FaGraduationCap size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {activeTab === 'vocab' ? textbook.vocab : textbook.grammar}
-            </span>
+        {/* Stat cards row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {/* Vocab lessons */}
+          <div className="rounded-2xl p-4 flex flex-col gap-1.5"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: `rgba(${meta.accentRgb},.12)` }}>
+              <FaBookOpen size={13} style={{ color: meta.accent }} />
+            </div>
+            <p className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>
+              {vocabLessonCount}
+            </p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Bài từ vựng
+            </p>
           </div>
-        </div>
-      )}
 
-      {/* ── Legacy skill-based content ── */}
-      {!hasNewContent && legacyCats.length > 0 && (
-        <div className="px-4 sm:px-6 pb-10">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Kỹ năng khác</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {legacyCats.map(cat => (
-              <Link key={cat.id} href={`/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}`}
-                className="card-hover border flex items-center gap-4">
-                <div className="text-3xl flex-shrink-0">{cat.icon ?? '📂'}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm mb-0.5">{cat.name}</div>
-                  {cat.description && (
-                    <p className="text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{cat.description}</p>
-                  )}
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{cat.lessons.length} bài học</div>
-                </div>
-              </Link>
-            ))}
+          {/* Grammar lessons */}
+          <div className="rounded-2xl p-4 flex flex-col gap-1.5"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: `rgba(${meta.accentRgb},.12)` }}>
+              <FaRuler size={13} style={{ color: meta.accent }} />
+            </div>
+            <p className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>
+              {grammarLessonCount}
+            </p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Bài ngữ pháp
+            </p>
           </div>
+
+          {/* Textbook */}
+          {textbook && (
+            <div className="rounded-2xl p-4 flex flex-col gap-1.5 col-span-2 sm:col-span-1"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: `rgba(${meta.accentRgb},.12)` }}>
+                <FaGraduationCap size={13} style={{ color: meta.accent }} />
+              </div>
+              <p className="text-xs font-bold leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                {textbook.vocab}
+              </p>
+              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                Giáo trình
+              </p>
+            </div>
+          )}
+
+          {/* Progress */}
+          {userId && (
+            <div className="rounded-2xl p-4 flex flex-col gap-1.5"
+              style={{ background: `rgba(${meta.accentRgb},.07)`, border: `1px solid rgba(${meta.accentRgb},.2)` }}>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: `rgba(${meta.accentRgb},.18)` }}>
+                <span className="text-sm">🎯</span>
+              </div>
+              <p className="text-xl font-black" style={{ color: meta.accent }}>
+                {progressPct}%
+              </p>
+              <p className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                Hoàn thành
+              </p>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* 2-column: posts (left) + map (right) */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Posts section */}
+          <div className="flex-1 min-w-0">
+            <LevelPostsSection
+              levelCode={level.code}
+              initialPosts={posts}
+              userId={userId}
+              userName={(session?.user as { name?: string } | undefined)?.name ?? undefined}
+            />
+          </div>
+
+          {/* Learning path map */}
+          {roadmapLessons.length > 0 && (
+            <div className="w-full lg:w-[280px] shrink-0 lg:sticky lg:top-20">
+              <LearningPathMap
+                lessons={roadmapLessons}
+                accentColor={meta.accent}
+                accentRgb={meta.accentRgb}
+                lessonsHref={`/${params.lang}/learn/${level.code}/lessons`}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

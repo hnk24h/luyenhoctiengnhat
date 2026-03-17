@@ -17,30 +17,36 @@ export async function GET(req: NextRequest) {
   const lang = req.nextUrl.searchParams.get('lang') ?? 'ja';
   const subject: Subject = LANG_SUBJECT[lang] ?? 'JLPT';
 
-  const lessons = await prisma.learningLesson.findMany({
-    where: {
-      type: 'audio',
-      category: {
-        skill: 'nghe',
-        level: { subject },
-      },
-    },
-    include: {
-      category: {
-        include: {
-          level: true,
+  const [lessons, grammarPatterns] = await Promise.all([
+    prisma.learningLesson.findMany({
+      where: {
+        type: 'audio',
+        category: {
+          skill: 'nghe',
+          level: { subject },
         },
       },
-    },
-    orderBy: [
-      { category: { level: { order: 'asc' } } },
-      { order: 'asc' },
-      { title: 'asc' },
-    ],
-  });
+      include: {
+        category: {
+          include: {
+            level: true,
+          },
+        },
+      },
+      orderBy: [
+        { category: { level: { order: 'asc' } } },
+        { order: 'asc' },
+        { title: 'asc' },
+      ],
+    }),
+    prisma.grammarPattern.findMany({
+      where: { lang },
+      orderBy: [{ levelCode: 'asc' }, { order: 'asc' }],
+    }),
+  ]);
 
   const practices = lessons
-    .map(l => mapLessonToUnified(l, lang))
+    .map(l => mapLessonToUnified(l, lang, grammarPatterns))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
   return NextResponse.json(practices);

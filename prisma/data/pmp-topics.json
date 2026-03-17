@@ -1,0 +1,29 @@
+{
+  "subject": "PMP",
+  "levelCode": "PMP",
+  "mode": "lessons",
+  "language": "en",
+  "categoryName": "PMP Core Concepts",
+  "topics": [
+    {
+      "title": "Giới thiệu về quản lý dự án và PMP",
+      "keywords": ["project lifecycle", "PMBOK", "project charter", "stakeholders", "project manager"]
+    },
+    {
+      "title": "Các giai đoạn trong vòng đời dự án",
+      "keywords": ["initiating", "planning", "executing", "monitoring", "closing", "process groups"]
+    },
+    {
+      "title": "Quản lý phạm vi dự án (Scope Management)",
+      "keywords": ["WBS", "scope statement", "scope creep", "requirements", "deliverables"]
+    },
+    {
+      "title": "Quản lý thời gian và tiến độ (Schedule Management)",
+      "keywords": ["Gantt chart", "critical path", "network diagram", "float", "milestones"]
+    },
+    {
+      "title": "Quản lý rủi ro dự án (Risk Management)",
+      "keywords": ["risk register", "risk matrix", "probability", "impact", "mitigation", "contingency"]
+    }
+  ]
+}

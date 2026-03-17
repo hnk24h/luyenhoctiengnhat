@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { ChatBot } from '@/components/ChatBot';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </main>
           <Footer />
+          <ChatBot />
         </Providers>
       </body>
     </html>

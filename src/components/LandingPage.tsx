@@ -14,6 +14,7 @@ interface LevelCard { code: string; label: string; from: string; to: string; tex
 interface MarqueeItem { icon: ReactNode; text: string }
 interface SkillCard { icon: ReactNode; label: string; href: string; desc: string; from: string; to: string; icon_bg: string; key_color: string }
 interface StepCard { num: string; icon: ReactNode; title: string; desc: string; color: string }
+interface TestimonialCard { name: string; level: string; avatar: string; text: string; rating: number; color: string }
 interface LangConfig {
   badge: string;
   h1_plain: string;
@@ -42,6 +43,8 @@ interface LangConfig {
   register_href: string;
   try_href: string;
   show_intent_selector: boolean;
+  testimonials: TestimonialCard[];
+  section_testimonials_title: string;
 }
 
 /* ── Language configs ───────────────────────────────────────────────── */
@@ -105,6 +108,12 @@ function getConfig(lang: string): LangConfig {
     register_href: '/auth/register',
     try_href: '/ja/learn',
     show_intent_selector: true,
+    section_testimonials_title: 'Học viên nói gì về JLPT?',
+    testimonials: [
+      { name: 'Nguyễn Minh', level: 'Đạt N3', avatar: 'NM', text: 'Học 6 tháng từ N5 lên N3, hệ thống flashcard và bài nghe chất lượng cao. Không ngờ tiếng Nhật lại thú vị đến vậy.', rating: 5, color: '#7C3AED' },
+      { name: 'Trần Hòa', level: 'Đạt N4', avatar: 'TH', text: 'Thi thử sát đề thật, lần đầu thi JLPT mà không bị bỡ ngỡ. Miễn phí mà chất lượng không thua app trả phí.', rating: 5, color: '#2563EB' },
+      { name: 'Lê Thu Hương', level: 'Đang học N2', avatar: 'LH', text: 'Giao diện đẹp, dùng trên điện thoại rất mượt. 20 phút mỗi ngày trên xe buýt — streak 45 ngày rồi!', rating: 5, color: '#10B981' },
+    ],
   };
 
   /* ─── Chinese ─── */
@@ -167,6 +176,12 @@ function getConfig(lang: string): LangConfig {
     register_href: '/auth/register',
     try_href: '/zh/learn',
     show_intent_selector: false,
+    section_testimonials_title: 'Học viên nói gì về HSK?',
+    testimonials: [
+      { name: 'Phạm Lan Anh', level: 'Đạt HSK3', avatar: 'PL', text: 'Tiếng Trung khó nhưng cách học ở đây giúp mình tiến bộ rõ rệt sau 4 tháng. Từ vựng và ngữ pháp được giải thích rất dễ hiểu.', rating: 5, color: '#DC2626' },
+      { name: 'Hoàng Nam', level: 'Đạt HSK4', avatar: 'HN', text: 'Hán tự không còn là nỗi kinh hoàng nữa. Hệ thống SRS giúp mình nhớ từ lâu hơn nhiều so với học truyền thống.', rating: 5, color: '#7C3AED' },
+      { name: 'Vũ Thị Mai', level: 'Đang học HSK5', avatar: 'VM', text: 'Bài nghe rất đa dạng, sát format HSK thực tế. Thi thử nhiều lần giúp mình tự tin hơn hẳn khi vào phòng thi.', rating: 5, color: '#2563EB' },
+    ],
   };
 
   /* ─── Korean ─── */
@@ -229,6 +244,12 @@ function getConfig(lang: string): LangConfig {
     register_href: '/auth/register',
     try_href: '/ko/learn',
     show_intent_selector: false,
+    section_testimonials_title: 'Học viên nói gì về TOPIK?',
+    testimonials: [
+      { name: 'Trương Bảo', level: 'Đạt TOPIK 3', avatar: 'TB', text: 'Tiếng Hàn từ zero đến TOPIK 3 trong 5 tháng. Phương pháp kết hợp flashcard + nghe + đọc giúp mình tiến bộ nhanh hơn mong đợi.', rating: 5, color: '#10B981' },
+      { name: 'Lý Mỹ Linh', level: 'Đạt TOPIK 4', avatar: 'LM', text: 'K-drama và K-pop giúp mình yêu tiếng Hàn, còn nền tảng này giúp mình học đúng bài bản. Rất recommend!', rating: 5, color: '#F59E0B' },
+      { name: 'Đỗ Quang Huy', level: 'Đang học TOPIK 5', avatar: 'DQ', text: 'Mock test chuẩn format TOPIK, giải thích đáp án chi tiết. Mình improve điểm từ 120 lên 195 sau 3 tháng.', rating: 5, color: '#7C3AED' },
+    ],
   };
 
   /* ─── Fallback → Japanese ─── */
@@ -318,15 +339,15 @@ export function LandingPage({ lang }: { lang: string }) {
                 <div className="lp-float-badge lp-float-streak">
                   <FaFire size={18} color="#F97316"/>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:800, color:'#0F0D1A' }}>7 ngày streak</div>
-                    <div style={{ fontSize:10, color:'#6B7280' }}>Tiếp tục nhé!</div>
+                    <div className="lp-float-label">7 ngày streak</div>
+                    <div className="lp-float-sub">Tiếp tục nhé!</div>
                   </div>
                 </div>
                 <div className="lp-float-badge lp-float-xp">
                   <FaTrophy size={16} color="#F59E0B"/>
                   <div>
-                    <div style={{ fontSize:12, fontWeight:800, color:'#0F0D1A' }}>+50 XP</div>
-                    <div style={{ fontSize:10, color:'#6B7280' }}>Bài vừa xong</div>
+                    <div className="lp-float-label">+50 XP</div>
+                    <div className="lp-float-sub">Bài vừa xong</div>
                   </div>
                 </div>
               </div>
@@ -347,6 +368,50 @@ export function LandingPage({ lang }: { lang: string }) {
           ))}
         </div>
       </div>
+
+      {/* ════════════════════ STEPS ════════════════════ */}
+      <section className="py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="lp-section-header">
+            <div className="lp-section-tag"><FaRocket size={11}/> BẮT ĐẦU</div>
+            <h2 className="lp-section-title">{cfg.section_steps_title}</h2>
+          </div>
+
+          <div className="lp-steps-grid">
+            {cfg.steps.map(step => (
+              <div key={step.num} className="lp-step-card" style={{ '--st-color': step.color } as React.CSSProperties}>
+                <div className="lp-step-num-bg">{step.num}</div>
+                <div className="lp-step-icon">{step.icon}</div>
+                <div className="lp-step-title">{step.title}</div>
+                <p className="lp-step-desc">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════ SKILLS ════════════════════ */}
+      <section className="py-20 px-4 lp-skills-section">
+        <div className="max-w-5xl mx-auto">
+          <div className="lp-section-header">
+            <div className="lp-section-tag"><FaStar size={11}/> NỘI DUNG</div>
+            <h2 className="lp-section-title">{cfg.section_skills_title}</h2>
+            <p className="lp-section-sub">{cfg.section_skills_sub}</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {cfg.skills.map(s => (
+              <Link key={s.label} href={s.href} className="lp-skill-card"
+                style={{ '--sk-bg-from': s.from, '--sk-bg-to': s.to, '--sk-color': s.key_color } as React.CSSProperties}>
+                <div className="lp-skill-icon-box" style={{ background: s.icon_bg, color: '#fff' }}>{s.icon}</div>
+                <div className="lp-skill-name">{s.label}</div>
+                <p className="lp-skill-desc">{s.desc}</p>
+                <div className="lp-skill-cta">Học ngay <FaArrowRight size={10}/></div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ════════════════════ LEVELS ════════════════════ */}
       <section className="py-20 px-4">
@@ -386,44 +451,28 @@ export function LandingPage({ lang }: { lang: string }) {
       {/* ════════════════════ INTENT SELECTOR (ja only) ════════════════════ */}
       {cfg.show_intent_selector && <HomeIntentSelector lang={lang} />}
 
-      {/* ════════════════════ SKILLS ════════════════════ */}
-      <section className="py-20 px-4" style={{ background: '#F8F9FF' }}>
+      {/* ════════════════════ TESTIMONIALS ════════════════════ */}
+      <section className="py-20 px-4 lp-testimonials-section">
         <div className="max-w-5xl mx-auto">
           <div className="lp-section-header">
-            <div className="lp-section-tag"><FaStar size={11}/> NỘI DUNG</div>
-            <h2 className="lp-section-title">{cfg.section_skills_title}</h2>
-            <p className="lp-section-sub">{cfg.section_skills_sub}</p>
+            <div className="lp-section-tag"><FaStar size={11}/> HỌC VIÊN</div>
+            <h2 className="lp-section-title">{cfg.section_testimonials_title}</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {cfg.skills.map(s => (
-              <Link key={s.label} href={s.href} className="lp-skill-card"
-                style={{ '--sk-bg-from': s.from, '--sk-bg-to': s.to, '--sk-color': s.key_color } as React.CSSProperties}>
-                <div className="lp-skill-icon-box" style={{ background: s.icon_bg, color: '#fff' }}>{s.icon}</div>
-                <div className="lp-skill-name">{s.label}</div>
-                <p className="lp-skill-desc">{s.desc}</p>
-                <div className="lp-skill-cta">Học ngay <FaArrowRight size={10}/></div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════ STEPS ════════════════════ */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="lp-section-header">
-            <div className="lp-section-tag"><FaRocket size={11}/> BẮT ĐẦU</div>
-            <h2 className="lp-section-title">{cfg.section_steps_title}</h2>
-          </div>
-
-          <div className="lp-steps-grid">
-            {cfg.steps.map(step => (
-              <div key={step.num} className="lp-step-card" style={{ '--st-color': step.color } as React.CSSProperties}>
-                <div className="lp-step-num-bg">{step.num}</div>
-                <div className="lp-step-icon">{step.icon}</div>
-                <div className="lp-step-title">{step.title}</div>
-                <p className="lp-step-desc">{step.desc}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {cfg.testimonials.map(t => (
+              <div key={t.name} className="lp-testimonial-card">
+                <div className="lp-testimonial-stars">
+                  {Array.from({ length: t.rating }).map((_, i) => <FaStar key={i} size={12} color="#F59E0B"/>)}
+                </div>
+                <p className="lp-testimonial-text">"{t.text}"</p>
+                <div className="lp-testimonial-author">
+                  <div className="lp-testimonial-avatar" style={{ background: t.color }}>{t.avatar}</div>
+                  <div>
+                    <div className="lp-testimonial-name">{t.name}</div>
+                    <div className="lp-testimonial-level" style={{ color: t.color }}>{t.level}</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

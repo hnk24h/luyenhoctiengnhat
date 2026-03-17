@@ -1,0 +1,500 @@
+/**
+ * seed-pmp-q3.ts — PMP Exam Questions Part 2c
+ * Phần: Quality Management (20 câu) + Resource Management (20 câu)
+ * Chạy: npx tsx prisma/seed-pmp-q3.ts
+ */
+import { PrismaClient, Difficulty } from '@prisma/client';
+const prisma = new PrismaClient();
+
+type QDef = {
+  area: string;
+  group: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  answer: string;
+  explain: string;
+  difficulty: Difficulty;
+};
+
+const QUESTIONS: QDef[] = [
+  // ─────────────────────────────────────────────────────────────────────────
+  // QUALITY MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'quality', group: 'planning',
+    content: 'Sự khác biệt giữa Quality (chất lượng) và Grade (hạng) trong quản lý dự án là gì?',
+    optionA: 'Quality và Grade là hai từ đồng nghĩa trong PMBOK',
+    optionB: 'Quality là mức độ đáp ứng requirements; Grade là categories của sản phẩm có cùng chức năng nhưng đặc tính kỹ thuật khác nhau',
+    optionC: 'Grade cao hơn thì Quality tốt hơn',
+    optionD: 'Quality đo lường tính năng, Grade đo lường độ bền',
+    answer: 'B',
+    explain: 'Quality = degree to which deliverable meets specifications (high quality = meets all specs). Grade = category assigned based on technical characteristics. Ví dụ: phần mềm có nhiều tính năng (high grade) nhưng nhiều bugs (low quality). Low quality LUÔN là vấn đề, low grade có thể chấp nhận được.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Preventive Costs trong Cost of Quality (CoQ) bao gồm những gì?',
+    optionA: 'Chi phí kiểm tra sản phẩm sau khi sản xuất',
+    optionB: 'Chi phí để ngăn ngừa defects: training, quality planning, process documentation, supplier evaluation',
+    optionC: 'Chi phí sửa lỗi phát hiện trước khi giao hàng',
+    optionD: 'Chi phí warranty và xử lý khiếu nại khách hàng',
+    answer: 'B',
+    explain: 'Prevention Costs là costs of activities để ngăn không cho defects xảy ra ngay từ đầu: training, quality planning, process documentation, supplier evaluation. Đây là phần của Cost of Conformance và thường là investment tốt nhất (prevention cheaper than cure).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Control Charts trong quản lý chất lượng dùng để làm gì?',
+    optionA: 'Track chi phí và tiến độ dự án',
+    optionB: 'Xác định process đang trong giới hạn kiểm soát hay đang "out of control"',
+    optionC: 'So sánh chất lượng với đối thủ cạnh tranh',
+    optionD: 'Đo lường mức độ hài lòng khách hàng',
+    answer: 'B',
+    explain: 'Control Charts hiển thị process data theo thời gian với Upper Control Limit (UCL) và Lower Control Limit (LCL). Process "in control" = data points trong UCL/LCL theo phân phối ngẫu nhiên. "Out of control" = điểm vượt UCL/LCL hoặc 7 điểm liên tiếp trên/dưới mean (Rule of Seven).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Pareto Chart (Pareto Analysis) dựa trên nguyên tắc nào?',
+    optionA: 'Mọi defect đều có importance ngang nhau',
+    optionB: '80% problems thường đến từ 20% causes (80/20 rule)',
+    optionC: 'Chi phí quality phân phối đều theo mức độ severity',
+    optionD: 'Tất cả defect types đều phải được xử lý đồng thời',
+    answer: 'B',
+    explain: 'Pareto Analysis dựa trên Pareto Principle (80/20): 80% defects đến từ 20% causes. Bar chart sắp xếp causes theo frequency, với cumulative line. Giúp PM focus resources vào "vital few" causes thay vì "trivial many" để tối đa hóa quality improvement.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Ishikawa Diagram (Fishbone/Cause-and-Effect) được dùng để làm gì?',
+    optionA: 'Hiển thị tần suất các types of defects',
+    optionB: 'Xác định potential causes (root causes) của một problem hoặc effect',
+    optionC: 'So sánh hai biến số để tìm correlation',
+    optionD: 'Theo dõi defect trends theo thời gian',
+    answer: 'B',
+    explain: 'Fishbone Diagram (Ishikawa) nhận diện potential root causes của problem. "Fishbone" vì hình dạng xương cá: effect ở đầu, branches là major categories (6Ms: Man, Machine, Method, Material, Measurement, Mother Nature). Là tool trong Manage Quality và Root Cause Analysis.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Scatter Diagram trong quản lý chất lượng dùng để?',
+    optionA: 'Hiển thị process performance theo thời gian',
+    optionB: 'Kiểm tra mối quan hệ (correlation) giữa hai biến số',
+    optionC: 'Phân loại defects theo mức độ nghiêm trọng',
+    optionD: 'Theo dõi defect counts hàng ngày',
+    answer: 'B',
+    explain: 'Scatter Diagram (Scatter Plot) hiển thị hai biến số trên trục X và Y. Nếu data points tạo thành đường/cụm, có correlation. Positive correlation = cùng tăng, Negative = ngược chiều, No correlation = không liên quan. Dùng để kiểm tra hypothesis về causes.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Design of Experiments (DoE) trong Quality Management là gì?',
+    optionA: 'Phương pháp thử nghiệm A/B trên sản phẩm',
+    optionB: 'Statistical method để identify những factors nào ảnh hưởng đến quality outcome của process',
+    optionC: 'Kỹ thuật review design tài liệu',
+    optionD: 'Phương pháp đánh giá chất lượng của nhà cung cấp',
+    answer: 'B',
+    explain: 'Design of Experiments (DoE) là statistical technique xác định factors ảnh hưởng đến quality của process output. Ví dụ: test nhiều combinations (độ nhiệt, áp suất, vật liệu) để xác định setting tối ưu. Giúp optimize product design và manufacturing process.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: '"Rule of Seven" trong Control Charts có nghĩa là gì?',
+    optionA: 'Process bị coi là out of control khi có 7 defects trong một ngày',
+    optionB: '7 consecutive data points trên/dưới mean hoặc trending theo một hướng là dấu hiệu process out of control',
+    optionC: 'Kiểm tra mẫu mỗi 7 units sản phẩm',
+    optionD: 'Cho phép tối đa 7% defect rate',
+    answer: 'B',
+    explain: 'Rule of Seven (Western Electric Rules): 7 consecutive points on same side of mean (hoặc ascending/descending trend) là statistical signal rằng process đang out of statistical control, mặc dù chưa vượt UCL/LCL. Cần investigate assignable cause.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Sự khác biệt chính giữa Manage Quality và Control Quality là gì?',
+    optionA: 'Không có sự khác biệt, cả hai đều kiểm tra sản phẩm',
+    optionB: 'Manage Quality = process improvement, auditing quy trình; Control Quality = checking deliverables có đáp ứng standards không',
+    optionC: 'Control Quality làm trước, Manage Quality làm sau',
+    optionD: 'Manage Quality do PM; Control Quality do QA team',
+    answer: 'B',
+    explain: 'Manage Quality (cũ gọi là Perform Quality Assurance): tập trung vào quy trình — audit, process analysis, Kaizen. Control Quality: tập trung vào sản phẩm — inspect, test deliverables để xác định chúng có đúng specifications không. "QA = process; QC = product".',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Quality Audit trong Manage Quality nhằm mục đích gì?',
+    optionA: 'Kiểm tra sản phẩm đã hoàn thành để tìm defects',
+    optionB: 'Xác định các best practices đang được áp dụng và các gaps trong quy trình cần cải thiện',
+    optionC: 'Audit tài chính của dự án',
+    optionD: 'Review performance của từng thành viên team',
+    answer: 'B',
+    explain: 'Quality Audit là structured, independent review của quy trình dự án. Mục đích: xác định best practices được dùng, các process gaps, noncompliance issues và cơ hội improvement. Kết quả là process improvement recommendations, không phải inspection của sản phẩm.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Benchmarking trong Plan Quality Management là gì?',
+    optionA: 'Đặt ra mục tiêu chất lượng ngẫu nhiên',
+    optionB: 'So sánh practices và performance của dự án với các dự án tương tự hoặc industry standards để làm cơ sở đo lường',
+    optionC: 'Kiểm tra hiệu năng máy chủ',
+    optionD: 'Hoạt động testing cuối giai đoạn',
+    answer: 'B',
+    explain: 'Benchmarking so sánh planned hoặc actual practices với comparable projects (trong hoặc ngoài tổ chức) để xác định best practices, generate ideas for improvement và đặt ra performance measurement baseline phù hợp.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Statistical Sampling trong Control Quality được dùng khi nào?',
+    optionA: 'Khi muốn kiểm tra 100% sản phẩm',
+    optionB: 'Khi kiểm tra toàn bộ population quá tốn kém hoặc không khả thi — kiểm tra một mẫu đại diện',
+    optionC: 'Chỉ dùng cho sản xuất, không dùng trong dự án IT',
+    optionD: 'Khi không có tiêu chuẩn chất lượng rõ ràng',
+    answer: 'B',
+    explain: 'Statistical Sampling kiểm tra một phần (sample) của population để inference về toàn bộ. Ít tốn kém hơn 100% inspection nhưng có statistical risk. Sample size và sampling method được xác định trong Quality Management Plan.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Triết lý "Prevention over Inspection" trong quality management có nghĩa là gì?',
+    optionA: 'Không cần kiểm tra nếu quy trình tốt',
+    optionB: 'Chi phí ngăn ngừa defect thường ít hơn chi phí tìm và sửa defect sau khi xảy ra',
+    optionC: 'PM nên kiểm tra thay vì để QA team làm',
+    optionD: 'Phòng ngừa chỉ quan trọng trong giai đoạn cuối dự án',
+    answer: 'B',
+    explain: '"Prevention over Inspection" là quality principle cốt lõi: đầu tư vào prevention (training, process design, planning) cheaper than inspection (finding defects) which is cheaper than failures (rework, warranty, reputation damage). Phát hiện defect sớm luôn ít tốn kém hơn.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Quality Management Plan định nghĩa những gì?',
+    optionA: 'Danh sách defects cần sửa trong dự án',
+    optionB: 'Cách quality policies sẽ được implemented, quality standards, tools, metrics và cách quality control sẽ được thực hiện',
+    optionC: 'Chi phí của quality activities',
+    optionD: 'Vai trò và trách nhiệm của QA team',
+    answer: 'B',
+    explain: 'Quality Management Plan bao gồm: quality standards applicable, quality objectives, quality roles and responsibilities, deliverables and processes needing review, quality tools, major procedures (Control of Nonconformance, Corrective Action, Continuous Improvement).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Design for X (DfX) trong quality management bao gồm những gì?',
+    optionA: 'Thiết kế chỉ cho tính năng (functionality)',
+    optionB: 'Tối ưu hóa thiết kế cho một đặc tính cụ thể như DfM (manufacturability), DfR (reliability), DfT (testability)',
+    optionC: 'Phương pháp eXtreme Programming',
+    optionD: 'Design theo excel template',
+    answer: 'B',
+    explain: 'Design for X (DfX) là tập hợp các guidelines tối ưu hóa specific attribute của design: DfM (Design for Manufacturing), DfA (Assembly), DfR (Reliability), DfT (Testability), DfS (Sustainability). Giúp reduce costs và improve quality từ giai đoạn design.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Continuous Improvement (Kaizen) trong Quality Management là gì?',
+    optionA: 'Cải tiến lớn và đột phá một lần trong năm',
+    optionB: 'Triết lý cải tiến liên tục, nhỏ nhặt từng bước để tối ưu processes và reduce waste',
+    optionC: 'Tự động hóa quy trình sản xuất',
+    optionD: 'Đào tạo nhân viên về quality standards',
+    answer: 'B',
+    explain: 'Kaizen (改善) = "Change for better". Triết lý Nhật Bản về cải tiến liên tục, nhỏ từng bước (incremental improvements) thay vì cải tiến lớn. Tất cả mọi người trong tổ chức đều tham gia. PDCA (Plan-Do-Check-Act) là framework thực hiện Kaizen.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'quality', group: 'monitoring',
+    content: 'Check Sheets (Tally Sheets) trong Quality Management dùng để làm gì?',
+    optionA: 'Danh sách việc cần làm của PM',
+    optionB: 'Thu thập và organize dữ liệu thực tế về frequencies hoặc consequences of defects',
+    optionC: 'Theo dõi tiến độ từng task',
+    optionD: 'Danh sách tests cần thực hiện',
+    answer: 'B',
+    explain: 'Check Sheets là structured form để collect and analyze data. Tally marks ghi lại số lần sự kiện xảy ra (ví dụ: loại defect, tần suất, thời điểm). Dữ liệu từ Check Sheets thường được dùng để xây dựng Pareto Charts hoặc Histograms.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'quality', group: 'monitoring',
+    content: 'Upper Control Limit (UCL) trong Control Charts được đặt ở đâu theo thống kê?',
+    optionA: 'Tại giá trị maximum bao giờ đo được',
+    optionB: 'Tại ±3 standard deviations (sigma) từ mean',
+    optionC: 'Tại giá trị specification limit của sản phẩm',
+    optionD: 'Tại ±2 standard deviations từ mean',
+    answer: 'B',
+    explain: 'Control Limits (UCL/LCL) thường đặt ở ±3σ (3 standard deviations) từ mean, bao gồm 99.73% của normal distribution. Khác với Specification Limits (do customer/engineering set). Nếu data vượt Control Limits, có assignable (special) cause cần investigate.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'quality', group: 'executing',
+    content: 'Process Improvement Plan trong Manage Quality nhằm mục đích gì?',
+    optionA: 'Kế hoạch sửa defects cụ thể trong sản phẩm',
+    optionB: 'Định nghĩa các bước analyzes project management và product development processes để xác định và implement improvements',
+    optionC: 'Tài liệu hóa quy trình sản xuất hiện tại',
+    optionD: 'Lịch trình training cho team',
+    answer: 'B',
+    explain: 'Process Improvement Plan là subsidiary plan của Project Management Plan. Nó định nghĩa process boundaries, process configuration, process metrics và targets for improved performance. Là foundation cho Manage Quality activities như process analysis và quality audits.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'quality', group: 'planning',
+    content: 'Histogram trong quality control hiển thị điều gì?',
+    optionA: 'Xu hướng process performance theo thời gian',
+    optionB: 'Phân phối tần suất của data — cho thấy shape và spread của data distribution',
+    optionC: 'Correlation giữa hai biến số',
+    optionD: 'Cumulative frequency của defects',
+    answer: 'B',
+    explain: 'Histogram là bar chart hiển thị frequency distribution của numerical data. Mỗi bar đại diện cho một data range (bin). Cho thấy shape của distribution (normal, skewed), central tendency, spread và presence of outliers. Giúp nhận dạng patterns trong process.',
+    difficulty: 'easy',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RESOURCE MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'resource', group: 'planning',
+    content: 'RACI Matrix (Responsibility Assignment Matrix) phân biệt các vai trò: R, A, C, I có nghĩa là gì?',
+    optionA: 'Review, Approve, Comment, Inform',
+    optionB: 'Responsible (thực hiện), Accountable (chịu trách nhiệm), Consult (tư vấn), Inform (thông báo)',
+    optionC: 'Required, Assigned, Consulted, Instructed',
+    optionD: 'Report, Authorize, Control, Implement',
+    answer: 'B',
+    explain: 'RACI: R=Responsible (người thực hiện công việc), A=Accountable (người chịu trách nhiệm cuối cùng, chỉ có 1 người), C=Consulted (người được consult, 2-way communication), I=Informed (được thông báo, 1-way). Mỗi task chỉ có đúng 1 Accountable.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Theo mô hình Tuckman, giai đoạn "Norming" đặc trưng bởi điều gì?',
+    optionA: 'Team mới thành lập, lịch sự và ít xung đột',
+    optionB: 'Xung đột giữa các thành viên về cách làm việc',
+    optionC: 'Team bắt đầu làm việc hiệu quả — norms được thiết lập, trust được xây dựng',
+    optionD: 'Team hoạt động ở hiệu suất cao nhất',
+    answer: 'C',
+    explain: '5 giai đoạn Tuckman: Forming (getting to know) → Storming (conflicts/disagreements) → Norming (rules/norms established, trust develops) → Performing (high performance, problems solved efficiently) → Adjourning (project ends, team disbands). PM nên support team qua từng giai đoạn.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Thứ tự ưu tiên kỹ thuật giải quyết xung đột theo PMBOK từ tốt nhất đến kém nhất là gì?',
+    optionA: 'Forcing → Compromising → Collaborating → Withdrawing → Smoothing',
+    optionB: 'Collaborating/Problem Solving → Compromising → Smoothing → Forcing → Withdrawing',
+    optionC: 'Withdrawing → Smoothing → Compromising → Forcing → Collaborating',
+    optionD: 'Collaborating → Forcing → Smoothing → Compromising → Withdrawing',
+    answer: 'B',
+    explain: 'Thứ tự conflict resolution từ tốt → kém: (1) Collaborating/Problem Solving (win-win, best) → (2) Compromising (give and take) → (3) Smoothing/Accommodating → (4) Forcing (win-lose) → (5) Withdrawing/Avoiding (worst, giải quyết tạm thời). PMBOK ưa Problem Solving nhất.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Co-location (War Room) là kỹ thuật phát triển team vì lý do gì?',
+    optionA: 'Giảm không gian văn phòng và chi phí',
+    optionB: 'Tập trung team cùng địa điểm vật lý để tăng communication, collaboration và team cohesion',
+    optionC: 'Dễ dàng kiểm soát và giám sát team',
+    optionD: 'Bắt buộc khi team làm việc ở nhiều múi giờ',
+    answer: 'B',
+    explain: 'Co-location (collocation) đặt tất cả hoặc hầu hết team members cùng một địa điểm vật lý để enhance communication và build team cohesion. "War Room" là phòng dành riêng cho team. Face-to-face interaction giúp giải quyết vấn đề nhanh hơn và strengthen relationships.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Virtual Teams tạo ra thách thức gì cho PM?',
+    optionA: 'Chỉ thách thức về công nghệ',
+    optionB: 'Khó khăn về communication, cultural differences, time zone, trust building và team cohesion',
+    optionC: 'Virtual Teams luôn kém hiệu quả hơn co-located teams',
+    optionD: 'Chi phí luôn cao hơn traditional teams',
+    answer: 'B',
+    explain: 'Virtual Teams mang nhiều lợi ích (worldwide talent, no relocation) nhưng thách thức: (1) Communication quality/frequency giảm; (2) Cultural/language differences; (3) Building trust khó hơn; (4) Timezone coordination; (5) Team cohesion, isolation. PM cần ground rules, regular check-ins và collaboration tools.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Theo Abraham Maslow, nhân viên ở cấp độ nào trong Hierarchy of Needs có ít nhất động lực trong công việc nếu cấp đó chưa được đáp ứng?',
+    optionA: 'Esteem needs (tự trọng)',
+    optionB: 'Physiological needs (nhu cầu sinh lý cơ bản — food, shelter, safety)',
+    optionC: 'Self-actualization (tự hiện thực hóa)',
+    optionD: 'Social needs (tình cảm, belonging)',
+    answer: 'B',
+    explain: 'Maslow Hierarchy (từ dưới lên): Physiological → Safety → Social/Love → Esteem → Self-Actualization. Nhu cầu cơ bản (Physiological) phải được thỏa mãn trước. Nếu chưa đáp ứng, con người không focus vào higher-level needs. PM cần hiểu stage hiện tại của team để motivate.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Herzberg\'s Two-Factor Theory phân biệt Hygiene Factors và Motivators như thế nào?',
+    optionA: 'Cả hai đều tạo ra motivation như nhau',
+    optionB: 'Hygiene Factors (lương, điều kiện làm việc) nếu thiếu gây dissatisfaction nhưng nếu có không tạo motivation; Motivators (achievement, recognition) thực sự tạo motivation',
+    optionC: 'Hygiene Factors quan trọng hơn Motivators',
+    optionD: 'Motivators là ngoại tại, Hygiene Factors là nội tại',
+    answer: 'B',
+    explain: 'Herzberg Two-Factor: Hygiene Factors (pay, security, working conditions, company policies) = "dissatisfiers" — nếu thiếu gây unhappy, nhưng nếu có chỉ prevent dissatisfaction, không create motivation. Motivators (achievement, recognition, growth, responsibility) = truly motivate people.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'planning',
+    content: 'Organizational Breakdown Structure (OBS) trong Resource Management là gì?',
+    optionA: 'Sơ đồ tổ chức chuẩn của công ty',
+    optionB: 'Hierarchical representation của tổ chức theo organizational units/departments, cho thấy ai chịu trách nhiệm về work packages',
+    optionC: 'Danh sách tất cả resources cần thiết',
+    optionD: 'Lịch phân công công việc cho team',
+    answer: 'B',
+    explain: 'OBS là organizational hierarchy tương tự WBS nhưng theo organizational units. Khi kết hợp WBS × OBS = Responsibility Assignment Matrix (RAM). Control Accounts nằm ở intersection của WBS và OBS.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Pre-assignment of Resources trong Acquire Resources xảy ra khi nào?',
+    optionA: 'Sau khi project scope được xác định',
+    optionB: 'Khi specific resources đã được committed cho dự án trước khi Acquire Resources (ví dụ: trong project charter hoặc hợp đồng)',
+    optionC: 'Khi PM chọn resources từ danh sách available',
+    optionD: 'Khi sponsor chỉ định người vào team',
+    answer: 'B',
+    explain: 'Pre-assignment xảy ra khi specific people/resources đã được xác định trước: (1) Được hứa hẹn trong giai đoạn proposal/contract; (2) Được liệt kê trong Project Charter; (3) Là SME (Subject Matter Expert) bắt buộc. PM nhận resources này ngay từ đầu.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Kỹ thuật Negotiation trong Acquire Resources quan trọng khi nào?',
+    optionA: 'Chỉ khi thuê nhân sự bên ngoài',
+    optionB: 'Khi PM cần negotiate với functional managers để xin resources trong functional/matrix organization, vì PM không có direct authority',
+    optionC: 'Khi team members yêu cầu tăng lương',
+    optionD: 'Khi resources không đủ năng lực',
+    answer: 'B',
+    explain: 'Trong functional hoặc weak/balanced matrix organization, PM phải negotiate với functional managers để "borrow" resources. PM thường không có direct authority. Khả năng negotiation và relationship building là critical skill cho PM trong môi trường này.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Team Performance Assessment trong Develop Team nhằm mục đích gì?',
+    optionA: 'Đánh giá để sa thải nhân viên kém hiệu quả',
+    optionB: 'Đánh giá effectiveness của team development activities để xác định cải tiến cần thiết',
+    optionC: 'Tính lương cho team members',
+    optionD: 'Báo cáo tiến độ cho sponsor',
+    answer: 'B',
+    explain: 'Team Performance Assessment đánh giá effectiveness của team building efforts: technical skills improvement, competencies developed, reduction in turnover rate, increased team cohesion. Không phải individual performance review mà là tổng thể team effectiveness.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'planning',
+    content: 'McGregor\'s Theory X và Theory Y mô tả hai quan điểm quản lý như thế nào?',
+    optionA: 'Theory X = quản lý theo mục tiêu; Theory Y = quản lý theo quy trình',
+    optionB: 'Theory X = nhân viên lười biếng, cần kiểm soát chặt; Theory Y = nhân viên tự giác, muốn làm việc tốt',
+    optionC: 'Theory X lỗi thời, Theory Y hiện đại',
+    optionD: 'Theory X cho dự án lớn, Theory Y cho dự án nhỏ',
+    answer: 'B',
+    explain: 'McGregor Theory X: người lười, chỉ làm vì bị ép → cần micromanage, control chặt. Theory Y: người muốn làm việc, sáng tạo, có trách nhiệm → cần empower, delegate. PM theo Theory Y thường build better performing teams through trust and empowerment.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Emotional Intelligence (EI) quan trọng với PM vì lý do gì?',
+    optionA: 'Giúp PM học kỹ năng kỹ thuật nhanh hơn',
+    optionB: 'Giúp PM nhận biết và quản lý cảm xúc của bản thân và stakeholders, từ đó improve team performance',
+    optionC: 'EI chỉ quan trọng cho HR, không phải PM',
+    optionD: 'Giúp PM đàm phán hợp đồng tốt hơn',
+    answer: 'B',
+    explain: 'Emotional Intelligence = khả năng nhận biết, hiểu và quản lý cảm xúc (self-awareness, self-management, social awareness, relationship management). PM với EI cao: build trust, resolve conflicts better, motivate team effectively và manage stakeholder relationships.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'planning',
+    content: 'Staffing Management Plan (phần của Resource Management Plan) bao gồm những gì?',
+    optionA: 'Chỉ danh sách team members',
+    optionB: 'Staff acquisition, resource calendars, release plan, training needs, recognition & rewards, compliance, safety',
+    optionC: 'Chi tiết budget cho nhân sự',
+    optionD: 'Job descriptions của mỗi role',
+    answer: 'B',
+    explain: 'Staffing Management Plan là phần của Resource Management Plan bao gồm: cách acquire (tuyển/borrow), release plan (khi nào release), training requirements, recognition & rewards, compliance (HR regulations), safety considerations và resource calendars.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Khi một functional manager thu hồi một key team member giữa dự án mà không có sự đồng ý của PM, PM nên làm gì?',
+    optionA: 'Từ chối không cho team member đi',
+    optionB: 'Chấp nhận và điều chỉnh dự án mà không cần hành động nào khác',
+    optionC: 'Escalate vấn đề và negotiate với functional manager, và nếu không giải quyết được thì escalate lên sponsor',
+    optionD: 'Sa thải functional manager',
+    answer: 'C',
+    explain: 'Trong matrix organization, resource conflicts giữa PM và functional managers là phổ biến. PM nên: (1) Communicate ảnh hưởng; (2) Negotiate với functional manager về alternatives hoặc replacement; (3) Nếu không giải quyết được, escalate lên project sponsor hoặc PMO.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'planning',
+    content: 'Trong Resource Management, Halo Effect là gì?',
+    optionA: 'Hiệu ứng khi team cohesion ảnh hưởng tích cực đến performance',
+    optionB: 'Xu hướng assume rằng chỉ vì ai đó giỏi một kỹ năng, họ cũng giỏi kỹ năng khác liên quan',
+    optionC: 'Ảnh hưởng của PM charisma lên team',
+    optionD: 'Tác động của peer recognition lên individual performance',
+    answer: 'B',
+    explain: 'Halo Effect: bias nhận thức khi ấn tượng tổng thể về người nào đó (ví dụ: giỏi coding) ảnh hưởng đến đánh giá các phẩm chất khác của họ (assume giỏi project management). Dẫn đến assignments không phù hợp — người giỏi kỹ thuật không nhất thiết giỏi quản lý.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'Recognition and Reward System trong Develop Team nhằm mục đích gì trong ngữ cảnh của PM?',
+    optionA: 'Phân phối tiền thưởng cho team',
+    optionB: 'Reinforcement behavior mong muốn thông qua recognition, giúp increase team performance và morale',
+    optionC: 'Tuân thủ HR policy của công ty',
+    optionD: 'Tránh conflicts về lương thưởng',
+    answer: 'B',
+    explain: 'Recognition & Rewards reinforces desired behaviors. Phải: (1) Win-win — không zero-sum; (2) Timely và specific; (3) Culturally appropriate; (4) Aligned với project objectives. Nên reward collaborative behaviors, not just individual heroics. Là key tool trong Develop Team.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'resource', group: 'planning',
+    content: 'Resource Calendar trong Resource Management cho biết điều gì?',
+    optionA: 'Lịch làm việc của từng resource (availability, working days/shifts, holidays, vacation)',
+    optionB: 'Khi nào resources được phân công cho từng task',
+    optionC: 'Chi phí của resource theo thời gian',
+    optionD: 'Ngày release resource khỏi dự án',
+    answer: 'A',
+    explain: 'Resource Calendar (Resource Availability) cho biết resource có available khi nào: working hours per day, holidays, vacation, other commitments. Được dùng trong Estimate Activity Durations và Develop Schedule để đảm bảo resource assignments realistic.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'resource', group: 'monitoring',
+    content: 'Control Resources trong PMBOK 6 là quy trình mới với mục đích gì?',
+    optionA: 'Hire và fire project team members',
+    optionB: 'Ensure physical resources (equipment, materials, facilities) được available như kế hoạch và xử lý variances',
+    optionC: 'Monitor team member performance',
+    optionD: 'Manage vendor resources',
+    answer: 'B',
+    explain: 'Control Resources (PMBOK 6 - quy trình mới, tách từ Manage Project Team) tập trung vào physical resources: equipment, materials, supplies, facilities. Không phải human resources (human resources được manage trong Manage Team). Đảm bảo physical resources available on time và budget.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'resource', group: 'executing',
+    content: 'PM nhận thấy một thành viên team đang ở giai đoạn "Storming" theo Tuckman. PM nên làm gì?',
+    optionA: 'Kỷ luật thành viên đang gây xung đột',
+    optionB: 'Coaching, clarify roles và facilitate conflict resolution để team tiến sang Norming',
+    optionC: 'Để team tự giải quyết, không can thiệp',
+    optionD: 'Tách team thành các nhóm nhỏ hơn',
+    answer: 'B',
+    explain: 'Trong Storming phase, PM nên: (1) Acknowledge conflicts là natural; (2) Coach team qua conflicts; (3) Clarify roles, responsibilities và authority; (4) Facilitate resolution. Mục tiêu là help team move to Norming bằng establishing ground rules và trust.',
+    difficulty: 'medium',
+  },
+];
+
+async function main() {
+  console.log('🌱 Seeding PMP Exam Questions — Part 2c: Quality + Resource\n');
+  let created = 0;
+  let skipped = 0;
+
+  for (const q of QUESTIONS) {
+    const exists = await prisma.pMPExamQuestion.findFirst({
+      where: { content: q.content },
+    });
+    if (exists) {
+      process.stdout.write('○');
+      skipped++;
+      continue;
+    }
+    await prisma.pMPExamQuestion.create({ data: q });
+    process.stdout.write('✓');
+    created++;
+  }
+
+  console.log(`\n\n📊 Kết quả:`);
+  console.log(`   ✅ Tạo mới : ${created} câu`);
+  console.log(`   ⏭  Bỏ qua  : ${skipped} câu (đã tồn tại)`);
+  console.log(`   📝 Tổng    : ${QUESTIONS.length} câu`);
+  console.log(`\n👉 Chạy tiếp: npx tsx prisma/seed-pmp-q4.ts`);
+}
+
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

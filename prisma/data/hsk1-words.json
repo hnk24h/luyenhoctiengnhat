@@ -1,0 +1,20 @@
+{
+  "subject": "HSK",
+  "levelCode": "HSK1",
+  "mode": "vocab",
+  "language": "zh",
+  "categoryCode": "hsk1_vocab",
+  "lessonTitle": "Từ vựng hàng ngày HSK1",
+  "words": [
+    { "term": "你好", "pronunciation": "nǐ hǎo",    "meaning": "xin chào" },
+    { "term": "谢谢", "pronunciation": "xiè xiè",   "meaning": "cảm ơn" },
+    { "term": "对不起","pronunciation": "duì bu qǐ", "meaning": "xin lỗi" },
+    { "term": "我",   "pronunciation": "wǒ",        "meaning": "tôi" },
+    { "term": "你",   "pronunciation": "nǐ",        "meaning": "bạn, anh, chị" },
+    { "term": "他",   "pronunciation": "tā",        "meaning": "anh ấy, ông ấy" },
+    { "term": "她",   "pronunciation": "tā",        "meaning": "cô ấy, bà ấy" },
+    { "term": "好",   "pronunciation": "hǎo",       "meaning": "tốt, được" },
+    { "term": "不",   "pronunciation": "bù",        "meaning": "không" },
+    { "term": "是",   "pronunciation": "shì",       "meaning": "là (động từ)" }
+  ]
+}

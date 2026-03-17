@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import ReactFlow, {
   Node, Edge, Background, Controls, MiniMap,
   Handle, Position, NodeProps, BackgroundVariant,
@@ -528,7 +529,7 @@ function MindmapInner({ category, lessons, level, skill }: Props) {
         ))}
         {divider}
         {/* Back */}
-        <Link href={`/learn/${level}/${skill}/${category.id}`} style={{
+        <Link href={`/${(useParams() as { lang?: string }).lang ?? 'ja'}/learn/${level}/${skill}/${category.id}`} style={{
           display: 'flex', alignItems: 'center', gap: 4,
           fontSize: 11, color: T.muted, textDecoration: 'none',
           padding: '4px 8px', borderRadius: 6,

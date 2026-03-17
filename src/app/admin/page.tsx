@@ -3,8 +3,11 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { FaBullseye, FaBook, FaCircleQuestion, FaUser, FaSeedling, FaUpload, FaBookOpen, FaNewspaper, FaUsers, FaPalette, FaHeadphones } from 'react-icons/fa6';
-import type { ReactNode } from 'react';
+import {
+  FaBullseye, FaBook, FaCircleQuestion, FaSeedling, FaUpload,
+  FaBookOpen, FaNewspaper, FaUsers, FaPalette, FaHeadphones, FaLayerGroup,
+} from 'react-icons/fa6';
+import AdminDashboardClient, { type LangData, type GlobalStats } from './_components/AdminDashboardClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,83 +15,112 @@ export default async function AdminPage() {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') redirect('/');
 
-  const [levelCount, examSetCount, questionCount, userCount] = await Promise.all([
-    prisma.level.count(),
-    prisma.examSet.count(),
-    prisma.question.count(),
+  const [
+    userCount,
+    jlptLevels, hskLevels, pmpLevels,
+    jlptExamSets, hskExamSets, pmpExamSets,
+    jlptQuestions, hskQuestions, pmpQuestions,
+    jlptCategories, hskCategories, pmpCategories,
+  ] = await Promise.all([
     prisma.user.count(),
+    prisma.level.count({ where: { subject: 'JLPT' } }),
+    prisma.level.count({ where: { subject: 'HSK' } }),
+    prisma.level.count({ where: { subject: 'PMP' } }),
+    prisma.examSet.count({ where: { level: { subject: 'JLPT' } } }),
+    prisma.examSet.count({ where: { level: { subject: 'HSK' } } }),
+    prisma.examSet.count({ where: { level: { subject: 'PMP' } } }),
+    prisma.question.count({ where: { examSet: { level: { subject: 'JLPT' } } } }),
+    prisma.question.count({ where: { examSet: { level: { subject: 'HSK' } } } }),
+    prisma.question.count({ where: { examSet: { level: { subject: 'PMP' } } } }),
+    prisma.learningCategory.count({ where: { level: { subject: 'JLPT' } } }),
+    prisma.learningCategory.count({ where: { level: { subject: 'HSK' } } }),
+    prisma.learningCategory.count({ where: { level: { subject: 'PMP' } } }),
   ]);
 
-  const stats: { label: string; value: number; icon: ReactNode; href: string; color: string }[] = [
-    { label: 'Cấp độ',    value: levelCount,    icon: <FaBullseye size={20}/>, href: '/admin/levels',    color: 'bg-blue-50 border-blue-200' },
-    { label: 'Bộ đề',     value: examSetCount,  icon: <FaBook size={20}/>,         href: '/admin/examsets',  color: 'bg-green-50 border-green-200' },
-    { label: 'Câu hỏi',   value: questionCount, icon: <FaCircleQuestion size={20}/>, href: '/admin/examsets',  color: 'bg-yellow-50 border-yellow-200' },
-    { label: 'Người dùng', value: userCount,     icon: <FaUser size={20}/>,         href: '/admin/users',     color: 'bg-purple-50 border-purple-200' },
+  const global: GlobalStats = {
+    users: userCount,
+    levels: jlptLevels + hskLevels + pmpLevels,
+    questions: jlptQuestions + hskQuestions + pmpQuestions,
+    lessons: jlptCategories + hskCategories + pmpCategories,
+  };
+
+  const languages: LangData[] = [
+    {
+      key: 'JLPT',
+      flag: '🇯🇵',
+      label: 'Tiếng Nhật — JLPT',
+      shortLabel: 'JLPT',
+      desc: 'N5 → N1',
+      accent: 'red',
+      tabBg: 'bg-red-50',
+      tabText: 'text-red-600',
+      sectionBg: 'bg-red-50',
+      badgeClass: 'bg-red-100 text-red-700',
+      stats: [
+        { label: 'Cấp độ', value: jlptLevels, href: '/admin/levels?subject=JLPT' },
+        { label: 'Bộ đề', value: jlptExamSets, href: '/admin/examsets?subject=JLPT' },
+        { label: 'Câu hỏi', value: jlptQuestions, href: '/admin/examsets?subject=JLPT' },
+        { label: 'Bài học', value: jlptCategories, href: '/admin/learning?subject=JLPT' },
+      ],
+      links: [
+        { href: '/admin/levels?subject=JLPT', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'N5 → N1', bg: '#fee2e2', color: '#dc2626' },
+        { href: '/admin/examsets?subject=JLPT', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi theo kỹ năng', bg: '#dcfce7', color: '#15803d' },
+        { href: '/admin/learning?subject=JLPT', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: '#dbeafe', color: '#1d4ed8' },
+        { href: '/admin/reading?subject=JLPT', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: '#fff7ed', color: '#ea580c' },
+        { href: '/admin/listening?subject=JLPT', icon: <FaHeadphones size={18}/>, label: 'Bài nghe', desc: 'Audio transcript', bg: '#eff6ff', color: '#2563eb' },
+        { href: '/admin/import?subject=JLPT', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+      ],
+    },
+    {
+      key: 'HSK',
+      flag: '🇨🇳',
+      label: 'Tiếng Trung — HSK',
+      shortLabel: 'HSK',
+      desc: 'HSK 1 → 6',
+      accent: 'yellow',
+      tabBg: 'bg-yellow-50',
+      tabText: 'text-yellow-700',
+      sectionBg: 'bg-yellow-50',
+      badgeClass: 'bg-yellow-100 text-yellow-800',
+      stats: [
+        { label: 'Cấp độ', value: hskLevels, href: '/admin/levels?subject=HSK' },
+        { label: 'Bộ đề', value: hskExamSets, href: '/admin/examsets?subject=HSK' },
+        { label: 'Câu hỏi', value: hskQuestions, href: '/admin/examsets?subject=HSK' },
+        { label: 'Bài học', value: hskCategories, href: '/admin/learning?subject=HSK' },
+      ],
+      links: [
+        { href: '/admin/levels?subject=HSK', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'HSK 1 → 6', bg: '#fef9c3', color: '#a16207' },
+        { href: '/admin/examsets?subject=HSK', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi HSK', bg: '#dcfce7', color: '#15803d' },
+        { href: '/admin/learning?subject=HSK', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: '#dbeafe', color: '#1d4ed8' },
+        { href: '/admin/reading?subject=HSK', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: '#fff7ed', color: '#ea580c' },
+        { href: '/admin/import?subject=HSK', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+      ],
+    },
+    {
+      key: 'PMP',
+      flag: '📋',
+      label: 'Quản lý dự án — PMP',
+      shortLabel: 'PMP',
+      desc: 'PMBOK 6',
+      accent: 'blue',
+      tabBg: 'bg-blue-50',
+      tabText: 'text-blue-700',
+      sectionBg: 'bg-blue-50',
+      badgeClass: 'bg-blue-100 text-blue-800',
+      stats: [
+        { label: 'Cấp độ', value: pmpLevels, href: '/admin/levels?subject=PMP' },
+        { label: 'Bộ đề', value: pmpExamSets, href: '/admin/examsets?subject=PMP' },
+        { label: 'Câu hỏi', value: pmpQuestions, href: '/admin/examsets?subject=PMP' },
+        { label: 'Bài học', value: pmpCategories, href: '/admin/learning?subject=PMP' },
+      ],
+      links: [
+        { href: '/admin/levels?subject=PMP', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'PMP level config', bg: '#dbeafe', color: '#1d4ed8' },
+        { href: '/admin/examsets?subject=PMP', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Mock exam PMP', bg: '#dcfce7', color: '#15803d' },
+        { href: '/admin/learning?subject=PMP', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'PMBOK theory, ITTOs', bg: '#ede9fe', color: '#7c3aed' },
+        { href: '/admin/import?subject=PMP', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+      ],
+    },
   ];
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-      <p className="text-gray-500 mb-8">Quản lý nội dung hệ thống luyện thi tiếng Nhật</p>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        {stats.map(s => (
-          <Link key={s.label} href={s.href}
-            className={`card border ${s.color} hover:shadow-md transition`}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: 'rgba(0,0,0,0.06)' }}>{s.icon}</div>
-            <div className="text-2xl font-bold text-gray-900">{s.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{s.label}</div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/admin/levels" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}><FaBullseye size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-red-600">Quản lý cấp độ</h3>
-          <p className="text-sm text-gray-500 mt-1">Thêm/sửa/xóa cấp độ N5~N1</p>
-        </Link>
-        <Link href="/admin/examsets" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#dcfce7', color: '#15803d' }}><FaBook size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-red-600">Quản lý bộ đề</h3>
-          <p className="text-sm text-gray-500 mt-1">Thêm/sửa/xóa bộ đề, câu hỏi theo kỹ năng</p>
-        </Link>
-        <Link href="/admin/seed" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#fef9c3', color: '#92400e' }}><FaSeedling size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-red-600">Seed dữ liệu mẫu</h3>
-          <p className="text-sm text-gray-500 mt-1">Tạo dữ liệu mẫu để test hệ thống</p>
-        </Link>
-        <Link href="/admin/import" className="card hover:shadow-md transition group border-2 border-dashed border-indigo-200 bg-indigo-50">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#e0e7ff', color: '#4338ca' }}><FaUpload size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600">Import câu hỏi</h3>
-          <p className="text-sm text-gray-500 mt-1">Nhập hàng loạt câu hỏi từ file JSON</p>
-        </Link>
-        <Link href="/admin/learning" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#dbeafe', color: '#1d4ed8' }}><FaBookOpen size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-red-600">Quản lý bài học</h3>
-          <p className="text-sm text-gray-500 mt-1">Thêm/sửa bài học từ vựng, ngữ pháp</p>
-        </Link>
-        <Link href="/admin/reading" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#fff7ed', color: '#ea580c' }}><FaNewspaper size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-orange-600">Quản lý bài đọc</h3>
-          <p className="text-sm text-gray-500 mt-1">Thêm/sửa bài đọc tiếng Nhật cho học viên</p>
-        </Link>
-        <Link href="/admin/listening" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#eff6ff', color: '#2563eb' }}><FaHeadphones size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600">Quản lý bài nghe</h3>
-          <p className="text-sm text-gray-500 mt-1">Import, gắn audioUrl và quản lý transcript theo mondai</p>
-        </Link>
-        <Link href="/admin/users" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#ede9fe', color: '#7c3aed' }}><FaUsers size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-violet-600">Quản lý người dùng</h3>
-          <p className="text-sm text-gray-500 mt-1">Xem, phân quyền và xóa tài khoản học viên</p>
-        </Link>
-        <Link href="/admin/theme" className="card hover:shadow-md transition group">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2" style={{ background: '#fce7f3', color: '#db2777' }}><FaPalette size={20}/></div>
-          <h3 className="font-semibold text-gray-900 group-hover:text-pink-600">Giao diện & Theme</h3>
-          <p className="text-sm text-gray-500 mt-1">Thay đổi màu sắc toàn bộ website</p>
-        </Link>
-      </div>
-    </div>
-  );
+  return <AdminDashboardClient global={global} languages={languages} />;
 }

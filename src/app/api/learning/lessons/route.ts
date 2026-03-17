@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
-  const { categoryId, title, description, content, type, order } = body;
+  const { categoryId, title, description, content, type, order, requiredTier } = body;
 
   if (!categoryId || !title?.trim()) {
     return NextResponse.json({ error: 'categoryId và title là bắt buộc' }, { status: 400 });
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       type:        type || 'text',
       order:       order ?? 0,
+      requiredTier: requiredTier ?? 'free',
     },
     include: {
       _count: { select: { items: true } },

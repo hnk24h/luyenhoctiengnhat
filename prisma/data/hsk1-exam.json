@@ -1,0 +1,16 @@
+{
+  "subject": "HSK",
+  "levelCode": "HSK1",
+  "mode": "questions",
+  "language": "zh",
+  "examSetTitle": "Luyện tập từ vựng HSK1 - Bộ 1",
+  "skill": "vocab",
+  "count": 10,
+  "topics": [
+    "Chào hỏi và giao tiếp cơ bản",
+    "Đại từ nhân xưng (tôi, bạn, anh ấy...)",
+    "Con số 1-10",
+    "Màu sắc",
+    "Gia đình"
+  ]
+}

@@ -56,6 +56,7 @@ export default function AdminReadingPage() {
   const [form,          setForm]          = useState({ ...BLANK });
   const [saving,        setSaving]        = useState(false);
   const [search,        setSearch]        = useState('');
+  const [levelFilter,   setLevelFilter]   = useState('');
   const [formError,     setFormError]     = useState('');
   const [exporting,     setExporting]     = useState(false);
   const [showImport,    setShowImport]    = useState(false);
@@ -180,49 +181,56 @@ export default function AdminReadingPage() {
 
   /*──────────── Helpers ────────────*/
   const filtered = passages.filter(p =>
-    !search || p.title.toLowerCase().includes(search.toLowerCase()) ||
-    (p.titleVi?.toLowerCase().includes(search.toLowerCase()))
+    (!levelFilter || p.level === levelFilter) &&
+    (!search || p.title.toLowerCase().includes(search.toLowerCase()) ||
+    (p.titleVi?.toLowerCase().includes(search.toLowerCase())))
   );
   const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
   const LEVEL_COLOR: Record<string, string> = { N5: '#15803D', N4: '#1D4ED8', N3: '#92400E', N2: '#C2410C', N1: '#BE123C' };
   function set(k: keyof typeof BLANK, v: any) { setForm(prev => ({ ...prev, [k]: v })); }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
-
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1rem' }}>
+      {/* Gradient header */}
+      <div style={{ background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--primary)' }}>ADMIN</div>
-          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
-            <FaNewspaper size={20} style={{ color: 'var(--primary)' }} /> Quản lý bài đọc
-          </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{passages.length} bài đọc</p>
+          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
+            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
+            {' / '}Quản lý bài đọc
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>📰 Bài đọc</h1>
+          <div style={{ marginTop: 8 }}>
+            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{passages.length} bài đọc</span>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowImport(true)}
-            className="btn-secondary flex items-center gap-2 text-sm">
-            <FaFileImport size={13} /> Import JSON
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setShowImport(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FaFileImport size={12} /> Import
           </button>
-          <button onClick={handleExport} disabled={exporting || passages.length === 0}
-            className="btn-secondary flex items-center gap-2 text-sm">
-            {exporting
-              ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              : <FaFileExport size={13} />}
-            Export JSON
+          <button onClick={handleExport} disabled={exporting || passages.length === 0} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FaFileExport size={12} /> Export
           </button>
-          <button onClick={openCreate} className="btn-primary flex items-center gap-2 text-sm">
+          <button onClick={openCreate} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.9)', color: '#ea580c', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <FaPlus size={12} /> Thêm mới
           </button>
         </div>
       </div>
 
-      {/* ── Search ── */}
-      <div className="relative mb-4">
-        <FaMagnifyingGlass size={13} className="absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: 'var(--text-muted)' }} />
-        <input className="input w-full sm:w-72 pl-9" placeholder="Tìm bài đọc..."
-          value={search} onChange={e => setSearch(e.target.value)} />
+      <div style={{ paddingBottom: 40 }}>
+
+      {/* ── Search + filter ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative">
+          <FaMagnifyingGlass size={13} className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: 'var(--text-muted)' }} />
+          <input className="input sm:w-64 pl-9" placeholder="Tìm bài đọc..."
+            value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="input" style={{ width: 'auto' }} value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
+          <option value="">Tất cả cấp</option>
+          {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+        </select>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{filtered.length} bài</span>
       </div>
 
       {/* ── Table ── */}
@@ -507,7 +515,8 @@ export default function AdminReadingPage() {
           </div>
         </div>
       )}
-    </main>
+      </div>{/* end wrapper */}
+    </div>
   );
 }
 

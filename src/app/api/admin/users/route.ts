@@ -1,3 +1,11 @@
+// GET /api/admin/users/all — trả về danh sách user đơn giản
+export async function GET_ALL() {
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true, subscriptionTier: true },
+    orderBy: { name: 'asc' },
+  });
+  return NextResponse.json(users);
+}
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

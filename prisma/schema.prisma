@@ -1,3 +1,23 @@
+// ─── USER LESSON ACCESS ─────────────────────────────────────────────────────
+model UserLessonAccess {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    LearningLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  grantedAt DateTime       @default(now())
+  expiresAt DateTime?
+  note      String?
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
+  @@index([userId])
+}
+enum SubscriptionTier {
+  free
+  basic
+  premium
+}
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -86,6 +106,7 @@ model User {
   password          String?
   role              UserRole            @default(user)
   createdAt         DateTime            @default(now())
+  subscriptionTier  SubscriptionTier    @default(free)
   sessions          ExamSession[]
   progress          UserProgress[]
   lessonProgress    LessonProgress[]
@@ -99,6 +120,19 @@ model User {
   studyEvents       StudyEvent[]
   courseEnrollments CourseEnrollment[]
   pmpSessions       PMPExamSession[]
+  levelPosts        LevelPost[]
+  userLessonAccesses UserLessonAccess[]
+}
+
+model LevelPost {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  levelCode String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([levelCode, createdAt(sort: Desc)])
 }
 
 model UserStudyProfile {
@@ -246,6 +280,8 @@ model LearningLesson {
   items       Content[]
   progress    LessonProgress[]
   modules     LessonsOnModule[]
+  requiredTier SubscriptionTier @default(free)
+  lessonAccesses UserLessonAccess[]
 
   @@index([categoryId, order])
   @@index([type])
@@ -304,6 +340,27 @@ model LessonProgress {
   completedAt DateTime?
 
   @@unique([userId, lessonId])
+}
+
+// ─── GRAMMAR PATTERN MODULE ───────────────────────────────────────────────────
+// Searchable grammar patterns per language level.
+// searchIn: a literal substring to look for in lesson transcript text.
+
+model GrammarPattern {
+  id              String  @id @default(cuid())
+  lang            String  // "ja" | "zh"
+  levelCode       String  // "N5" | "HSK2" etc — matches Level.code
+  pattern         String  // display pattern, e.g. "〜ています"
+  reading         String? // furigana / pinyin romanisation
+  meaning         String  // Vietnamese meaning
+  example         String  // example sentence in target language
+  exampleReading  String? // furigana / pinyin reading of example
+  exampleVi       String  // Vietnamese translation of example
+  searchIn        String  // substring to match in transcript, e.g. "ています"
+  order           Int     @default(0)
+
+  @@index([lang, levelCode])
+  @@index([lang, levelCode, searchIn])
 }
 
 // ─── FLASHCARD MODULE ─────────────────────────────────────────────────────────

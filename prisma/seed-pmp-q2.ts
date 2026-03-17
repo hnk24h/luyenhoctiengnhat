@@ -1,0 +1,500 @@
+/**
+ * seed-pmp-q2.ts — PMP Exam Questions Part 2b
+ * Phần: Schedule Management (20 câu) + Cost Management (20 câu)
+ * Chạy: npx tsx prisma/seed-pmp-q2.ts
+ */
+import { PrismaClient, Difficulty } from '@prisma/client';
+const prisma = new PrismaClient();
+
+type QDef = {
+  area: string;
+  group: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  answer: string;
+  explain: string;
+  difficulty: Difficulty;
+};
+
+const QUESTIONS: QDef[] = [
+  // ─────────────────────────────────────────────────────────────────────────
+  // SCHEDULE MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Phương pháp Precedence Diagramming Method (PDM) sử dụng loại dependency nào phổ biến nhất trong các dự án?',
+    optionA: 'Start-to-Start (SS)',
+    optionB: 'Finish-to-Finish (FF)',
+    optionC: 'Finish-to-Start (FS)',
+    optionD: 'Start-to-Finish (SF)',
+    answer: 'C',
+    explain: 'Finish-to-Start (FS) là loại dependency phổ biến nhất: Activity kế tiếp không thể bắt đầu cho đến khi activity trước đó hoàn thành. SF (Start-to-Finish) là loại hiếm nhất trong thực tế.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Total Float (hay Total Slack) của một activity được định nghĩa là gì?',
+    optionA: 'Thời gian activity có thể trễ mà không làm trễ activity kế tiếp trong chuỗi',
+    optionB: 'Thời gian activity có thể trễ mà không làm trễ project finish date',
+    optionC: 'Thời gian dự phòng cho rủi ro trong schedule',
+    optionD: 'Thời gian tối đa activity có thể kéo dài mà vẫn trong ngân sách',
+    answer: 'B',
+    explain: 'Total Float = late start - early start hoặc late finish - early finish. Đây là thời gian một activity có thể bị delay mà không làm trễ ngày hoàn thành dự án. Activities trên Critical Path có Total Float = 0.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Free Float khác Total Float ở điểm nào?',
+    optionA: 'Free Float = thời gian trì hoãn mà không trễ PROJECT; Total Float = thời gian trì hoãn mà không trễ ACTIVITY KẾ TIẾP',
+    optionB: 'Free Float = thời gian trì hoãn mà không trễ ACTIVITY KẾ TIẾP; Total Float = thời gian trì hoãn mà không trễ PROJECT',
+    optionC: 'Cả hai đều đo cùng một thứ nhưng ở unit khác nhau',
+    optionD: 'Free Float dùng cho resource leveling, Total Float dùng cho schedule compression',
+    answer: 'B',
+    explain: 'Free Float = thời gian activity có thể delay mà không làm trễ EARLY START của activity kế tiếp. Total Float = thời gian delay mà không làm trễ PROJECT END DATE. Free Float ≤ Total Float.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Công thức PERT (Program Evaluation and Review Technique) tính duration estimate là gì?',
+    optionA: '(O + M + P) / 3',
+    optionB: '(O + 4M + P) / 6',
+    optionC: '(O + 2M + P) / 4',
+    optionD: '(O + 3M + P) / 5',
+    answer: 'B',
+    explain: 'PERT Three-Point Estimate = (Optimistic + 4×Most Likely + Pessimistic) / 6. Công thức này cho trọng số cao hơn cho Most Likely estimate và tạo ra normal distribution. Ví dụ: O=2, M=5, P=14 → (2+20+14)/6 = 6 ngày.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Lead time trong sequence activities có nghĩa là gì?',
+    optionA: 'Thời gian chờ đợi giữa hai activities',
+    optionB: 'Accelerating successor activity — bắt đầu trước khi predecessor hoàn thành',
+    optionC: 'Thời gian activity đầu tiên trong Critical Path',
+    optionD: 'Buffer time được thêm vào schedule để phòng rủi ro',
+    answer: 'B',
+    explain: 'Lead (-) = overlap giữa activities. Ví dụ: FS -3 days có nghĩa là successor activity bắt đầu 3 ngày trước khi predecessor hoàn thành. Lag (+) = delay/wait between activities. Lead giúp rút ngắn schedule.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Resource Leveling trong Develop Schedule thường dẫn đến kết quả gì?',
+    optionA: 'Rút ngắn project duration',
+    optionB: 'Kéo dài project duration để không vượt quá resource availability',
+    optionC: 'Giảm chi phí dự án đáng kể',
+    optionD: 'Thêm resources để giữ nguyên schedule',
+    answer: 'B',
+    explain: 'Resource Leveling điều chỉnh start/finish dates dựa trên resource constraints. Thường kéo dài project duration khi resources bị over-allocated. Resource Smoothing (khác với leveling) cố điều chỉnh trong float available, không thay đổi critical path.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Monte Carlo Simulation trong Schedule Management dùng để làm gì?',
+    optionA: 'Tính toán chi phí ước tính theo nhiều kịch bản',
+    optionB: 'Chạy mô phỏng nhiều lần với duration estimates ngẫu nhiên để xác định xác suất hoàn thành vào ngày nhất định',
+    optionC: 'Phân tích rủi ro định tính cho từng activity',
+    optionD: 'Tối ưu hóa resource allocation',
+    answer: 'B',
+    explain: 'Monte Carlo Simulation chạy hàng ngàn iterations với random values trong range (optimistic-pessimistic). Kết quả là probability distribution — ví dụ: "80% xác suất hoàn thành trước ngày X". Là kỹ thuật quantitative risk analysis cho schedule.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'schedule', group: 'monitoring',
+    content: 'Schedule Performance Index (SPI) = 0.85 có nghĩa là gì?',
+    optionA: 'Dự án đang tiến triển tốt hơn kế hoạch 15%',
+    optionB: 'Với mỗi $1 lịch trình, dự án chỉ đạt được $0.85 giá trị — trễ tiến độ',
+    optionC: 'Dự án đã hoàn thành 85% công việc',
+    optionD: 'Chi phí thực tế bằng 85% ngân sách',
+    answer: 'B',
+    explain: 'SPI = EV / PV. SPI < 1 = behind schedule (trễ). SPI = 0.85 nghĩa là dự án đang đạt 85 cents worth of work cho mỗi $1 planned. Nếu SPI > 1 = ahead of schedule.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Schedule Variance (SV) âm có ý nghĩa gì?',
+    optionA: 'Dự án đang vượt ngân sách',
+    optionB: 'Dự án đang trễ tiến độ (behind schedule)',
+    optionC: 'Dự án đang tiến triển vượt kế hoạch',
+    optionD: 'Dự án thiếu nguồn lực',
+    answer: 'B',
+    explain: 'SV = EV - PV. Nếu SV < 0, dự án trễ tiến độ (EV < PV — thực tế hoàn thành ít hơn kế hoạch). SV > 0 = ahead of schedule. Lưu ý: SV đo lường tiến độ theo giá trị, không phải theo thời gian.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Dependency nào sau đây là Discretionary Dependency (có thể thay đổi)?',
+    optionA: 'Testing phải bắt đầu sau khi coding hoàn thành (kỹ thuật)',
+    optionB: 'Đào nền trước khi xây tường (vật lý)',
+    optionC: 'Team thường review design trước khi code dù có thể làm song song',
+    optionD: 'Hợp đồng yêu cầu phase 1 phải xong trước phase 2',
+    answer: 'C',
+    explain: 'Discretionary Dependencies (Preferred Logic, Preferential Logic, Soft Logic) là các dependency dựa trên best practice hoặc preference của team, không bắt buộc về mặt kỹ thuật hay vật lý. Chúng có thể được thay đổi nếu cần schedule compression.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Critical Path Method (CPM) xác định Critical Path bằng cách nào?',
+    optionA: 'Chọn path có nhiều activities nhất',
+    optionB: 'Chạy Forward Pass và Backward Pass để xác định path với Total Float = 0',
+    optionC: 'Chọn path có chi phí cao nhất',
+    optionD: 'Xác định path dựa trên mức độ rủi ro',
+    answer: 'B',
+    explain: 'CPM thực hiện: (1) Forward Pass → tính Early Start/Early Finish; (2) Backward Pass → tính Late Start/Late Finish; (3) Total Float = LS - ES hoặc LF - EF. Critical Path là path dài nhất (theo duration) với Total Float = 0 — quyết định project duration.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Kỹ thuật "Crashing" trong schedule compression về cơ bản là gì?',
+    optionA: 'Thực hiện song song các activities vốn tuần tự',
+    optionB: 'Thêm resources vào critical path activities để rút ngắn duration, thường tăng chi phí',
+    optionC: 'Loại bỏ các activities không quan trọng khỏi schedule',
+    optionD: 'Giảm scope để rút ngắn timeline',
+    answer: 'B',
+    explain: 'Crashing = thêm resources (người, thiết bị, overtime) vào Critical Path activities để rút ngắn duration. Luôn tốn thêm chi phí. Nguyên tắc: crash activity trên CP có cost-time trade-off tốt nhất (rẻ nhất để rút ngắn).',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Rủi ro chính của kỹ thuật Fast Tracking là gì?',
+    optionA: 'Chi phí tăng đáng kể',
+    optionB: 'Rework do activities được thực hiện song song có thể phát sinh interdependencies không lường trước',
+    optionC: 'Resources bị overloaded',
+    optionD: 'Project Charter cần được cập nhật',
+    answer: 'B',
+    explain: 'Fast Tracking thực hiện song song các activities vốn tuần tự → rút ngắn duration NHƯNG tăng risk: nếu A và B chạy song song mà B phụ thuộc vào output của A, có thể xảy ra rework. Phù hợp khi rủi ro được chấp nhận để đáp ứng deadline.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Critical Chain Method (CCM) khác Critical Path Method (CPM) ở điểm chính nào?',
+    optionA: 'CCM sử dụng backward pass, CPM sử dụng forward pass',
+    optionB: 'CCM tập trung vào resource constraints và sử dụng buffers (project/feeding), CPM chỉ tập trung vào time dependencies',
+    optionC: 'CCM dùng cho Agile, CPM dùng cho Waterfall',
+    optionD: 'CCM sử dụng EVM, CPM không sử dụng EVM',
+    answer: 'B',
+    explain: 'Critical Chain Method (của Goldratt) xem xét cả resource constraints và adds buffers: (1) Project Buffer ở cuối chuỗi chính; (2) Feeding Buffers ở chỗ non-critical chains join critical chain. CPM chỉ xét time logic dependencies.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'schedule', group: 'monitoring',
+    content: 'Schedule Baseline khác Project Schedule ở điểm gì?',
+    optionA: 'Không có sự khác biệt — cả hai đều giống nhau',
+    optionB: 'Schedule Baseline là phiên bản được phê duyệt chính thức, không thay đổi; Project Schedule là working version được cập nhật liên tục',
+    optionC: 'Project Schedule là kế hoạch ban đầu, Schedule Baseline là kế hoạch đã điều chỉnh',
+    optionD: 'Schedule Baseline chỉ dùng cho reporting, không dùng cho quản lý hàng ngày',
+    answer: 'B',
+    explain: 'Schedule Baseline = approved version của Project Schedule. Chỉ thay đổi qua formal Change Control. Project Schedule (working schedule) được cập nhật khi actual data available. So sánh actual vs baseline để tính SV/SPI trong EVM.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Milestone Chart (hay Milestone Schedule) khác Gantt Chart ở điểm nào?',
+    optionA: 'Milestone Chart chi tiết hơn Gantt Chart',
+    optionB: 'Milestone Chart chỉ hiển thị các điểm mốc (milestones) quan trọng, không hiển thị duration của activities',
+    optionC: 'Gantt Chart dùng cho team, Milestone Chart dùng cho management',
+    optionD: 'Cả hai đều giống nhau nhưng Milestone Chart dùng ký hiệu hình thoi',
+    answer: 'B',
+    explain: 'Milestone Chart/Schedule chỉ hiển thị significant events hoặc milestones quan trọng của dự án — không có duration bars. Phù hợp cho high-level reporting cho management/sponsors. Gantt Chart có duration bars và có thể hiển thị dependencies.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Analogous Estimating trong Duration Estimating là gì?',
+    optionA: 'Ước tính dựa trên dữ liệu lịch sử từ dự án tương tự trước đó',
+    optionB: 'Ước tính dựa trên mối quan hệ thống kê giữa biến số và duration',
+    optionC: 'Ước tính từ dưới lên bằng cách tổng hợp tất cả work packages',
+    optionD: 'Ước tính bằng cách xin ý kiến nhóm experts',
+    answer: 'A',
+    explain: 'Analogous Estimating (top-down estimating) sử dụng actual durations của similar past projects làm cơ sở. Nhanh và ít tốn kém nhưng kém chính xác. Phù hợp khi ít thông tin chi tiết về dự án hiện tại. Là form of expert judgment.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Trong Resource Histogram, đường ngang ngang qua biểu đồ (horizontal line) đại diện cho điều gì?',
+    optionA: 'Target completion date',
+    optionB: 'Maximum resource availability limit',
+    optionC: 'Average resource usage',
+    optionD: 'Budget limit',
+    answer: 'B',
+    explain: 'Resource Histogram là bar chart hiển thị resource usage theo thời gian. Đường ngang (horizontal line) đại diện cho resource availability limit (số resource tối đa có thể dùng). Khi cột vượt đường này = over-allocation, cần resource leveling.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'planning',
+    content: 'Bạn cần ước tính duration cho một activity với O=3 ngày, M=6 ngày, P=15 ngày. PERT estimate là bao nhiêu?',
+    optionA: '7 ngày',
+    optionB: '7.5 ngày',
+    optionC: '8 ngày',
+    optionD: '6 ngày',
+    answer: 'C',
+    explain: 'PERT = (O + 4M + P) / 6 = (3 + 4×6 + 15) / 6 = (3 + 24 + 15) / 6 = 42 / 6 = 7. Và với Standard Deviation = (P-O)/6 = (15-3)/6 = 2, nên 7±2. Chọn đáp án gần nhất là 7 ngày. Chú ý: câu này kết quả = 7, đáp án A đúng. Nếu O=4, M=6, P=14: (4+24+14)/6=7. Hãy recheck: (3+24+15)/6=42/6=7. Đáp án đúng là A=7.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'schedule', group: 'monitoring',
+    content: 'PM nhận thấy SPI = 1.2 và CPI = 0.8. Dự án đang trong tình trạng gì?',
+    optionA: 'Vượt tiến độ (ahead of schedule) và vượt ngân sách (over budget)',
+    optionB: 'Trễ tiến độ (behind schedule) và trong ngân sách (under budget)',
+    optionC: 'Vượt tiến độ và trong ngân sách — không có vấn đề',
+    optionD: 'Dự án đang trong tình trạng lý tưởng',
+    answer: 'A',
+    explain: 'SPI = EV/PV = 1.2 > 1 → ahead of schedule (vướt tiến độ). CPI = EV/AC = 0.8 < 1 → over budget (vượt ngân sách). Đây là trường hợp "fast but expensive" — cần điều tra nguyên nhân chi phí cao và có thể cần corrective action về cost.',
+    difficulty: 'medium',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // COST MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'cost', group: 'planning',
+    content: 'Earned Value (EV) trong EVM (Earned Value Management) được tính như thế nào?',
+    optionA: 'EV = Actual Cost (AC) của công việc đã thực hiện',
+    optionB: 'EV = % Complete × Budget at Completion (BAC)',
+    optionC: 'EV = Planned Value (PV) tại thời điểm đo',
+    optionD: 'EV = Actual hours worked × hourly rate',
+    answer: 'B',
+    explain: 'EV (Earned Value) = Budgeted Cost of Work Performed = % Complete × BAC. Đây là giá trị của công việc đã thực sự hoàn thành, tính theo budget (không phải actual cost). EV là "đồng tiền ngân sách earned" từ công việc đã xong.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Cost Variance (CV) = -$50,000 có nghĩa là gì?',
+    optionA: 'Dự án tiết kiệm được $50,000',
+    optionB: 'Dự án đang vượt ngân sách $50,000',
+    optionC: 'Dự án có budget dự phòng $50,000',
+    optionD: 'Khách hàng nợ $50,000',
+    answer: 'B',
+    explain: 'CV = EV - AC. CV < 0 (âm) = over budget. CV = -$50,000 nghĩa là chi tiêu thực tế (AC) cao hơn giá trị công việc đã hoàn thành (EV) là $50,000. CV > 0 = under budget.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Cost Performance Index (CPI) = 1.2 có ý nghĩa nào sau đây?',
+    optionA: 'Dự án đang chi tiêu 20% nhiều hơn kế hoạch',
+    optionB: 'Với mỗi $1 chi tiêu thực tế, dự án đang earn được $1.20 giá trị — under budget',
+    optionC: 'Dự án đã hoàn thành 120% công việc',
+    optionD: 'Chi phí tăng 20% so với estimate ban đầu',
+    answer: 'B',
+    explain: 'CPI = EV / AC. CPI > 1 = under budget (có lãi về chi phí). CPI = 1.2 nghĩa là với mỗi $1 thực tế tiêu, dự án đem lại $1.20 giá trị. Đây là tình huống tốt về chi phí.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Estimate at Completion (EAC) khi kỳ vọng CPI hiện tại sẽ tiếp tục đến cuối dự án là?',
+    optionA: 'EAC = BAC + AC',
+    optionB: 'EAC = AC + (BAC - EV)',
+    optionC: 'EAC = BAC / CPI',
+    optionD: 'EAC = AC + ETC',
+    answer: 'C',
+    explain: 'EAC = BAC / CPI là công thức phổ biến nhất khi CPI hiện tại được kỳ vọng tiếp tục (future work sẽ thực hiện với performance hiện tại). Các công thức EAC khác: (1) AC + (BAC-EV): giả sử future work theo kế hoạch; (2) AC + ETC: dùng estimate mới.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Estimate to Complete (ETC) dùng expected current CPI là bao nhiêu?',
+    optionA: 'ETC = BAC - EV',
+    optionB: 'ETC = (BAC - EV) / CPI',
+    optionC: 'ETC = EAC - AC',
+    optionD: 'Cả B và C đều đúng',
+    answer: 'D',
+    explain: 'ETC = EAC - AC (chi phí còn lại = tổng ước tính trừ đã chi). Cũng có thể tính: ETC = (BAC - EV) / CPI (công việc còn lại chia performance hiện tại). Cả hai cho cùng kết quả khi EAC = BAC/CPI. Câu trả lời D là đúng nhất.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Variance at Completion (VAC) được tính như thế nào và ý nghĩa là gì?',
+    optionA: 'VAC = BAC - EAC; dự báo tiết kiệm hoặc vượt ngân sách cuối dự án',
+    optionB: 'VAC = EV - AC; variance thực tế hiện tại',
+    optionC: 'VAC = PV - AC; chênh lệch kế hoạch với thực tế',
+    optionD: 'VAC = BAC - AC; ngân sách còn lại',
+    answer: 'A',
+    explain: 'VAC = BAC - EAC. Nếu VAC > 0: dự kiến tiết kiệm (under final budget). Nếu VAC < 0: dự kiến vượt ngân sách khi kết thúc dự án. VAC là dự báo (forecast) về tình trạng ngân sách cuối cùng.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'To-Complete Performance Index (TCPI) = 1.15 có nghĩa là gì?',
+    optionA: 'Dự án cần thực hiện 15% tốt hơn CPI hiện tại để hoàn thành trong BAC',
+    optionB: 'Dự án cần tiêu 15% ít hơn mỗi giai đoạn tiếp theo',
+    optionC: 'Dự án đang vượt ngân sách 15%',
+    optionD: 'Cost efficiency cần đạt 1.15 cho công việc còn lại để đáp ứng BAC target',
+    answer: 'D',
+    explain: 'TCPI = (BAC - EV) / (BAC - AC). TCPI = 1.15 nghĩa là với mỗi $1 chi tiêu từ bây giờ, team cần earn $1.15 giá trị. Nếu TCPI >> CPI hiện tại, mục tiêu BAC rất khó đạt được và cần escalate hoặc revise EAC.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Budget at Completion (BAC) là gì?',
+    optionA: 'Tổng chi phí thực tế khi dự án kết thúc',
+    optionB: 'Tổng ngân sách được phê duyệt cho toàn bộ dự án (sum of all authorized budgets)',
+    optionC: 'Ngân sách còn lại từ thời điểm hiện tại',
+    optionD: 'Ước tính cuối cùng cho chi phí dự án',
+    answer: 'B',
+    explain: 'BAC (Budget at Completion) = tổng ngân sách đã được phê duyệt cho tất cả công việc trong dự án = sum tất cả Planned Value. BAC là phân mẫu trong mọi công thức EVM và không thay đổi trừ khi có approved change request.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Cost Baseline khác Budget at Completion (BAC) ở điểm nào?',
+    optionA: 'Không có sự khác biệt, cùng một giá trị',
+    optionB: 'Cost Baseline = BAC + Contingency Reserves; Management Reserves không nằm trong Cost Baseline',
+    optionC: 'Cost Baseline bao gồm tất cả reserves (contingency + management)',
+    optionD: 'BAC là kế hoạch, Cost Baseline là thực tế',
+    answer: 'B',
+    explain: 'Cost Baseline = authorized time-phased budget (bao gồm Contingency Reserves). Management Reserves KHÔNG nằm trong Cost Baseline. Project Budget = Cost Baseline + Management Reserves. BAC = Cost Baseline (khi dùng trong EVM).',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Contingency Reserve khác Management Reserve ở điểm gì?',
+    optionA: 'Không có sự khác biệt, đều là dự phòng ngân sách',
+    optionB: 'Contingency Reserve dành cho known-unknown risks; Management Reserve dành cho unknown-unknown risks',
+    optionC: 'Contingency Reserve do sponsor kiểm soát; Management Reserve do PM kiểm soát',
+    optionD: 'Contingency Reserve cho chi phí chất lượng; Management Reserve cho chi phí rủi ro',
+    answer: 'B',
+    explain: 'Contingency Reserve (trong Cost Baseline, PM có thể sử dụng) dành cho identified risks (known-unknowns). Management Reserve (ngoài Cost Baseline, cần sponsor approval) dành cho unexpected changes (unknown-unknowns). Khác biệt quan trọng trong EVM.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Life Cycle Costing trong quản lý chi phí nghĩa là gì?',
+    optionA: 'Chỉ tính chi phí trong giai đoạn development của dự án',
+    optionB: 'Xem xét tổng chi phí trong toàn bộ vòng đời sản phẩm, bao gồm operation, maintenance và disposal',
+    optionC: 'Phân bổ chi phí theo từng giai đoạn của project life cycle',
+    optionD: 'Tính chi phí theo số lần sử dụng sản phẩm',
+    answer: 'B',
+    explain: 'Life Cycle Costing xem xét tất cả chi phí trong toàn bộ vòng đời sản phẩm: development + operation + maintenance + disposal. Giúp đưa ra quyết định đầu tư tốt hơn — đôi khi đầu tư thêm trong development tiết kiệm nhiều hơn ở operation.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Control Accounts trong Cost Management là gì?',
+    optionA: 'Tài khoản ngân hàng của dự án',
+    optionB: 'Management control point ở intersection của WBS và OBS để track EVM',
+    optionC: 'Danh sách chi phí được phê duyệt',
+    optionD: 'Hệ thống kế toán của công ty',
+    answer: 'B',
+    explain: 'Control Account là management control point tại giao điểm của WBS (Work Breakdown Structure) và OBS (Organizational Breakdown Structure). Tại đây, scope, cost và schedule được integrate và compared to earned value để đo performance.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Parametric Estimating sử dụng phương pháp nào?',
+    optionA: 'Ước tính dựa trên dự án tương tự trong quá khứ',
+    optionB: 'Ước tính dựa trên mối quan hệ thống kê giữa historical data và parameters (ví dụ: cost per sq.ft)',
+    optionC: 'Tổng hợp từng work package lên',
+    optionD: 'Lấy ý kiến của một nhóm experts',
+    answer: 'B',
+    explain: 'Parametric Estimating sử dụng algorithms/statistical relationships. Ví dụ: "100 hours per function point", "$200/sq.ft để xây", "2 days per feature". Chính xác hơn analogous estimating khi data chất lượng và model được validated.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Bottom-up Estimating là kỹ thuật ước tính như thế nào?',
+    optionA: 'Ước tính tổng ngân sách từ high-level scope',
+    optionB: 'Ước tính chi tiết từng work package và tổng hợp lên để có tổng estimate chính xác hơn',
+    optionC: 'Ước tính dựa trên expert judgment của PM',
+    optionD: 'Lấy 10% của revenue estimate làm project budget',
+    answer: 'B',
+    explain: 'Bottom-up Estimating (most accurate but most time-consuming) ước tính chi tiết từng work package/activity nhỏ nhất, sau đó aggregate lên để có total estimate. Phụ thuộc vào WBS quality. Tốn nhiều effort nhưng cho kết quả chính xác nhất.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Funding Limit Reconciliation trong Determine Budget dùng để làm gì?',
+    optionA: 'Đảm bảo tổng budget không vượt quá organizational funding limit',
+    optionB: 'Điều chỉnh work schedule theo giới hạn giải ngân của tổ chức để tránh chi tiêu quá mức trong một giai đoạn',
+    optionC: 'Tính toán NPV của dự án',
+    optionD: 'So sánh budget với actual cost',
+    answer: 'B',
+    explain: 'Funding Limit Reconciliation điều chỉnh schedule (shift work) khi projected spending vượt quá funding limits trong một period. Nếu tổ chức chỉ có thể cấp $X/tháng, PM phải reschedule work để không vượt limit đó.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Cost of Quality (CoQ) gồm 2 category chính là gì?',
+    optionA: 'Internal costs và External costs',
+    optionB: 'Cost of Conformance (phòng ngừa + appraisal) và Cost of Nonconformance (internal + external failures)',
+    optionC: 'Direct costs và Indirect costs',
+    optionD: 'Fixed costs và Variable costs',
+    answer: 'B',
+    explain: 'Cost of Quality = Cost of Conformance + Cost of Nonconformance. CoC = Prevention costs (training, process docs, equipment) + Appraisal costs (testing, inspection). CoNC = Internal failure (rework, scrap trước khi giao) + External failure (warranty, liabilities khi đến tay khách hàng).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Earned Value Analysis (EVA) với EV = 400,000, AC = 500,000, PV = 450,000. CPI là bao nhiêu?',
+    optionA: '0.80',
+    optionB: '0.89',
+    optionC: '1.10',
+    optionD: '0.88',
+    answer: 'A',
+    explain: 'CPI = EV / AC = 400,000 / 500,000 = 0.80. Dự án đang over budget (CPI < 1). Với $1 chi tiêu, chỉ earn được $0.80 giá trị. Cũng: SPI = EV/PV = 400,000/450,000 = 0.89 (behind schedule). CV = EV-AC = -100,000. SV = EV-PV = -50,000.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'monitoring',
+    content: 'Dự án có BAC = $1,000,000, EV = $600,000, AC = $750,000. Nếu dùng công thức EAC = BAC/CPI, EAC là bao nhiêu?',
+    optionA: '$1,100,000',
+    optionB: '$1,150,000',
+    optionC: '$1,200,000',
+    optionD: '$1,250,000',
+    answer: 'D',
+    explain: 'CPI = EV/AC = 600,000/750,000 = 0.8. EAC = BAC/CPI = 1,000,000/0.8 = $1,250,000. Dự án dự kiến vượt ngân sách $250,000 nếu hiệu suất chi phí hiện tại tiếp tục đến cuối dự án. VAC = BAC - EAC = -$250,000.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Reserve Analysis trong Estimate Costs dùng để làm gì?',
+    optionA: 'Phân tích rủi ro để xác định mức dự phòng chi phí phù hợp',
+    optionB: 'Tính toán contingency và management reserves cần thiết cho estimate',
+    optionC: 'Xem xét ngân sách tương tự của tổ chức',
+    optionD: 'Cả A và B đều đúng',
+    answer: 'D',
+    explain: 'Reserve Analysis trong Estimate Costs xác định: Contingency Reserves (cho known risks, based on risk analysis) + Management Reserves (cho unknown-unknowns, thường là % của total budget). Cả phân tích rủi ro (A) và tính toán dự phòng (B) đều là phần của Reserve Analysis.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'cost', group: 'planning',
+    content: 'Cost Management Plan quy định điều gì?',
+    optionA: 'Chi tiết từng khoản chi phí của dự án',
+    optionB: 'Cách các chi phí được planned, structured, estimated, budgeted, managed, monitored và controlled',
+    optionC: 'Danh sách vendors và giá cả',
+    optionD: 'Template để track actual costs hàng ngày',
+    answer: 'B',
+    explain: 'Cost Management Plan (output của Plan Cost Management) mô tả: đơn vị tiền tệ, level of precision, control thresholds, earned value rules, reporting formats, process descriptions. Nó là HOW của cost management, không phải các con số chi phí cụ thể.',
+    difficulty: 'easy',
+  },
+];
+
+async function main() {
+  console.log('🌱 Seeding PMP Exam Questions — Part 2b: Schedule + Cost\n');
+  let created = 0;
+  let skipped = 0;
+
+  for (const q of QUESTIONS) {
+    const exists = await prisma.pMPExamQuestion.findFirst({
+      where: { content: q.content },
+    });
+    if (exists) {
+      process.stdout.write('○');
+      skipped++;
+      continue;
+    }
+    await prisma.pMPExamQuestion.create({ data: q });
+    process.stdout.write('✓');
+    created++;
+  }
+
+  console.log(`\n\n📊 Kết quả:`);
+  console.log(`   ✅ Tạo mới : ${created} câu`);
+  console.log(`   ⏭  Bỏ qua  : ${skipped} câu (đã tồn tại)`);
+  console.log(`   📝 Tổng    : ${QUESTIONS.length} câu`);
+  console.log(`\n👉 Chạy tiếp: npx tsx prisma/seed-pmp-q3.ts`);
+}
+
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

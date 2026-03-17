@@ -122,14 +122,22 @@ type ReadingRecommendation = {
   summary: string | null;
 };
 
-function getLessonHref(lesson: LessonWithProgress) {
-  return `/learn/${lesson.category.level.code}/${lesson.category.skill}/${lesson.categoryId}/${lesson.id}`;
+function getLangFromLevelCode(code: string): string {
+  if (/^N[1-5]$/.test(code)) return 'ja';
+  if (/^HSK/i.test(code)) return 'zh';
+  if (/^TOPIK/i.test(code)) return 'ko';
+  return 'ja';
 }
 
-function getSkillHref(skill: string) {
-  if (skill === 'nghe') return '/listening';
-  if (skill === 'doc') return '/reading';
-  return '/learn';
+function getLessonHref(lesson: LessonWithProgress) {
+  const lang = getLangFromLevelCode(lesson.category.level.code);
+  return `/${lang}/learn/${lesson.category.level.code}/${lesson.category.skill}/${lesson.categoryId}/${lesson.id}`;
+}
+
+function getSkillHref(skill: string, lang = 'ja') {
+  if (skill === 'nghe') return `/${lang}/listening`;
+  if (skill === 'doc') return `/${lang}/reading`;
+  return `/${lang}/learn`;
 }
 
 function startOfWeek(date: Date) {

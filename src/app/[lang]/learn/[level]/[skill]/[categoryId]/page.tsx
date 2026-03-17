@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { SKILLS } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { FaFont, FaRuler, FaHeadphones, FaFile, FaCodeBranch } from 'react-icons/fa6';
+import { FaFont, FaRuler, FaHeadphones, FaFile } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
 interface Props { params: { lang: string; level: string; skill: string; categoryId: string } }
@@ -72,25 +72,11 @@ export default async function LearnCategoryPage({ params }: Props) {
           )}
         </div>
         {userId && category.lessons.length > 0 && (
-          <div className="mt-3 flex items-center gap-3">
+          <div className="mt-3">
             <div className="progress-track flex-1">
               <div className="progress-fill"
                 style={{ width: `${Math.round((completedCount / category.lessons.length) * 100)}%` }} />
             </div>
-            <Link href={`/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}/mindmap`}
-              className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
-              style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              <FaCodeBranch size={12}/> Mindmap
-            </Link>
-          </div>
-        )}
-        {!userId && category.lessons.length > 0 && (
-          <div className="mt-3 flex justify-end">
-            <Link href={`/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}/mindmap`}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
-              style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              <FaCodeBranch size={12}/> Mindmap
-            </Link>
           </div>
         )}
       </div>

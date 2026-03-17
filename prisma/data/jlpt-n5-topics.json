@@ -1,0 +1,29 @@
+{
+  "subject": "JLPT",
+  "levelCode": "N5",
+  "mode": "lessons",
+  "language": "ja",
+  "categoryName": "Bài học cơ bản N5",
+  "topics": [
+    {
+      "title": "Chào hỏi cơ bản",
+      "keywords": ["おはようございます", "こんにちは", "こんばんは", "ありがとう", "すみません"]
+    },
+    {
+      "title": "Số đếm và con số 1-100",
+      "keywords": ["いち", "に", "さん", "よん", "ご", "じゅう", "ひゃく"]
+    },
+    {
+      "title": "Ngày tháng và thứ trong tuần",
+      "keywords": ["げつようび", "かようび", "すいようび", "きんようび", "どようび", "にちようび", "なんようび"]
+    },
+    {
+      "title": "Đồ vật trong nhà",
+      "keywords": ["つくえ", "いす", "まど", "ドア", "テレビ", "でんわ"]
+    },
+    {
+      "title": "Gia đình và người thân",
+      "keywords": ["ちち", "はは", "あに", "あね", "おとうと", "いもうと", "かぞく"]
+    }
+  ]
+}

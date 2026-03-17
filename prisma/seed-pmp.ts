@@ -1,12 +1,16 @@
 /**
- * Seeder: PMP PMBOK 6 module
+ * Seeder: PMP PMBOK 6 — Full Edition
  * Run: npx tsx prisma/seed-pmp.ts
  *
+ * Lần 1/3: Knowledge Areas + Process Groups + 49 Processes (đầy đủ ITTOs)
+ * Lần 2/3: seed-pmp-questions.ts (200+ câu hỏi thi)
+ * Lần 3/3: seed-pmp-learn.ts (LearningCategory / LearningLesson)
+ *
  * Seeds:
- *  - PMPKnowledgeArea (10 areas)
- *  - PMPProcessGroup (5 groups)
- *  - PMPProcess (49 processes)
- *  - PMPExamQuestion (50 sample questions)
+ *  - PMPKnowledgeArea (10 vùng kiến thức)
+ *  - PMPProcessGroup (5 nhóm quy trình)
+ *  - PMPProcess (49 quy trình — đầy đủ inputs, tools, outputs theo PMBOK 6)
+ *  - PMPExamQuestion (câu hỏi mẫu — đầy đủ hơn ở Lần 2)
  */
 
 import { PrismaClient, Difficulty } from '@prisma/client';
@@ -36,69 +40,478 @@ const PG_DATA = [
   { code: 'closing',     name: 'Closing Process Group',                 nameVi: 'Nhóm Quy trình Kết thúc',       order: 5 },
 ];
 
-// ─── Processes ───────────────────────────────────────────────
-// [kaCode, pgCode, name, nameVi, description?, keyPoints?]
-type ProcDef = [string, string, string, string, string?, string?];
+// ─── 49 Processes — Full ITTOs ──────────────────────────────────────────────────
+interface ProcDef {
+  kaCode: string; pgCode: string;
+  name: string; nameVi: string;
+  description: string;
+  inputs: string[]; tools: string[]; outputs: string[];
+  keyPoints: string;
+  order: number;
+}
+
 const PROC_DATA: ProcDef[] = [
-  // Integration (7)
-  ['integration', 'initiating',  'Develop Project Charter',               'Phát triển Điều lệ Dự án',                'Tạo tài liệu chính thức phê duyệt dự án và trao quyền cho PM.', 'Là quy trình đầu tiên trong Initiating; outputs: Project Charter'],
-  ['integration', 'planning',    'Develop Project Management Plan',       'Phát triển Kế hoạch Quản lý Dự án',       'Xác định, chuẩn bị và phối hợp tất cả các kế hoạch phụ.', 'Output: Project Management Plan (tài liệu tổng hợp của tất cả subsidiary plans)'],
-  ['integration', 'executing',   'Direct and Manage Project Work',        'Chỉ đạo và Quản lý Công việc Dự án',      'Lãnh đạo và thực hiện công việc được xác định trong PMP.', 'Tạo ra Deliverables; cập nhật Issue Log và Change Requests'],
-  ['integration', 'executing',   'Manage Project Knowledge',              'Quản lý Kiến thức Dự án',                  'Sử dụng kiến thức hiện có và tạo ra kiến thức mới để đạt mục tiêu.', 'Input: Lessons Learned từ các dự án trước; Output: Lessons Learned Register'],
-  ['integration', 'monitoring',  'Monitor and Control Project Work',      'Giám sát và Kiểm soát Công việc Dự án',   'Theo dõi, xem xét và báo cáo tiến độ tổng thể.', 'So sánh thực tế vs kế hoạch; tạo Work Performance Reports'],
-  ['integration', 'monitoring',  'Perform Integrated Change Control',     'Thực hiện Kiểm soát Thay đổi Tích hợp',  'Xem xét, phê duyệt và quản lý tất cả các yêu cầu thay đổi.', 'Change Control Board (CCB) phê duyệt/từ chối Change Requests; cập nhật Configuration Management System'],
-  ['integration', 'closing',     'Close Project or Phase',                'Kết thúc Dự án hoặc Giai đoạn',           'Hoàn thành tất cả hoạt động để kết thúc dự án/giai đoạn.', 'Output: Final Product/Service/Result Transition; Lessons Learned; Project Documents Updates'],
-  // Scope (6)
-  ['scope', 'planning',   'Plan Scope Management',   'Lập kế hoạch Quản lý Phạm vi',      'Tạo Scope Management Plan và Requirements Management Plan.', 'Output: Scope Management Plan; Requirements Management Plan'],
-  ['scope', 'planning',   'Collect Requirements',    'Thu thập Yêu cầu',                   'Xác định, tài liệu hóa và quản lý nhu cầu của stakeholders.', 'Tools: Interviews, Focus Groups, Surveys, Prototypes; Output: Requirements Documentation, Requirements Traceability Matrix'],
-  ['scope', 'planning',   'Define Scope',            'Xác định Phạm vi',                   'Phát triển mô tả chi tiết về dự án và sản phẩm.', 'Output: Project Scope Statement; Project Documents Updates'],
-  ['scope', 'planning',   'Create WBS',              'Tạo WBS',                            'Phân chia deliverables và công việc thành các thành phần nhỏ hơn.', 'WBS = Work Breakdown Structure; Work Package = đơn vị nhỏ nhất; Output: Scope Baseline'],
-  ['scope', 'monitoring', 'Validate Scope',          'Xác nhận Phạm vi',                   'Khách hàng chính thức chấp nhận các deliverables đã hoàn thành.', 'Khác với Control Quality: Validate Scope = khách hàng chấp nhận; Control Quality = kiểm tra kỹ thuật nội bộ'],
-  ['scope', 'monitoring', 'Control Scope',           'Kiểm soát Phạm vi',                  'Giám sát phạm vi và quản lý thay đổi đối với scope baseline.', 'Ngăn chặn Scope Creep; Output: Change Requests; Work Performance Information'],
-  // Schedule (6)
-  ['schedule', 'planning',   'Plan Schedule Management',      'Lập kế hoạch Quản lý Lịch trình',    'Thiết lập chính sách, quy trình và tài liệu để lập lịch trình.', 'Output: Schedule Management Plan'],
-  ['schedule', 'planning',   'Define Activities',             'Xác định Hoạt động',                  'Xác định các hành động cụ thể cần thực hiện để tạo ra deliverables.', 'Output: Activity List; Activity Attributes; Milestone List'],
-  ['schedule', 'planning',   'Sequence Activities',           'Sắp xếp Thứ tự Hoạt động',            'Xác định và tài liệu hóa quan hệ giữa các hoạt động dự án.', 'Tools: PDM (Precedence Diagramming Method); Output: Project Schedule Network Diagram; Dependency types: FS, FF, SS, SF'],
-  ['schedule', 'planning',   'Estimate Activity Durations',   'Ước tính Thời lượng Hoạt động',       'Ước tính số kỳ làm việc cần thiết để hoàn thành từng hoạt động.', 'Tools: PERT, Analogous, Parametric, Three-Point Estimating'],
-  ['schedule', 'planning',   'Develop Schedule',              'Phát triển Lịch trình',                'Phân tích chuỗi hoạt động, thời lượng, yêu cầu nguồn lực để tạo schedule.', 'Tools: Critical Path Method (CPM), Schedule Compression (Crashing/Fast Tracking); Output: Schedule Baseline'],
-  ['schedule', 'monitoring', 'Control Schedule',              'Kiểm soát Lịch trình',                'Giám sát trạng thái dự án để cập nhật lịch trình và quản lý thay đổi.', 'SPI = EV/PV; SV = EV-PV; Output: Schedule Forecasts; Change Requests'],
-  // Cost (4)
-  ['cost', 'planning',   'Plan Cost Management',  'Lập kế hoạch Quản lý Chi phí', 'Xác định cách ước tính, ngân sách, quản lý và kiểm soát chi phí.', 'Output: Cost Management Plan'],
-  ['cost', 'planning',   'Estimate Costs',         'Ước tính Chi phí',              'Phát triển ước tính chi phí cho nguồn lực cần thiết.', 'Tools: Analogous, Parametric, Bottom-up, Three-point; Output: Cost Estimates; Basis of Estimates'],
-  ['cost', 'planning',   'Determine Budget',       'Xác định Ngân sách',            'Tổng hợp chi phí ước tính để thiết lập cost baseline.', 'Output: Cost Baseline; Project Funding Requirements; BAC (Budget at Completion)'],
-  ['cost', 'monitoring', 'Control Costs',          'Kiểm soát Chi phí',             'Giám sát trạng thái để cập nhật chi phí dự án và quản lý thay đổi.', 'EVM: CPI = EV/AC; CV = EV-AC; EAC = BAC/CPI; ETC = EAC-AC; TCPI = (BAC-EV)/(BAC-AC)'],
-  // Quality (3)
-  ['quality', 'planning',   'Plan Quality Management', 'Lập kế hoạch Quản lý Chất lượng', 'Xác định yêu cầu và tiêu chuẩn chất lượng cho dự án/sản phẩm.', 'Output: Quality Management Plan; Quality Metrics; Quality Checklists'],
-  ['quality', 'executing',  'Manage Quality',          'Quản lý Chất lượng',               'Dịch Quality Management Plan thành các hoạt động chất lượng có thể thực hiện.', 'Trước đây gọi là "Perform Quality Assurance"; Focus: phòng ngừa (prevention)'],
-  ['quality', 'monitoring', 'Control Quality',         'Kiểm soát Chất lượng',             'Giám sát và ghi lại kết quả thực thi để đánh giá hiệu suất.', 'Focus: kiểm tra (inspection); Tools: Statistical Sampling, Inspection, Testing'],
-  // Resource (6)
-  ['resource', 'planning',   'Plan Resource Management',     'Lập kế hoạch Quản lý Nguồn lực',   'Xác định cách ước tính, thu thập và quản lý nguồn lực.', 'Output: Resource Management Plan; Team Charter'],
-  ['resource', 'planning',   'Estimate Activity Resources',  'Ước tính Nguồn lực Hoạt động',     'Ước tính loại và số lượng tài liệu, nguồn nhân lực, thiết bị.', 'Output: Resource Requirements; Resource Breakdown Structure'],
-  ['resource', 'executing',  'Acquire Resources',            'Thu thập Nguồn lực',               'Xác nhận nguồn lực, có được nhóm và vật chất cần thiết.', 'Output: Physical Resource Assignments; Project Team Assignments; Resource Calendars'],
-  ['resource', 'executing',  'Develop Team',                 'Phát triển Nhóm',                  'Cải thiện năng lực, tương tác và môi trường làm việc nhóm.', 'Tuckman: Forming→Storming→Norming→Performing→Adjourning; Output: Team Performance Assessments'],
-  ['resource', 'executing',  'Manage Team',                  'Quản lý Nhóm',                     'Theo dõi hiệu suất, đưa phản hồi, giải quyết vấn đề.', 'Conflict Resolution: Collaborate/Problem Solving (best), Compromise, Smooth/Accommodate, Force/Direct, Withdraw/Avoid'],
-  ['resource', 'monitoring', 'Control Resources',            'Kiểm soát Nguồn lực',              'Đảm bảo nguồn lực vật chất được phân bổ và sử dụng như kế hoạch.', 'Output: Work Performance Information; Change Requests'],
-  // Communications (3)
-  ['communications', 'planning',   'Plan Communications Management', 'Lập kế hoạch Quản lý Truyền thông', 'Phát triển cách tiếp cận thông tin phù hợp dựa trên nhu cầu stakeholder.', 'Công thức: n(n-1)/2 kênh giao tiếp; Output: Communications Management Plan'],
-  ['communications', 'executing',  'Manage Communications',          'Quản lý Truyền thông',               'Thu thập, tạo, phân phối, lưu trữ và truy xuất thông tin.', 'PM dành ~90% thời gian giao tiếp; Methods: Interactive, Push, Pull'],
-  ['communications', 'monitoring', 'Monitor Communications',         'Giám sát Truyền thông',              'Đảm bảo nhu cầu thông tin của dự án và các stakeholder được đáp ứng.', 'Output: Work Performance Information; Change Requests'],
-  // Risk (7)
-  ['risk', 'planning',   'Plan Risk Management',            'Lập kế hoạch Quản lý Rủi ro',            'Xác định cách thực hiện các hoạt động quản lý rủi ro.', 'Output: Risk Management Plan'],
-  ['risk', 'planning',   'Identify Risks',                  'Xác định Rủi ro',                         'Xác định các rủi ro có thể ảnh hưởng đến dự án.', 'Tools: Brainstorming, SWOT, Checklists, Interviews; Output: Risk Register; Risk Report'],
-  ['risk', 'planning',   'Perform Qualitative Risk Analysis', 'Phân tích Rủi ro Định tính',            'Ưu tiên hóa rủi ro để phân tích thêm dựa trên xác suất và tác động.', 'Probability-Impact Matrix; Output: Risk Register Updates'],
-  ['risk', 'planning',   'Perform Quantitative Risk Analysis', 'Phân tích Rủi ro Định lượng',          'Phân tích số học tác động của rủi ro đã xác định lên mục tiêu.', 'Tools: Monte Carlo Simulation; Decision Trees; EMV = Probability × Impact'],
-  ['risk', 'planning',   'Plan Risk Responses',             'Lập kế hoạch Ứng phó Rủi ro',             'Phát triển tùy chọn và hành động để giảm thiểu mối đe dọa.', 'Threats: Avoid, Transfer, Mitigate, Accept; Opportunities: Exploit, Share, Enhance, Accept'],
-  ['risk', 'executing',  'Implement Risk Responses',        'Thực hiện Ứng phó Rủi ro',                'Thực thi các kế hoạch ứng phó rủi ro đã thỏa thuận.', 'Output: Change Requests; Project Documents Updates'],
-  ['risk', 'monitoring', 'Monitor Risks',                   'Giám sát Rủi ro',                         'Theo dõi rủi ro đã xác định, xác định rủi ro mới và đánh giá hiệu quả.', 'Output: Work Performance Information; Change Requests; Risk Register Updates'],
-  // Procurement (3)
-  ['procurement', 'planning',   'Plan Procurement Management', 'Lập kế hoạch Quản lý Mua sắm', 'Tài liệu hóa các quyết định mua sắm, xác định phương pháp và nhà cung cấp tiềm năng.', 'Output: Procurement Management Plan; Procurement Statement of Work (SOW); Source Selection Criteria'],
-  ['procurement', 'executing',  'Conduct Procurements',        'Tiến hành Mua sắm',             'Nhận phản hồi, lựa chọn nhà cung cấp và ký kết hợp đồng.', 'Tools: Bidder Conference, Proposal Evaluation; Output: Selected Sellers; Agreements'],
-  ['procurement', 'monitoring', 'Control Procurements',        'Kiểm soát Mua sắm',             'Quản lý mối quan hệ mua sắm, giám sát hiệu suất hợp đồng.', 'Output: Closed Procurements; Work Performance Information; Change Requests'],
-  // Stakeholder (4)
-  ['stakeholder', 'initiating', 'Identify Stakeholders',          'Xác định Các bên liên quan',          'Xác định người/tổ chức bị ảnh hưởng bởi dự án.', 'Thực hiện từ sớm nhất có thể; Output: Stakeholder Register'],
-  ['stakeholder', 'planning',   'Plan Stakeholder Engagement',    'Lập kế hoạch Tham gia của Stakeholders', 'Phát triển phương pháp tương tác hiệu quả với stakeholders.', 'Engagement Scale: Unaware→Resistant→Neutral→Supportive→Leading; Output: Stakeholder Engagement Plan'],
-  ['stakeholder', 'executing',  'Manage Stakeholder Engagement',  'Quản lý Tương tác với Stakeholders', 'Làm việc với stakeholders để đáp ứng nhu cầu và giải quyết vấn đề.', 'Output: Change Requests; Project Documents Updates (Issue Log, Stakeholder Register)'],
-  ['stakeholder', 'monitoring', 'Monitor Stakeholder Engagement', 'Giám sát Tương tác với Stakeholders', 'Giám sát mối quan hệ và điều chỉnh chiến lược tham gia.', 'Output: Work Performance Information; Change Requests'],
+
+  // ══════════════ 1. INTEGRATION (7) ══════════════
+  {
+    kaCode: 'integration', pgCode: 'initiating', order: 1,
+    name: 'Develop Project Charter', nameVi: 'Phát triển Điều lệ Dự án',
+    description: 'Tạo tài liệu chính thức phê duyệt sự tồn tại của dự án và trao quyền cho PM sử dụng nguồn lực tổ chức.',
+    inputs: ['Business case', 'Benefits management plan', 'Agreements', 'Enterprise environmental factors (EEF)', 'Organizational process assets (OPA)'],
+    tools: ['Expert judgment', 'Data gathering (brainstorming, focus groups, interviews)', 'Interpersonal & team skills (conflict management, facilitation, meeting management)', 'Meetings'],
+    outputs: ['Project charter', 'Assumption log'],
+    keyPoints: '**Điểm quan trọng:**\n- Là quy trình đầu tiên trong Initiating — project chính thức bắt đầu\n- Project Charter trao quyền cho PM quản lý nguồn lực tổ chức\n- PM không ký Project Charter — Sponsor ký\n- Project Charter không thể được phát triển bởi PM một mình\n- Output: Project Charter (phê duyệt dự án) + Assumption Log (ghi lại các giả định)',
+  },
+  {
+    kaCode: 'integration', pgCode: 'planning', order: 2,
+    name: 'Develop Project Management Plan', nameVi: 'Phát triển Kế hoạch Quản lý Dự án',
+    description: 'Xác định, chuẩn bị và tích hợp tất cả các kế hoạch phụ thành một kế hoạch quản lý dự án toàn diện.',
+    inputs: ['Project charter', 'Outputs from other planning processes', 'Enterprise environmental factors (EEF)', 'Organizational process assets (OPA)'],
+    tools: ['Expert judgment', 'Data gathering (brainstorming, checklists, focus groups, interviews)', 'Interpersonal & team skills (conflict management, facilitation, meeting management)', 'Meetings'],
+    outputs: ['Project management plan (tài liệu tổng hợp tất cả subsidiary plans)'],
+    keyPoints: '**Subsidiary Plans:** Scope, Schedule, Cost, Quality, Resource, Communications, Risk, Procurement, Stakeholder Management Plans + Requirements, Change, Configuration Management Plans\n\n**Baselines:** Scope Baseline, Schedule Baseline, Cost Baseline (= Performance Measurement Baseline)\n\n**Lưu ý:** PMP được cập nhật thông qua Perform Integrated Change Control — không sửa trực tiếp.',
+  },
+  {
+    kaCode: 'integration', pgCode: 'executing', order: 3,
+    name: 'Direct and Manage Project Work', nameVi: 'Chỉ đạo và Quản lý Công việc Dự án',
+    description: 'Lãnh đạo và thực hiện công việc được xác định trong PMP và thực thi các thay đổi đã được phê duyệt.',
+    inputs: ['Project management plan', 'Project documents', 'Approved change requests', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Project management information system (PMIS)', 'Meetings'],
+    outputs: ['Deliverables', 'Work performance data', 'Issue log', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Work Performance Data** (raw data — đầu ra quy trình này) vs **Work Performance Information** (phân tích — đầu ra M&C) vs **Work Performance Reports** (tổng hợp báo cáo).\nQuy trình này tạo ra Deliverables thực tế. Issue Log ghi lại vấn đề phát sinh. Change Requests được tạo đây và xử lý bởi Perform Integrated Change Control.',
+  },
+  {
+    kaCode: 'integration', pgCode: 'executing', order: 4,
+    name: 'Manage Project Knowledge', nameVi: 'Quản lý Kiến thức Dự án',
+    description: 'Sử dụng kiến thức hiện có và tạo ra kiến thức mới để đạt mục tiêu dự án và đóng góp vào việc học tập tổ chức.',
+    inputs: ['Project management plan', 'Project documents (lessons learned register, team assignments, etc.)', 'Deliverables', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Knowledge management', 'Information management', 'Interpersonal & team skills (active listening, facilitation, leadership, networking, political awareness)'],
+    outputs: ['Lessons learned register', 'Project management plan updates', 'Organizational process assets updates'],
+    keyPoints: '**Quy trình mới trong PMBOK 6** (trước đây không có trong PMBOK 5).\nLessons Learned Register được tạo ở đây trong Executing và cập nhật xuyên suốt dự án. Cuối dự án, nó trở thành OPA.\n\n**Hai loại kiến thức:**\n- Explicit knowledge: có thể mã hóa thành văn bản\n- Tacit knowledge: khó mã hóa, cần trao đổi trực tiếp (quan trọng hơn)',
+  },
+  {
+    kaCode: 'integration', pgCode: 'monitoring', order: 5,
+    name: 'Monitor and Control Project Work', nameVi: 'Giám sát và Kiểm soát Công việc Dự án',
+    description: 'Theo dõi, xem xét và báo cáo tiến độ tổng thể để đáp ứng mục tiêu hiệu suất được xác định trong PMP.',
+    inputs: ['Project management plan', 'Project documents', 'Work performance information', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (alternatives, cost-benefit, earned value, root cause, trend, variance)', 'Decision making', 'Meetings'],
+    outputs: ['Work performance reports', 'Change requests', 'Project management plan updates', 'Project document updates'],
+    keyPoints: '**Work Performance Information** (đầu vào) → phân tích → **Work Performance Reports** (đầu ra)\n\nKhác với Direct & Manage Project Work:\n- D&M: thực thi, tạo Work Performance Data (raw)\n- M&C Work: theo dõi, tạo Work Performance Reports (tổng hợp)\n\nMột số báo cáo điển hình: status reports, progress reports, forecasts.',
+  },
+  {
+    kaCode: 'integration', pgCode: 'monitoring', order: 6,
+    name: 'Perform Integrated Change Control', nameVi: 'Thực hiện Kiểm soát Thay đổi Tích hợp',
+    description: 'Xem xét tất cả các yêu cầu thay đổi; phê duyệt và quản lý thay đổi đối với deliverables, tài liệu dự án và PMP.',
+    inputs: ['Project management plan', 'Project documents', 'Work performance reports', 'Change requests', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Change control tools (manual and automated)', 'Data analysis (alternatives analysis, cost-benefit analysis)', 'Decision making (voting, autocratic decision making, multicriteria decision analysis)', 'Meetings (Change Control Board)'],
+    outputs: ['Approved change requests', 'Project management plan updates', 'Project document updates'],
+    keyPoints: '**Change Control Board (CCB)** có thể bao gồm PM, sponsor, khách hàng và các stakeholder khác.\nTất cả Change Requests ĐỀU phải đi qua quy trình này.\n\n**Corrective Action:** điều chỉnh hiệu suất về kế hoạch\n**Preventive Action:** giảm xác suất vấn đề tiêu cực\n**Defect Repair:** sửa chữa defect\n\nPM có thể có quyền phê duyệt một số thay đổi nhỏ (quy định trong Change Management Plan).',
+  },
+  {
+    kaCode: 'integration', pgCode: 'closing', order: 7,
+    name: 'Close Project or Phase', nameVi: 'Kết thúc Dự án hoặc Giai đoạn',
+    description: 'Hoàn thành tất cả mọi hoạt động đối với tất cả các nhóm quy trình để chính thức kết thúc dự án hoặc giai đoạn.',
+    inputs: ['Project charter', 'Project management plan', 'Project documents (assumption log, change log, issue log, lessons learned register, etc.)', 'Accepted deliverables', 'Business documents (business case, benefits management plan)', 'Agreements', 'Procurement documentation', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (document analysis, regression analysis, trend analysis, variance analysis)', 'Meetings'],
+    outputs: ['Project documents updates (lessons learned register)', 'Final product/service/result transition', 'Final report', 'Organizational process assets updates'],
+    keyPoints: '**Final Report** tóm tắt hiệu suất dự án: phạm vi, chất lượng, schedule, cost.\n\n**Quy trình này có thể chạy ở cuối mỗi phase (phase gate) hoặc cuối toàn bộ dự án.**\n\nNếu dự án bị hủy sớm: PM vẫn phải đóng dự án đúng cách — ghi lại lý do, chuyển giao deliverables đã có.',
+  },
+
+  // ══════════════ 2. SCOPE (6) ══════════════
+  {
+    kaCode: 'scope', pgCode: 'planning', order: 8,
+    name: 'Plan Scope Management', nameVi: 'Lập kế hoạch Quản lý Phạm vi',
+    description: 'Tạo Scope Management Plan và Requirements Management Plan mô tả cách phạm vi được xác định, xác nhận và kiểm soát.',
+    inputs: ['Project charter', 'Project management plan (quality management plan, project lifecycle description)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (alternatives analysis)', 'Meetings'],
+    outputs: ['Scope management plan', 'Requirements management plan'],
+    keyPoints: '**Scope Management Plan mô tả:** cách phát triển Project Scope Statement, tạo WBS, duy trì WBS, formal acceptance, xử lý thay đổi phạm vi.\n\n**Requirements Management Plan mô tả:** cách thu thập, phân tích, tài liệu hóa và quản lý yêu cầu, configuration management, requirements prioritization.',
+  },
+  {
+    kaCode: 'scope', pgCode: 'planning', order: 9,
+    name: 'Collect Requirements', nameVi: 'Thu thập Yêu cầu',
+    description: 'Xác định, tài liệu hóa và quản lý nhu cầu và yêu cầu của stakeholders để đáp ứng mục tiêu dự án.',
+    inputs: ['Project charter', 'Project management plan (scope management plan, requirements management plan, stakeholder engagement plan)', 'Project documents (assumption log, lessons learned register, stakeholder register)', 'Business documents (business case)', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (brainstorming, interviews, focus groups, questionnaires & surveys, benchmarking)', 'Data analysis (document analysis)', 'Decision making (voting, autocratic decision making, multicriteria decision analysis)', 'Data representation (affinity diagrams, mind mapping)', 'Interpersonal & team skills (nominal group technique, observation/conversation, facilitation)', 'Context diagrams', 'Prototypes'],
+    outputs: ['Requirements documentation', 'Requirements traceability matrix (RTM)'],
+    keyPoints: '**Requirements categories:** Business requirements (why), Stakeholder requirements (needs), Solution requirements (Functional + Non-functional), Transition & readiness requirements, Project requirements, Quality requirements.\n\n**RTM (Requirements Traceability Matrix)** liên kết requirements với business objectives, WBS, product design, test strategy.',
+  },
+  {
+    kaCode: 'scope', pgCode: 'planning', order: 10,
+    name: 'Define Scope', nameVi: 'Xác định Phạm vi',
+    description: 'Phát triển mô tả chi tiết về dự án và sản phẩm (Project Scope Statement).',
+    inputs: ['Project charter', 'Project management plan (scope management plan)', 'Project documents (assumption log, requirements documentation, risk register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (alternatives analysis)', 'Decision making (multicriteria decision analysis)', 'Interpersonal & team skills (facilitation)', 'Product analysis (product breakdown, requirements analysis, systems analysis, value engineering)'],
+    outputs: ['Project scope statement', 'Project document updates (assumption log, requirements documentation, requirements traceability matrix, stakeholder register)'],
+    keyPoints: '**Project Scope Statement bao gồm:** Product scope description, Deliverables, Acceptance criteria, Project exclusions (explicitly out of scope), Constraints, Assumptions.\n\n**Phân biệt:** Project Charter = high-level scope; Project Scope Statement = detailed scope.\n\n**Project exclusions** giúp ngăn Scope Creep bằng cách nêu rõ what is NOT included.',
+  },
+  {
+    kaCode: 'scope', pgCode: 'planning', order: 11,
+    name: 'Create WBS', nameVi: 'Tạo WBS',
+    description: 'Phân chia deliverables dự án và công việc dự án thành các thành phần nhỏ hơn, dễ quản lý hơn.',
+    inputs: ['Project management plan (scope management plan)', 'Project documents (project scope statement, requirements documentation)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Decomposition'],
+    outputs: ['Scope baseline (project scope statement + WBS + WBS dictionary)', 'Project document updates (assumption log, requirements documentation)'],
+    keyPoints: '**WBS = Work Breakdown Structure** — deliverable-oriented (không phải activity-oriented)\n- Work Package = level thấp nhất trong WBS (có thể ước tính cost/duration)\n- Planning Package = nội dung đã biết nhưng chưa thể phân rã chi tiết\n\n**WBS Dictionary** ghi chi tiết mỗi WBS element: description, code, deliverables, responsible party, schedule milestones, quality requirements, cost estimates.\n\n**Scope Baseline** = Project Scope Statement + WBS + WBS Dictionary.',
+  },
+  {
+    kaCode: 'scope', pgCode: 'monitoring', order: 12,
+    name: 'Validate Scope', nameVi: 'Xác nhận Phạm vi',
+    description: 'Formalizing acceptance của các completed project deliverables.',
+    inputs: ['Project management plan (scope management plan, requirements management plan, requirements traceability matrix)', 'Project documents (lessons learned register, quality reports, requirements documentation, requirements traceability matrix)', 'Verified deliverables (từ Control Quality)', 'Work performance data'],
+    tools: ['Inspection', 'Decision making (voting)'],
+    outputs: ['Accepted deliverables', 'Work performance information', 'Change requests', 'Project document updates'],
+    keyPoints: '**Validate Scope vs Control Quality:**\n- Validate Scope: khách hàng/sponsor chính thức chấp nhận deliverables (external focus)\n- Control Quality: nhóm dự án kiểm tra deliverables có đúng tiêu chuẩn không (internal focus)\n\n**Thứ tự thực hiện:** Control Quality → Validate Scope\n\n**Accepted Deliverables** → đầu vào của Close Project or Phase.',
+  },
+  {
+    kaCode: 'scope', pgCode: 'monitoring', order: 13,
+    name: 'Control Scope', nameVi: 'Kiểm soát Phạm vi',
+    description: 'Giám sát trạng thái phạm vi dự án và sản phẩm, quản lý thay đổi đối với scope baseline.',
+    inputs: ['Project management plan (scope management plan, requirements management plan, change management plan, configuration management plan, scope baseline, performance measurement baseline)', 'Project documents (lessons learned register, requirements documentation, requirements traceability matrix)', 'Work performance data', 'Organizational process assets'],
+    tools: ['Data analysis (variance analysis, trend analysis)'],
+    outputs: ['Work performance information', 'Change requests', 'Project management plan updates (scope baseline, schedule baseline, cost baseline)', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Scope Creep** = thêm tính năng/yêu cầu mà không qua Change Control → KHÔNG cho phép.\n\n**Gold Plating** = PM/team thêm tính năng ngoài phạm vi mà không được yêu cầu → KHÔNG khuyến nghị.\n\nVariance Analysis so sánh scope baseline vs actual scope.',
+  },
+
+  // ══════════════ 3. SCHEDULE (6) ══════════════
+  {
+    kaCode: 'schedule', pgCode: 'planning', order: 14,
+    name: 'Plan Schedule Management', nameVi: 'Lập kế hoạch Quản lý Lịch trình',
+    description: 'Thiết lập các chính sách, thủ tục và tài liệu cần thiết để lập kế hoạch, phát triển, quản lý và kiểm soát lịch trình dự án.',
+    inputs: ['Project charter', 'Project management plan (scope management plan, development approach)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (alternatives analysis)', 'Meetings'],
+    outputs: ['Schedule management plan'],
+    keyPoints: '**Schedule Management Plan xác định:** project schedule model development method, release and iteration lengths, level of accuracy, units of measure, organizational procedure links, project schedule model maintenance, control thresholds, rules of performance measurement (EVM), reporting formats.',
+  },
+  {
+    kaCode: 'schedule', pgCode: 'planning', order: 15,
+    name: 'Define Activities', nameVi: 'Xác định Hoạt động',
+    description: 'Xác định và tài liệu hóa các hành động cụ thể cần thực hiện để tạo ra các deliverables của dự án.',
+    inputs: ['Project management plan (scope management plan, schedule management plan, scope baseline)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Decomposition', 'Rolling wave planning', 'Meetings'],
+    outputs: ['Activity list', 'Activity attributes', 'Milestone list', 'Change requests', 'Project management plan updates (schedule baseline, cost baseline)'],
+    keyPoints: '**Phân biệt WBS vs Activity List:**\n- WBS = deliverable-oriented (WHAT)\n- Activity List = action-oriented verbs (HOW to achieve WBS components)\n- Work Package → vỡ nhỏ hơn thành Activities\n\n**Rolling Wave Planning:** hoạch định chi tiết cho công việc gần, để ở cấp cao hơn cho công việc xa.\n\n**Milestone:** sự kiện quan trọng trong lịch trình, thời gian = 0.',
+  },
+  {
+    kaCode: 'schedule', pgCode: 'planning', order: 16,
+    name: 'Sequence Activities', nameVi: 'Sắp xếp Thứ tự Hoạt động',
+    description: 'Xác định và tài liệu hóa quan hệ giữa các hoạt động dự án.',
+    inputs: ['Project management plan (schedule management plan, scope baseline)', 'Project documents (activity attributes, activity list, assumption log, milestone list)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Precedence Diagramming Method (PDM)', 'Dependency determination and integration (mandatory/discretionary, internal/external)', 'Leads and lags', 'Project management information system (PMIS)'],
+    outputs: ['Project schedule network diagrams', 'Project document updates (activity attributes, activity list, assumption log, milestone list)'],
+    keyPoints: '**PDM — 4 loại dependency:**\n- FS (Finish-to-Start): phổ biến nhất — B bắt đầu sau khi A kết thúc\n- FF (Finish-to-Finish): B kết thúc sau khi A kết thúc\n- SS (Start-to-Start): B bắt đầu sau khi A bắt đầu\n- SF (Start-to-Finish): ít gặp nhất\n\n**Lead:** đẩy sớm hoạt động kế tiếp (negative lag)\n**Lag:** trì hoãn hoạt động kế tiếp\n\n**Mandatory dependency** = hard logic; **Discretionary dependency** = soft logic.',
+  },
+  {
+    kaCode: 'schedule', pgCode: 'planning', order: 17,
+    name: 'Estimate Activity Durations', nameVi: 'Ước tính Thời lượng Hoạt động',
+    description: 'Ước tính số kỳ làm việc cần thiết để hoàn thành từng activity với các nguồn lực ước tính.',
+    inputs: ['Project management plan (schedule management plan, scope baseline)', 'Project documents (activity attributes, activity list, assumption log, lessons learned register, resource calendars, resource requirements, risk register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Analogous estimating', 'Parametric estimating', 'Three-point estimating (PERT: tE = (O + 4M + P) / 6)', 'Bottom-up estimating', 'Data analysis (alternatives analysis, reserve analysis)', 'Decision making', 'Meetings'],
+    outputs: ['Duration estimates', 'Basis of estimates', 'Project document updates (activity attributes, assumption log, lessons learned register)'],
+    keyPoints: '**Three-Point (PERT):**\n- tE = (O + 4M + P) / 6\n- SD = (P - O) / 6\n- O = Optimistic, M = Most likely, P = Pessimistic\n\n**Reserve Analysis:**\n- Contingency Reserve: cho identified risks (known unknowns)\n- Management Reserve: cho unidentified risks (unknown unknowns), không trong cost/schedule baseline\n\n**Effort ≠ Duration:** Effort = tổng giờ làm; Duration = thời gian thực tế trôi qua.',
+  },
+  {
+    kaCode: 'schedule', pgCode: 'planning', order: 18,
+    name: 'Develop Schedule', nameVi: 'Phát triển Lịch trình',
+    description: 'Phân tích chuỗi hoạt động, thời lượng, yêu cầu nguồn lực và ràng buộc lịch trình để tạo mô hình lịch trình dự án.',
+    inputs: ['Project management plan (schedule management plan, scope baseline)', 'Project documents (activity attributes, activity list, assumption log, basis of estimates, duration estimates, lessons learned register, milestone list, project schedule network diagrams, resource calendars, resource requirements, risk register)', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Schedule network analysis', 'Critical Path Method (CPM)', 'Resource optimization (resource leveling, resource smoothing)', 'Data analysis (what-if scenario, simulation/Monte Carlo)', 'Leads and lags', 'Schedule compression (crashing, fast tracking)', 'Project management information system (PMIS)', 'Agile release planning'],
+    outputs: ['Schedule baseline', 'Project schedule (Gantt chart, milestone chart, project schedule network diagram)', 'Schedule data', 'Project calendars', 'Change requests', 'Project management plan updates', 'Project document updates'],
+    keyPoints: '**Critical Path Method:**\n- Forward pass: Early Start (ES) & Early Finish (EF)\n- Backward pass: Late Start (LS) & Late Finish (LF)\n- Float = LS - ES = LF - EF; Critical Path: Float = 0\n\n**Schedule Compression:**\n- Crashing: thêm nguồn lực → tăng cost, ít tăng risk\n- Fast Tracking: song song hóa các hoạt động → tăng risk, không tăng cost\n\n**Resource Leveling:** điều chỉnh ngày để giải quyết resource conflicts → có thể kéo dài schedule.',
+  },
+  {
+    kaCode: 'schedule', pgCode: 'monitoring', order: 19,
+    name: 'Control Schedule', nameVi: 'Kiểm soát Lịch trình',
+    description: 'Giám sát trạng thái dự án để cập nhật schedule và quản lý thay đổi đối với schedule baseline.',
+    inputs: ['Project management plan (schedule management plan, schedule baseline, scope baseline, performance measurement baseline)', 'Project documents (lessons learned register, project calendars, project schedule, resource calendars, schedule data)', 'Work performance data', 'Organizational process assets'],
+    tools: ['Data analysis (earned value analysis, iteration burndown charts, performance reviews, trend analysis, variance analysis)', 'Critical path method', 'Project management information system (PMIS)', 'Resource optimization', 'Leads and lags', 'Schedule compression'],
+    outputs: ['Work performance information', 'Schedule forecasts', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**EVM Schedule Metrics:**\n- SV (Schedule Variance) = EV - PV\n- SPI (Schedule Performance Index) = EV / PV\n- SPI > 1: ahead of schedule; SPI < 1: behind schedule; SPI = 1: on schedule\n\n**Schedule Forecast:** dự báo Expected Completion Date dựa trên hiệu suất hiện tại.',
+  },
+
+  // ══════════════ 4. COST (4) ══════════════
+  {
+    kaCode: 'cost', pgCode: 'planning', order: 20,
+    name: 'Plan Cost Management', nameVi: 'Lập kế hoạch Quản lý Chi phí',
+    description: 'Xác định cách chi phí dự án được ước tính, ngân sách hóa, quản lý, giám sát và kiểm soát.',
+    inputs: ['Project charter', 'Project management plan (schedule management plan, risk management plan)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (alternatives analysis)', 'Meetings'],
+    outputs: ['Cost management plan'],
+    keyPoints: '**Cost Management Plan bao gồm:** Units of measure, Level of precision (rounding), Level of accuracy (\u00b110%), Organizational procedure links, Control thresholds, Rules of performance measurement (EVM), Reporting formats.\n\nCost Management Plan là subsidiary plan của PMP.',
+  },
+  {
+    kaCode: 'cost', pgCode: 'planning', order: 21,
+    name: 'Estimate Costs', nameVi: 'Ước tính Chi phí',
+    description: 'Phát triển ước tính chi phí cho nguồn lực tiền tệ cần thiết để hoàn thành các công việc dự án.',
+    inputs: ['Project management plan (cost management plan, quality management plan, scope baseline, resource management plan)', 'Project documents (lessons learned register, project schedule, resource requirements, risk register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Analogous estimating', 'Parametric estimating', 'Bottom-up estimating', 'Three-point estimating', 'Data analysis (alternatives analysis, reserve analysis, cost of quality)', 'Project management information system (PMIS)', 'Decision making (voting)'],
+    outputs: ['Cost estimates', 'Basis of estimates', 'Project document updates (assumption log, lessons learned register, risk register)'],
+    keyPoints: '**Order of Magnitude Estimate (ROM):** -25% đến +75% → giai đoạn sớm\n**Budget Estimate:** -10% đến +25%\n**Definitive Estimate:** -5% đến +10% → giai đoạn cuối planning\n\n**Analogous:** nhanh, ít tốn kém nhưng kém chính xác\n**Parametric:** dùng số liệu thống kê (vd: cost/m²)\n**Bottom-up:** chính xác nhất nhưng tốn thời gian nhất\n\nCost baseline KHÔNG bao gồm Management Reserve.',
+  },
+  {
+    kaCode: 'cost', pgCode: 'planning', order: 22,
+    name: 'Determine Budget', nameVi: 'Xác định Ngân sách',
+    description: 'Tổng hợp chi phí ước tính của từng activity hoặc work package để xây dựng cost baseline đã được phê duyệt.',
+    inputs: ['Project management plan (cost management plan, resource management plan, scope baseline)', 'Project documents (basis of estimates, cost estimates, project schedule, risk register)', 'Business documents (business case, benefits management plan)', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Cost aggregation', 'Data analysis (reserve analysis)', 'Historical information review', 'Funding limit reconciliation', 'Financing'],
+    outputs: ['Cost baseline', 'Project funding requirements', 'Project document updates (cost estimates, project schedule, risk register)'],
+    keyPoints: '**Cost Baseline** = tổng chi phí ước tính + contingency reserves\n**BAC (Budget at Completion)** = tổng cost baseline\n**Project Budget** = Cost Baseline + Management Reserve\n\n**Cost Baseline ≠ Project Budget:**\n- Cost Baseline: có contingency; dùng để đo EVM\n- Project Budget: thêm management reserve; total authorized budget.',
+  },
+  {
+    kaCode: 'cost', pgCode: 'monitoring', order: 23,
+    name: 'Control Costs', nameVi: 'Kiểm soát Chi phí',
+    description: 'Giám sát trạng thái dự án để cập nhật chi phí và quản lý thay đổi đối với cost baseline.',
+    inputs: ['Project management plan (cost management plan, cost baseline, performance measurement baseline)', 'Project documents (lessons learned register)', 'Project funding requirements', 'Work performance data', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (EVM, variance analysis, trend analysis, reserve analysis)', 'To-complete performance index (TCPI)', 'Project management information system (PMIS)'],
+    outputs: ['Work performance information', 'Cost forecasts (EAC)', 'Change requests', 'Project management plan updates (cost baseline, cost management plan)', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**EVM Formulas (PHẢI THUỘC):**\n- PV = Planned Value; EV = Earned Value; AC = Actual Cost\n- CV = EV - AC (+ = under budget); SV = EV - PV (+ = ahead)\n- CPI = EV/AC (> 1 = under budget); SPI = EV/PV (> 1 = ahead)\n\n**Forecasts:**\n- EAC (typical) = BAC/CPI\n- EAC (atypical) = AC + (BAC - EV)\n- ETC = EAC - AC; VAC = BAC - EAC\n\n**TCPI** = (BAC-EV)/(BAC-AC) → > 1 = khó đạt được.',
+  },
+
+  // ══════════════ 5. QUALITY (3) ══════════════
+  {
+    kaCode: 'quality', pgCode: 'planning', order: 24,
+    name: 'Plan Quality Management', nameVi: 'Lập kế hoạch Quản lý Chất lượng',
+    description: 'Xác định yêu cầu và/hoặc tiêu chuẩn chất lượng cho dự án và sản phẩm; tài liệu hóa cách dự án sẽ đạt được sự tuân thủ.',
+    inputs: ['Project charter', 'Project management plan (requirements management plan, risk management plan, stakeholder engagement plan, scope baseline)', 'Project documents (assumption log, requirements documentation, requirements traceability matrix, risk register, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (benchmarking, brainstorming, interviews)', 'Data analysis (cost-benefit analysis, cost of quality)', 'Decision making (multicriteria decision analysis)', 'Data representation (flowcharts, logical data model, matrix diagrams, mind mapping)', 'Test and inspection planning', 'Meetings'],
+    outputs: ['Quality management plan', 'Quality metrics', 'Project management plan updates', 'Project document updates (lessons learned register, requirements traceability matrix, risk register, stakeholder register)'],
+    keyPoints: '**Cost of Quality (COQ):**\n- Cost of Conformance: Prevention (training, process documentation) + Appraisal (testing, inspections)\n- Cost of Nonconformance: Internal failure (rework, scrap) + External failure (liabilities, warranty, lost business)\n\n**Chất lượng vs Cấp độ (Grade):**\n- Quality: đáp ứng requirements; Low quality = luôn có vấn đề\n- Grade: category based on technical characteristics; Low grade = có thể chấp nhận được.',
+  },
+  {
+    kaCode: 'quality', pgCode: 'executing', order: 25,
+    name: 'Manage Quality', nameVi: 'Quản lý Chất lượng',
+    description: 'Chuyển đổi Quality Management Plan thành các hoạt động chất lượng có thể thực hiện được để đưa vào kế hoạch chất lượng của dự án.',
+    inputs: ['Project management plan (quality management plan)', 'Project documents (lessons learned register, quality control measurements, quality metrics, risk report)', 'Organizational process assets'],
+    tools: ['Data gathering (checklists)', 'Data analysis (alternatives analysis, document analysis, process analysis, root cause analysis)', 'Decision making (multicriteria decision analysis)', 'Data representation (affinity diagrams, cause-and-effect diagrams, flowcharts, histograms, matrix diagrams, scatter diagrams)', 'Audits', 'Design for X', 'Problem solving', 'Quality improvement methods (PDCA, Six Sigma)'],
+    outputs: ['Quality reports', 'Test and evaluation documents', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Manage Quality (trước là "Perform Quality Assurance"):**\n- Focus: PREVENTION — làm đúng quy trình để tránh lỗi\n- Là audit-based process\n\n**Vs Control Quality:**\n- Control Quality: INSPECTION — kiểm tra output có đạt standards không\n\n**Process Improvement Tools:** PDCA (Plan-Do-Check-Act) = Deming Cycle; Six Sigma: DMAIC; Lean: loại bỏ lãng phí; Kaizen: cải tiến liên tục.',
+  },
+  {
+    kaCode: 'quality', pgCode: 'monitoring', order: 26,
+    name: 'Control Quality', nameVi: 'Kiểm soát Chất lượng',
+    description: 'Giám sát và ghi lại kết quả thực thi các hoạt động chất lượng để đánh giá hiệu suất và đảm bảo output dự án hoàn chỉnh, đúng, đáp ứng kỳ vọng.',
+    inputs: ['Project management plan (quality management plan)', 'Project documents (lessons learned register, quality metrics, test and evaluation documents)', 'Approved change requests', 'Deliverables', 'Work performance data', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Data gathering (checklists, check sheets, statistical sampling, questionnaires and surveys)', 'Data analysis (performance reviews, root cause analysis)', 'Inspection', 'Testing/product evaluations', 'Data representation (cause-and-effect diagrams, control charts, histogram, scatter diagrams)', 'Meetings'],
+    outputs: ['Quality control measurements', 'Verified deliverables', 'Work performance information', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Control Charts (Statistical Process Control):**\n- Upper Control Limit (UCL) = Mean + 3σ\n- Lower Control Limit (LCL) = Mean - 3σ\n- Rule of Seven: 7 điểm liên tiếp cùng một phía → out of control\n\n**Verified Deliverables** → đầu vào của Validate Scope.\n\n**Sampling:** Attribute sampling (đạt/không đạt) vs Variable sampling (thang liên tục).',
+  },
+
+  // ══════════════ 6. RESOURCE (6) ══════════════
+  {
+    kaCode: 'resource', pgCode: 'planning', order: 27,
+    name: 'Plan Resource Management', nameVi: 'Lập kế hoạch Quản lý Nguồn lực',
+    description: 'Xác định cách ước tính, thu thập, quản lý và sử dụng nguồn lực dự án (nhân lực + vật chất).',
+    inputs: ['Project charter', 'Project management plan (quality management plan, scope baseline)', 'Project documents (project schedule, requirements documentation, risk register, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data representation (hierarchical charts — OBS, RBS; responsibility assignment matrix — RAM/RACI; text-oriented formats)', 'Organizational theory', 'Meetings'],
+    outputs: ['Resource management plan', 'Team charter', 'Project document updates (assumption log, risk register)'],
+    keyPoints: '**RACI Matrix:** R = Responsible (thực hiện), A = Accountable (chịu trách nhiệm — chỉ một người), C = Consulted (tham vấn), I = Informed (thông báo).\n\n**Team Charter** thiết lập: team values, communication guidelines, decision-making criteria, conflict resolution process, meeting guidelines.\n\n**OBS (Organizational Breakdown Structure):** phân cấp tổ chức.\n**RBS (Resource Breakdown Structure):** phân cấp theo loại nguồn lực.',
+  },
+  {
+    kaCode: 'resource', pgCode: 'planning', order: 28,
+    name: 'Estimate Activity Resources', nameVi: 'Ước tính Nguồn lực Hoạt động',
+    description: 'Ước tính nguồn lực nhóm và loại, số lượng vật liệu, thiết bị và nguồn cung cấp cần thiết để thực hiện công việc dự án.',
+    inputs: ['Project management plan (resource management plan, scope baseline)', 'Project documents (activity attributes, activity list, assumption log, cost estimates, resource calendars, risk register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Bottom-up estimating', 'Analogous estimating', 'Parametric estimating', 'Data analysis (alternatives analysis)', 'Project management information system (PMIS)', 'Meetings'],
+    outputs: ['Resource requirements', 'Basis of estimates', 'Resource breakdown structure (RBS)', 'Project document updates (activity attributes, assumption log, lessons learned register)'],
+    keyPoints: '**Resource types:** Human resources, Equipment, Materials, Supplies, Facilities.\n\n**Resource Breakdown Structure (RBS)** phân cấp nguồn lực theo loại và category.\n\n**Resource Requirements** sẽ là đầu vào của Develop Schedule, Estimate Costs, Determine Budget, Acquire Resources.',
+  },
+  {
+    kaCode: 'resource', pgCode: 'executing', order: 29,
+    name: 'Acquire Resources', nameVi: 'Thu thập Nguồn lực',
+    description: 'Xác nhận nguồn lực, có được nhóm và tài sản vật chất cần thiết để hoàn thành công việc dự án.',
+    inputs: ['Project management plan (resource management plan, procurement management plan, cost baseline)', 'Project documents (project schedule, resource calendars, resource requirements, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Decision making (multicriteria decision analysis)', 'Interpersonal & team skills (negotiation)', 'Pre-assignment', 'Virtual teams'],
+    outputs: ['Physical resource assignments', 'Project team assignments', 'Resource calendars', 'Change requests', 'Project management plan updates', 'Project document updates', 'Enterprise environmental factors updates', 'Organizational process assets updates'],
+    keyPoints: '**PM thường KHÔNG có quyền force-assign resources** trong functional/matrix org → phải negotiate với Functional Managers.\n\n**Pre-assignment:** resources đã được identify trước trong Project Charter → PM phải honor cam kết này.\n\n**Virtual Teams:** Pro: global talent, cost savings; Con: communication challenges, time zones, isolation.\n\nMulticriteria Decision Analysis để chọn team member: availability, cost, experience, skills.',
+  },
+  {
+    kaCode: 'resource', pgCode: 'executing', order: 30,
+    name: 'Develop Team', nameVi: 'Phát triển Nhóm',
+    description: 'Cải thiện năng lực, tương tác giữa các thành viên và môi trường làm việc nhóm để nâng cao hiệu suất dự án.',
+    inputs: ['Project management plan (resource management plan)', 'Project documents (lessons learned register, project schedule, project team assignments, resource calendars, team charter)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Colocation (war room)', 'Virtual teams', 'Communication technology', 'Interpersonal & team skills (conflict management, influencing, motivation, negotiation, team building)', 'Recognition and rewards', 'Training', 'Individual and team assessments', 'Meetings'],
+    outputs: ['Team performance assessments', 'Change requests', 'Project management plan updates', 'Project document updates', 'Enterprise environmental factors updates', 'Organizational process assets updates'],
+    keyPoints: '**Tuckman Ladder (5 stages):**\n1. Forming — nhóm hình thành, lịch sự\n2. Storming — xung đột khi giao việc\n3. Norming — quy tắc được thiết lập, tin tưởng nhau\n4. Performing — hiệu suất cao, tự quản\n5. Adjourning — kết thúc dự án\n\n**Motivation Theories:**\n- Maslow: Hierarchy of needs\n- Herzberg: Hygiene factors vs Motivators\n- McGregor: Theory X (người lười) vs Theory Y (người ham làm)\n- Theory Z (Ouchi): trung thành và cam kết lâu dài.',
+  },
+  {
+    kaCode: 'resource', pgCode: 'executing', order: 31,
+    name: 'Manage Team', nameVi: 'Quản lý Nhóm',
+    description: 'Theo dõi hiệu suất thành viên, đưa phản hồi, giải quyết vấn đề và quản lý thay đổi để tối ưu hiệu suất dự án.',
+    inputs: ['Project management plan (resource management plan)', 'Project documents (issue log, lessons learned register, project team assignments, team charter)', 'Work performance reports', 'Team performance assessments', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Interpersonal & team skills (conflict management, decision making, emotional intelligence, influencing, leadership)', 'Project management information system (PMIS)'],
+    outputs: ['Change requests', 'Project management plan updates (resource management plan, schedule baseline, cost baseline)', 'Project document updates (issue log, lessons learned register, project team assignments)', 'Enterprise environmental factors updates'],
+    keyPoints: '**Conflict Resolution Methods (từ best đến worst):**\n1. Collaborating/Problem Solving — tìm giải pháp win-win (BEST)\n2. Compromising/Reconciling — nhân nhượng đôi bên\n3. Smoothing/Accommodating — nhấn mạnh điểm chung\n4. Forcing/Directing — áp đặt quan điểm (win/lose)\n5. Withdrawing/Avoiding — rút lui, không giải quyết (WORST)\n\n**Powers of PM:** Legitimate, Reward, Penalty (Coercive), Expert (best long-term), Referent, Informational.',
+  },
+  {
+    kaCode: 'resource', pgCode: 'monitoring', order: 32,
+    name: 'Control Resources', nameVi: 'Kiểm soát Nguồn lực',
+    description: 'Đảm bảo rằng các nguồn lực vật chất được giao cho dự án được sử dụng như kế hoạch, và giám sát việc sử dụng nguồn lực thực tế so với kế hoạch.',
+    inputs: ['Project management plan (resource management plan)', 'Project documents (issue log, lessons learned register, physical resource assignments, project schedule, resource breakdown structure, resource requirements, risk register)', 'Work performance data', 'Agreements', 'Organizational process assets'],
+    tools: ['Data analysis (alternatives analysis, cost-benefit analysis, performance reviews, trend analysis)', 'Problem solving', 'Interpersonal & team skills (negotiation, influencing)', 'Project management information system (PMIS)'],
+    outputs: ['Work performance information', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Control Resources tập trung vào nguồn lực vật chất** (physical resources: vật liệu, thiết bị, cơ sở hạ tầng), KHÔNG phải nhân sự.\nNhân sự được quản lý bởi Manage Team.\n\n**Các vấn đề thường gặp:** Resource shortages, resource conflicts, over-allocation, under-utilization.\n\nGiải pháp: Resource leveling, crashing, fast tracking, outsourcing.',
+  },
+
+  // ══════════════ 7. COMMUNICATIONS (3) ══════════════
+  {
+    kaCode: 'communications', pgCode: 'planning', order: 33,
+    name: 'Plan Communications Management', nameVi: 'Lập kế hoạch Quản lý Truyền thông',
+    description: 'Phát triển cách tiếp cận truyền thông phù hợp và kế hoạch dựa trên nhu cầu thông tin của stakeholders và tài sản tổ chức.',
+    inputs: ['Project charter', 'Project management plan (resource management plan, stakeholder engagement plan)', 'Project documents (requirements documentation, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Communication requirements analysis', 'Communication technology', 'Communication models (noise, feedback, barriers)', 'Communication methods (interactive, push, pull)', 'Interpersonal & team skills (communication styles assessment, political awareness, cultural awareness)', 'Data representation (stakeholder engagement assessment matrix)', 'Meetings'],
+    outputs: ['Communications management plan', 'Project management plan updates (stakeholder engagement plan)', 'Project document updates (project schedule, stakeholder register)'],
+    keyPoints: '**Công thức số kênh giao tiếp:** n(n-1)/2\n- 10 người = 45 kênh; 15 người = 105 kênh\n\n**Communication Methods:**\n- Interactive: two-way, real-time (meetings, calls, video)\n- Push: sent but may not be read (emails, memos, reports)\n- Pull: receiver retrieves when needed (intranet, e-learning)\n\n**PM dành ~90% thời gian cho communication.**',
+  },
+  {
+    kaCode: 'communications', pgCode: 'executing', order: 34,
+    name: 'Manage Communications', nameVi: 'Quản lý Truyền thông',
+    description: 'Đảm bảo thu thập, tạo, phân phối, lưu trữ, truy xuất, quản lý, giám sát và phân phối thông tin dự án kịp thời và phù hợp.',
+    inputs: ['Project management plan (communications management plan, resource management plan, stakeholder engagement plan)', 'Project documents (change log, issue log, lessons learned register, quality report, risk report, stakeholder register)', 'Work performance reports', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Communication technology', 'Communication methods', 'Communication skills (communication competence, feedback, nonverbal, presentations)', 'Project management information system (PMIS)', 'Project reporting', 'Interpersonal & team skills (active listening, conflict management, cultural awareness, meeting management, networking, political awareness)', 'Meetings'],
+    outputs: ['Project communications', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Communication Barriers:** Language/terminology, physical distance, cultural differences, information overload, noise.\n\n**Active Listening** bao gồm: paraphrasing, questioning, summarizing, không gián đoạn.\n\n**Formal vs Informal:** Formal Written (contracts), Formal Verbal (presentations), Informal Written (emails), Informal Verbal (conversations).',
+  },
+  {
+    kaCode: 'communications', pgCode: 'monitoring', order: 35,
+    name: 'Monitor Communications', nameVi: 'Giám sát Truyền thông',
+    description: 'Đảm bảo nhu cầu thông tin của dự án và các stakeholders được đáp ứng.',
+    inputs: ['Project management plan (communications management plan, stakeholder engagement plan)', 'Project documents (issue log, lessons learned register, project communications)', 'Work performance data', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Project management information system (PMIS)', 'Data representation (stakeholder engagement assessment matrix)', 'Interpersonal & team skills (observation/conversation)', 'Meetings'],
+    outputs: ['Work performance information', 'Change requests', 'Project management plan updates (communications management plan, stakeholder engagement plan)', 'Project document updates (issue log, lessons learned register, stakeholder register)'],
+    keyPoints: '**Giám sát truyền thông đảm bảo:** thông tin đang được gửi/nhận đúng người, kênh truyền thông hoạt động hiệu quả, stakeholder engagement levels được duy trì, phát hiện communication breakdowns sớm.\n\nCommunication Plan phải được cập nhật khi có thay đổi về stakeholders hoặc project environment.',
+  },
+
+  // ══════════════ 8. RISK (7) ══════════════
+  {
+    kaCode: 'risk', pgCode: 'planning', order: 36,
+    name: 'Plan Risk Management', nameVi: 'Lập kế hoạch Quản lý Rủi ro',
+    description: 'Xác định cách thực hiện các hoạt động quản lý rủi ro cho một dự án.',
+    inputs: ['Project charter', 'Project management plan (all subsidiary plans)', 'Project documents (stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data analysis (stakeholder analysis)', 'Meetings'],
+    outputs: ['Risk management plan'],
+    keyPoints: '**Risk Management Plan bao gồm:** Risk strategy, Methodology, Roles and responsibilities, Funding (risk budget), Timing, Risk categories (RBS), Stakeholder risk appetite, Definitions of risk probability and impact, Probability and impact matrix, Reporting formats, Tracking.\n\n**Risk Appetite vs Risk Tolerance vs Risk Threshold:** Appetite = mức độ sẵn sàng chấp nhận rủi ro (chung); Tolerance = biên độ chấp nhận được; Threshold = điểm cụ thể kích hoạt hành động.',
+  },
+  {
+    kaCode: 'risk', pgCode: 'planning', order: 37,
+    name: 'Identify Risks', nameVi: 'Xác định Rủi ro',
+    description: 'Xác định các rủi ro cá nhân cũng như nguồn rủi ro tổng thể của dự án, và tài liệu hóa đặc điểm của chúng.',
+    inputs: ['Project management plan (requirements management plan, schedule management plan, cost management plan, quality management plan, resource management plan, risk management plan, scope baseline, schedule baseline, cost baseline)', 'Project documents (assumption log, cost estimates, duration estimates, issue log, lessons learned register, requirements documentation, resource requirements, stakeholder register)', 'Agreements', 'Procurement documentation', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (brainstorming, checklists, interviews)', 'Data analysis (root cause analysis, assumption and constraint analysis, SWOT analysis, document analysis)', 'Interpersonal & team skills (facilitation)', 'Prompt lists', 'Meetings'],
+    outputs: ['Risk register', 'Risk report', 'Project document updates (assumption log, issue log, lessons learned register)'],
+    keyPoints: '**Risk Register ban đầu bao gồm:** List of identified risks, Potential risk owners, Potential risk responses.\n\n**Risk Report (mới trong PMBOK 6):** Sources of overall project risk, Summary information on identified individual project risks.\n\n**SWOT Analysis:** Strengths, Weaknesses (internal); Opportunities, Threats (external).',
+  },
+  {
+    kaCode: 'risk', pgCode: 'planning', order: 38,
+    name: 'Perform Qualitative Risk Analysis', nameVi: 'Phân tích Rủi ro Định tính',
+    description: 'Ưu tiên hóa rủi ro cá nhân để phân tích hoặc hành động tiếp theo bằng cách đánh giá xác suất xảy ra và tác động của chúng.',
+    inputs: ['Project management plan (risk management plan)', 'Project documents (assumption log, risk register, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (interviews)', 'Data analysis (risk data quality assessment, risk probability and impact assessment, assessment of other risk parameters)', 'Interpersonal & team skills (facilitation)', 'Risk categorization', 'Data representation (probability and impact matrix, hierarchical charts)', 'Meetings'],
+    outputs: ['Project document updates (assumption log, issue log, risk register, risk report)'],
+    keyPoints: '**Probability-Impact Matrix (P-I Matrix):** Xếp hạng rủi ro từ Very High đến Very Low.\n**Risk Score** = Probability × Impact\n\n**Rất nhanh và tương đối rẻ** — không yêu cầu dữ liệu số liệu chính xác.\n\nRisk Owner được chỉ định ở quy trình này hoặc Plan Risk Responses.\n\nQualitative → tiếp theo là Quantitative (đối với high-priority risks) → Plan Risk Responses.',
+  },
+  {
+    kaCode: 'risk', pgCode: 'planning', order: 39,
+    name: 'Perform Quantitative Risk Analysis', nameVi: 'Phân tích Rủi ro Định lượng',
+    description: 'Phân tích số học tác động kết hợp của các rủi ro cá nhân đã xác định lên mục tiêu dự án tổng thể.',
+    inputs: ['Project management plan (risk management plan, scope baseline, schedule baseline, cost baseline)', 'Project documents (assumption log, basis of estimates, cost estimates, cost forecasts, duration estimates, milestone list, resource requirements, risk register, risk report, schedule forecasts)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (interviews)', 'Interpersonal & team skills (facilitation)', 'Representations of uncertainty (probability distributions)', 'Data analysis (simulations/Monte Carlo, sensitivity analysis/tornado diagram, decision tree analysis, influence diagrams)'],
+    outputs: ['Project document updates (risk report)'],
+    keyPoints: '**Monte Carlo Simulation:** Chạy hàng nghìn lần với random inputs, tạo probability distribution cho outcomes, xác định P-80 cost/schedule.\n\n**Decision Tree Analysis:** EMV = Probability × Impact; Threat EMV: âm; Opportunity EMV: dương.\n\n**Sensitivity Analysis (Tornado Diagram):** Xác định risk nào ảnh hưởng nhất đến dự án.\n\nKHÔNG phải tất cả dự án đều cần Quantitative Analysis.',
+  },
+  {
+    kaCode: 'risk', pgCode: 'planning', order: 40,
+    name: 'Plan Risk Responses', nameVi: 'Lập kế hoạch Ứng phó Rủi ro',
+    description: 'Phát triển các lựa chọn, lựa chọn chiến lược và thỏa thuận các hành động để giải quyết rủi ro tổng thể dự án và để xử lý rủi ro cá nhân.',
+    inputs: ['Project management plan (resource management plan, risk management plan, cost baseline)', 'Project documents (lessons learned register, project schedule, project team assignments, resource calendars, risk register, risk report, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (interviews)', 'Interpersonal & team skills (facilitation)', 'Strategies for threats (Escalate/Avoid/Transfer/Mitigate/Accept)', 'Strategies for opportunities (Escalate/Exploit/Share/Enhance/Accept)', 'Contingent response strategies', 'Strategies for overall project risk', 'Data analysis (alternatives analysis, cost-benefit analysis)', 'Decision making (multicriteria decision analysis)'],
+    outputs: ['Change requests', 'Project management plan updates (schedule management plan, cost management plan, quality management plan, resource management plan, procurement management plan, scope baseline, schedule baseline, cost baseline)', 'Project document updates (assumption log, cost forecasts, lessons learned register, project schedule, risk register, risk report)'],
+    keyPoints: '**Strategies for THREATS (E-A-T-M-A):**\n- Escalate: vượt phạm vi PM, chuyển lên sponsor\n- Avoid: loại bỏ mối đe dọa hoàn toàn (thay đổi PMP)\n- Transfer: chuyển sang bên thứ ba (insurance, fixed-price contract)\n- Mitigate: giảm probability hoặc impact\n- Accept: active (contingency reserve, plan) hoặc passive (không làm gì)\n\n**Strategies for OPPORTUNITIES (E-E-S-E-A):**\n- Escalate, Exploit (đảm bảo cơ hội xảy ra), Share, Enhance (tăng probability/impact), Accept\n\n**Residual Risk:** sau khi áp dụng responses, vẫn còn lại.\n**Secondary Risk:** rủi ro mới phát sinh từ việc thực hiện risk response.',
+  },
+  {
+    kaCode: 'risk', pgCode: 'executing', order: 41,
+    name: 'Implement Risk Responses', nameVi: 'Thực hiện Ứng phó Rủi ro',
+    description: 'Thực thi các kế hoạch ứng phó rủi ro đã thỏa thuận.',
+    inputs: ['Project management plan (risk management plan)', 'Project documents (lessons learned register, risk register, risk report)', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Interpersonal & team skills (influencing)', 'Project management information system (PMIS)'],
+    outputs: ['Change requests', 'Project document updates (issue log, lessons learned register, project team assignments, risk register, risk report)'],
+    keyPoints: '**Quy trình mới trong PMBOK 6** (không có trong PMBOK 5).\n\nTrước đây, thực thi risk responses được coi là một phần của Direct and Manage Project Work.\n\n**Mục đích:** đảm bảo risk owners thực sự tiến hành các planned responses — không chỉ là lập kế hoạch.\n\nRisk owners chịu trách nhiệm thực thi responses đã được lên kế hoạch, và báo cáo lại cho PM.',
+  },
+  {
+    kaCode: 'risk', pgCode: 'monitoring', order: 42,
+    name: 'Monitor Risks', nameVi: 'Giám sát Rủi ro',
+    description: 'Theo dõi việc thực hiện các kế hoạch ứng phó rủi ro đã thỏa thuận, theo dõi các rủi ro đã xác định, xác định và phân tích rủi ro mới.',
+    inputs: ['Project management plan (risk management plan)', 'Project documents (issue log, lessons learned register, risk register, risk report)', 'Work performance data', 'Work performance reports'],
+    tools: ['Data analysis (technical performance analysis, reserve analysis)', 'Audits', 'Meetings'],
+    outputs: ['Work performance information', 'Change requests', 'Project management plan updates', 'Project document updates (assumption log, issue log, lessons learned register, risk register, risk report)', 'Organizational process assets updates'],
+    keyPoints: '**Monitor Risks activities:** Check if risk responses are being executed, Evaluate effectiveness of risk responses, Track identified risks, Identify and analyze new risks, Evaluate reserve adequacy, Ensure risk management policies are followed.\n\n**Reserve Analysis:** So sánh contingency reserve còn lại với risks còn lại.\n\nRisk Audits: đánh giá hiệu quả của risk management processes.',
+  },
+
+  // ══════════════ 9. PROCUREMENT (3) ══════════════
+  {
+    kaCode: 'procurement', pgCode: 'planning', order: 43,
+    name: 'Plan Procurement Management', nameVi: 'Lập kế hoạch Quản lý Mua sắm',
+    description: 'Tài liệu hóa các quyết định mua sắm, xác định phương pháp mua sắm và xác định các nhà cung cấp tiềm năng.',
+    inputs: ['Project charter', 'Business documents (business case, benefits management plan)', 'Project management plan (scope management plan, quality management plan, resource management plan, risk management plan, scope baseline)', 'Project documents (milestone list, project team assignments, requirements documentation, requirements traceability matrix, resource requirements, risk register, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (market research)', 'Data analysis (make-or-buy analysis)', 'Source selection analysis', 'Meetings'],
+    outputs: ['Procurement management plan', 'Procurement strategy', 'Bid documents (RFP, IFB, RFQ)', 'Procurement statement of work (SOW)', 'Source selection criteria', 'Make-or-buy decisions', 'Independent cost estimates', 'Change requests', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Contract Types — Risk to Buyer/Seller:**\n\nFixed Price (FP) — Low risk Buyer, High risk Seller:\n- FFP (Firm Fixed Price): giá cố định hoàn toàn\n- FP-EPA (FP with Economic Price Adjustment): điều chỉnh theo inflation\n- FPIF (FP Incentive Fee): thưởng nếu tiết kiệm\n\nCost Reimbursable (CR) — High risk Buyer, Low risk Seller:\n- CPFF (Cost Plus Fixed Fee), CPAF (Cost Plus Award Fee), CPIF (Cost Plus Incentive Fee)\n\nT&M (Time and Material): middle risk, linh hoạt.\n\n**Make-or-buy analysis:** make (giữ bí mật, kiểm soát) vs buy (chuyên môn, cost).',
+  },
+  {
+    kaCode: 'procurement', pgCode: 'executing', order: 44,
+    name: 'Conduct Procurements', nameVi: 'Tiến hành Mua sắm',
+    description: 'Nhận phản hồi từ nhà cung cấp, lựa chọn nhà cung cấp và trao hợp đồng.',
+    inputs: ['Project management plan (scope management plan, requirements management plan, communications management plan, risk management plan, procurement management plan, configuration management plan, cost baseline)', 'Project documents (lessons learned register, project schedule, requirements documentation, risk register, stakeholder register)', 'Procurement documentation', 'Seller proposals', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Advertising', 'Bidder conferences', 'Data analysis (proposal evaluation techniques)', 'Interpersonal & team skills (negotiation)'],
+    outputs: ['Selected sellers', 'Agreements', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Bidder Conference (Contractor Conference / Pre-bid Conference):** Đảm bảo tất cả nhà thầu tiềm năng hiểu requirements như nhau. Tránh lợi thế không công bằng.\n\n**Agreements (Contracts):** Legal, binding documents. Bảo vệ cả hai bên. Phải có consideration.\n\n**Privity of contract:** quan hệ hợp đồng trực tiếp (buyer-seller).',
+  },
+  {
+    kaCode: 'procurement', pgCode: 'monitoring', order: 45,
+    name: 'Control Procurements', nameVi: 'Kiểm soát Mua sắm',
+    description: 'Quản lý quan hệ mua sắm, giám sát hiệu suất hợp đồng và thực hiện thay đổi/corrections theo yêu cầu; đóng hợp đồng.',
+    inputs: ['Project management plan (requirements management plan, risk management plan, procurement management plan, change management plan, schedule baseline)', 'Project documents (assumption log, lessons learned register, milestone list, quality reports, requirements documentation, requirements traceability matrix, risk register, stakeholder register)', 'Agreements', 'Procurement documentation', 'Approved change requests', 'Work performance data', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Claims administration', 'Data analysis (performance reviews, earned value analysis, trend analysis)', 'Inspection', 'Audits'],
+    outputs: ['Closed procurements', 'Work performance information', 'Procurement documentation updates', 'Change requests', 'Project management plan updates', 'Project document updates', 'Organizational process assets updates'],
+    keyPoints: '**Claims Administration (Disputes):** Claims = tranh chấp về hợp đồng. Best resolved through negotiation. Nếu không giải quyết được: Alternative Dispute Resolution (ADR), sau đó mới ra tòa.\n\n**Contract Closeout:** Xác nhận tất cả deliverables đã được accepted, giải quyết open claims, cập nhật records, formal written notice of completion.\n\n**Early Termination:** Termination for convenience (buyer có thể kết thúc); Termination for default (seller vi phạm).',
+  },
+
+  // ══════════════ 10. STAKEHOLDER (4) ══════════════
+  {
+    kaCode: 'stakeholder', pgCode: 'initiating', order: 46,
+    name: 'Identify Stakeholders', nameVi: 'Xác định Các bên liên quan',
+    description: 'Xác định các cá nhân, nhóm hoặc tổ chức có thể ảnh hưởng hoặc bị ảnh hưởng bởi quyết định, hoạt động hoặc kết quả của dự án.',
+    inputs: ['Project charter', 'Business documents (business case, benefits management plan)', 'Project management plan (communications management plan, stakeholder engagement plan)', 'Project documents (change log, issue log, requirements documentation)', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (questionnaires and surveys, brainstorming)', 'Data analysis (stakeholder analysis, document analysis)', 'Data representation (stakeholder mapping — Power/Interest Grid, Power/Influence Grid, Influence/Impact Grid, Salience Model)', 'Meetings'],
+    outputs: ['Stakeholder register', 'Change requests', 'Project management plan updates', 'Project document updates (assumption log, issue log, risk register)'],
+    keyPoints: '**Thực hiện sớm nhất có thể** — ngay từ khi nhận Project Charter.\n\n**Stakeholder Register bao gồm:** Identification information (name, role, department), Assessment information (major requirements, expectations, potential for influence), Stakeholder classification.\n\n**Stakeholder Mapping:** Power/Interest Grid, Power/Influence Grid, Salience Model (Power + Urgency + Legitimacy).\n\nIdentify Stakeholders lặp lại trong suốt dự án khi có stakeholders mới.',
+  },
+  {
+    kaCode: 'stakeholder', pgCode: 'planning', order: 47,
+    name: 'Plan Stakeholder Engagement', nameVi: 'Lập kế hoạch Tham gia của Stakeholders',
+    description: 'Phát triển cách tiếp cận để tương tác hiệu quả với stakeholders dựa trên nhu cầu, kỳ vọng, lợi ích và tác động tiềm tàng của họ.',
+    inputs: ['Project charter', 'Project management plan (communications management plan, resource management plan, risk management plan)', 'Project documents (assumption log, change log, issue log, project schedule, risk register, stakeholder register)', 'Agreements', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Data gathering (benchmarking)', 'Data analysis (assumption and constraint analysis, root cause analysis)', 'Decision making (prioritization/ranking)', 'Data representation (mind mapping, stakeholder engagement assessment matrix)', 'Meetings'],
+    outputs: ['Stakeholder engagement plan'],
+    keyPoints: '**Stakeholder Engagement Assessment Matrix — Mức độ tham gia:**\n- Unaware: không biết về dự án và tác động\n- Resistant: biết nhưng chống lại\n- Neutral: biết nhưng không hỗ trợ/chống\n- Supportive: biết và hỗ trợ\n- Leading: biết, hỗ trợ và chủ động tham gia\n\nC = Current level; D = Desired level. PM cần bridge the gap (C→D).\n\n**Stakeholder Engagement Plan là CONFIDENTIAL** — không phổ biến rộng rãi.',
+  },
+  {
+    kaCode: 'stakeholder', pgCode: 'executing', order: 48,
+    name: 'Manage Stakeholder Engagement', nameVi: 'Quản lý Tương tác với Stakeholders',
+    description: 'Truyền thông và làm việc với stakeholders để đáp ứng nhu cầu/kỳ vọng của họ, giải quyết vấn đề và thúc đẩy sự tham gia phù hợp.',
+    inputs: ['Project management plan (communications management plan, risk management plan, stakeholder engagement plan)', 'Project documents (change log, issue log, lessons learned register, stakeholder register)', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Expert judgment', 'Communication skills (feedback, presentations)', 'Interpersonal & team skills (conflict management, cultural awareness, negotiation, observation/conversation, political awareness)', 'Ground rules', 'Meetings'],
+    outputs: ['Change requests', 'Project management plan updates', 'Project document updates (change log, issue log, lessons learned register, stakeholder register)'],
+    keyPoints: '**Mục tiêu chính:** Tăng sự ủng hộ, giảm sự kháng cự. Đưa stakeholders từ Resistant/Neutral → Supportive/Leading.\n\n**Chiến thuật quan trọng:** Active listening, frequent communication, involving stakeholders in decisions, addressing concerns promptly, building trust.\n\nIssue Log: ghi lại và theo dõi tất cả stakeholder issues → đảm bảo resolution.',
+  },
+  {
+    kaCode: 'stakeholder', pgCode: 'monitoring', order: 49,
+    name: 'Monitor Stakeholder Engagement', nameVi: 'Giám sát Tương tác với Stakeholders',
+    description: 'Giám sát mối quan hệ với stakeholders và điều chỉnh chiến lược và kế hoạch tương tác với stakeholder.',
+    inputs: ['Project management plan (resource management plan, communications management plan, stakeholder engagement plan)', 'Project documents (issue log, lessons learned register, project communications, risk register, stakeholder register)', 'Work performance data', 'Enterprise environmental factors', 'Organizational process assets'],
+    tools: ['Data analysis (alternatives analysis, root cause analysis, stakeholder analysis)', 'Decision making (multicriteria decision analysis)', 'Data representation (stakeholder engagement assessment matrix)', 'Communication skills (feedback)', 'Interpersonal & team skills (active listening, cultural awareness, leadership, networking, political awareness)', 'Meetings'],
+    outputs: ['Work performance information', 'Change requests', 'Project management plan updates (communications management plan, stakeholder engagement plan)', 'Project document updates (issue log, lessons learned register, risk register, stakeholder register)'],
+    keyPoints: '**Monitor Stakeholder Engagement kiểm tra:** Stakeholder engagement levels có đạt mức desired không? Có stakeholders mới xuất hiện không? Có thay đổi về power/interest/influence không? Engagement strategies có hiệu quả không?\n\n**So sánh:** Plan = lập kế hoạch; Manage = thực thi; Monitor = theo dõi và điều chỉnh.\n\nKết thúc dự án: cập nhật stakeholder register lần cuối, ghi lessons learned.',
+  },
 ];
 
 // ─── Sample Exam Questions ──────────────────────────────────
@@ -141,12 +554,12 @@ const QUESTIONS: QDef[] = [
   { area: 'stakeholder', group: 'planning', content: 'Stakeholder Engagement Assessment Matrix phân loại stakeholders theo mức độ nào?', optionA: 'Quyền lực (Power) và Quan tâm (Interest)', optionB: 'Mức độ tham gia Hiện tại (Current) và Mong muốn (Desired)', optionC: 'Ảnh hưởng (Influence) và Tác động (Impact)', optionD: 'Hỗ trợ (Support) và Phản đối (Oppose)', answer: 'B', explain: 'Stakeholder Engagement Assessment Matrix so sánh mức độ tham gia hiện tại (C) vs mong muốn (D) trên thang: Unaware → Resistant → Neutral → Supportive → Leading. PM cần thu hẹp khoảng cách C-D.', difficulty: 'hard' },
 ];
 
-// ─── Main ─────────────────────────────────────────────────
+// ─── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('🌱 Seeding PMP module...\n');
+  console.log('🌱 PMP PMBOK 6 Seeder — Lần 1/3: Processes + ITTOs\n');
 
   // 1. Knowledge Areas
-  console.log('📚 Creating Knowledge Areas...');
+  console.log('📚 Knowledge Areas...');
   const kaMap = new Map<string, string>();
   for (const ka of KA_DATA) {
     const row = await prisma.pMPKnowledgeArea.upsert({
@@ -155,11 +568,11 @@ async function main() {
       create: ka,
     });
     kaMap.set(ka.code, row.id);
-    console.log(`   ✓ ${ka.code}`);
+    console.log(`   ✓ [${ka.order}] ${ka.nameVi}`);
   }
 
   // 2. Process Groups
-  console.log('\n📋 Creating Process Groups...');
+  console.log('\n📋 Process Groups...');
   const pgMap = new Map<string, string>();
   for (const pg of PG_DATA) {
     const row = await prisma.pMPProcessGroup.upsert({
@@ -168,31 +581,38 @@ async function main() {
       create: pg,
     });
     pgMap.set(pg.code, row.id);
-    console.log(`   ✓ ${pg.code}`);
+    console.log(`   ✓ ${pg.nameVi}`);
   }
 
-  // 3. Processes
-  console.log('\n⚙️  Creating Processes...');
+  // 3. Processes with full ITTOs
+  console.log('\n⚙️  Processes (49 with full ITTOs)...');
   const procMap = new Map<string, string>();
-  let procOrder = 0;
-  for (const [kaCode, pgCode, name, nameVi, description, keyPoints] of PROC_DATA) {
-    const kaId = kaMap.get(kaCode)!;
-    const pgId = pgMap.get(pgCode)!;
-    const existing = await prisma.pMPProcess.findFirst({ where: { knowledgeAreaId: kaId, name } });
-    if (!existing) {
-      const row = await prisma.pMPProcess.create({
-        data: { knowledgeAreaId: kaId, processGroupId: pgId, name, nameVi, description, keyPoints, order: ++procOrder },
-      });
-      procMap.set(name, row.id);
-      console.log(`   ✓ [${kaCode}/${pgCode}] ${name}`);
+  let created = 0; let updated = 0;
+  for (const p of PROC_DATA) {
+    const kaId = kaMap.get(p.kaCode)!;
+    const pgId = pgMap.get(p.pgCode)!;
+    const existing = await prisma.pMPProcess.findFirst({ where: { knowledgeAreaId: kaId, name: p.name } });
+    const data = {
+      knowledgeAreaId: kaId, processGroupId: pgId,
+      name: p.name, nameVi: p.nameVi, description: p.description,
+      inputs: p.inputs, tools: p.tools, outputs: p.outputs,
+      keyPoints: p.keyPoints, order: p.order,
+    };
+    let row: { id: string };
+    if (existing) {
+      row = await prisma.pMPProcess.update({ where: { id: existing.id }, data });
+      updated++;
+      console.log(`   ↻ [${p.kaCode}/${p.pgCode}] ${p.name}`);
     } else {
-      procMap.set(name, existing.id);
-      console.log(`   – [${kaCode}/${pgCode}] ${name} (already exists)`);
+      row = await prisma.pMPProcess.create({ data });
+      created++;
+      console.log(`   ✓ [${p.kaCode}/${p.pgCode}] ${p.name}`);
     }
+    procMap.set(p.name, row.id);
   }
 
-  // 4. Exam Questions
-  console.log('\n❓ Creating Exam Questions...');
+  // 4. Exam Questions (giữ nguyên từ file gốc)
+  console.log('\n❓ Exam Questions...');
   let qCreated = 0;
   for (const q of QUESTIONS) {
     const existing = await prisma.pMPExamQuestion.findFirst({ where: { content: q.content } });
@@ -204,15 +624,16 @@ async function main() {
   console.log(`   ✓ ${qCreated} new questions created`);
 
   // Summary
-  const kaCount = await prisma.pMPKnowledgeArea.count();
-  const pgCount = await prisma.pMPProcessGroup.count();
+  const kaCount   = await prisma.pMPKnowledgeArea.count();
+  const pgCount   = await prisma.pMPProcessGroup.count();
   const procCount = await prisma.pMPProcess.count();
-  const qCount = await prisma.pMPExamQuestion.count();
-  console.log(`\n✅ PMP Seeding Complete:`);
+  const qCount    = await prisma.pMPExamQuestion.count();
+  console.log(`\n✅ Lần 1/3 hoàn thành:`);
   console.log(`   Knowledge Areas : ${kaCount}`);
   console.log(`   Process Groups  : ${pgCount}`);
-  console.log(`   Processes       : ${procCount}`);
+  console.log(`   Processes       : ${procCount} (${created} created, ${updated} updated)`);
   console.log(`   Exam Questions  : ${qCount}`);
+  console.log(`\n👉 Chạy tiếp: npx tsx prisma/seed-pmp-questions.ts`);
 }
 
 main()

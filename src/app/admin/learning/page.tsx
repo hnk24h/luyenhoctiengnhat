@@ -5,12 +5,13 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaPlus, FaTrash, FaPencil, FaBookOpen, FaXmark, FaCheck,
   FaChevronRight, FaChevronDown, FaArrowLeft, FaLayerGroup,
   FaListUl, FaMagnifyingGlass, FaCirclePlus,
-  FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation,
+  FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation, FaLock
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ interface Category {
 interface Lesson {
   id: string; categoryId: string; title: string; description: string | null;
   content: string | null; type: string; order: number;
+  requiredTier?: string;
   _count: { items: number };
   category: { name: string; skill: string; level: { code: string } };
 }
@@ -43,16 +45,20 @@ interface LearningItem {
 
 const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
 const SKILLS = [
-  { value: 'doc',   label: 'Đọc' },
-  { value: 'nghe',  label: 'Nghe' },
+  { value: 'doc',      label: 'Đọc' },
+  { value: 'nghe',     label: 'Nghe' },
   { value: 'ngu_phap', label: 'Ngữ pháp' },
   { value: 'tu_vung',  label: 'Từ vựng' },
+  { value: 'vocab',    label: 'Vocab' },
+  { value: 'grammar',  label: 'Grammar' },
+  { value: 'viet',     label: 'Viết' },
+  { value: 'noi',      label: 'Nói' },
 ];
 const LESSON_TYPES = ['text', 'vocab', 'grammar', 'audio'];
 const ITEM_TYPES   = ['vocab', 'character', 'grammar', 'example', 'phrase', 'tone', 'idiom'];
 
-const CAT_BLANK = { levelCode: 'N5', skill: 'tu_vung', name: '', description: '', icon: '', order: 0 };
-const LES_BLANK = { title: '', description: '', type: 'vocab', order: 0 };
+const CAT_BLANK = { levelCode: '', skill: 'tu_vung', name: '', description: '', icon: '', order: 0 };
+const LES_BLANK = { title: '', description: '', type: 'vocab', order: 0, requiredTier: 'free' };
 const ITEM_BLANK = {
   type: 'vocab', term: '', pronunciation: '', language: 'ja', meaning: '',
   example: '', exampleMeaning: '', order: 0,
@@ -81,6 +87,8 @@ function SkillBadge({ skill }: { skill: string }) {
 export default function AdminLearningPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const subject = searchParams.get('subject') ?? 'JLPT';
 
   // ── Data ──
   const [levels,     setLevels]     = useState<Level[]>([]);
@@ -89,7 +97,7 @@ export default function AdminLearningPage() {
   const [items,      setItems]      = useState<LearningItem[]>([]);
 
   // ── Selection ──
-  const [activeLevel, setActiveLevel] = useState('N5');
+  const [activeLevel, setActiveLevel] = useState('');
   const [activeSkill, setActiveSkill] = useState('');   // '' = all
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const [activeLesId, setActiveLesId] = useState<string | null>(null);
@@ -129,11 +137,16 @@ export default function AdminLearningPage() {
 
   // ── Load levels ──
   useEffect(() => {
-    fetch('/api/admin/levels?subject=JLPT').then(r => r.json()).then(setLevels).catch(() => {
-      // fallback: use static list
-      setLevels(LEVELS.map((c, i) => ({ id: c, code: c, name: c })));
+    fetch(`/api/admin/levels?subject=${subject}`).then(r => r.json()).then((ls: Level[]) => {
+      setLevels(ls);
+      if (ls.length) setActiveLevel(ls[0].code);
+    }).catch(() => {
+      const fallback = subject === 'JLPT' ? ['N5', 'N4', 'N3', 'N2', 'N1'] : [];
+      const ls = fallback.map((c, i) => ({ id: c, code: c, name: c }));
+      setLevels(ls);
+      if (ls.length) setActiveLevel(ls[0].code);
     });
-  }, []);
+  }, [subject]);
 
   // ── Load categories when level/skill changes ──
   const loadCategories = useCallback(async () => {
@@ -142,7 +155,7 @@ export default function AdminLearningPage() {
     const params = new URLSearchParams();
     if (level) params.set('levelId', level.id);
     if (activeSkill) params.set('skill', activeSkill);
-    params.set('subject', 'JLPT');
+    params.set('subject', subject);
     const res = await fetch(`/api/learning/categories?${params}`);
     if (res.ok) setCategories(await res.json());
     setActiveCatId(null);
@@ -223,7 +236,7 @@ export default function AdminLearningPage() {
   }
 
   function openLesEdit(les: Lesson) {
-    setLesForm({ title: les.title, description: les.description ?? '', type: les.type, order: les.order });
+    setLesForm({ title: les.title, description: les.description ?? '', type: les.type, order: les.order, requiredTier: les.requiredTier ?? 'free' });
     setEditId(les.id); setModalErr(''); setModal('les-edit');
   }
 
@@ -338,51 +351,48 @@ export default function AdminLearningPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-
-      {/* Page header */}
-      <div className="flex items-center gap-3 mb-2">
-        <Link href="/admin" className="btn-ghost p-2 rounded-lg" style={{ color: 'var(--text-muted)' }}>
-          <FaArrowLeft size={14} />
-        </Link>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dbeafe', color: '#1d4ed8' }}>
-          <FaBookOpen size={18} />
-        </div>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1rem' }}>
+      {/* Gradient header */}
+      <div style={{ background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-base)' }}>Quản lý bài học</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Chủ đề → Bài học → Từ vựng / Ngữ pháp</p>
+          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
+            <span style={{ display: 'inline-block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.12)', padding: '2px 12px', fontWeight: 500 }}>
+              <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
+              {' / '}Quản lý bài học
+            </span>
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>📚 Bài học {subject}</h1>
+          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.8 }}>
+            {subject === 'JLPT' ? '🇯🇵 Tiếng Nhật' : subject === 'HSK' ? '🇨🇳 Tiếng Trung' : '📋 Quản lý dự án'}
+            {' — '}Chủ đề → Bài học → Từ vựng / Ngữ pháp
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {(['JLPT', 'HSK', 'PMP'] as const).map(s => (
+            <a key={s} href={`?subject=${s}`} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: subject === s ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)', color: subject === s ? '#2563eb' : '#fff', border: '1px solid rgba(255,255,255,0.3)', textDecoration: 'none', transition: 'all 0.15s' }}>
+              {s === 'JLPT' ? '🇯🇵 JLPT' : s === 'HSK' ? '🇨🇳 HSK' : '📋 PMP'}
+            </a>
+          ))}
         </div>
       </div>
 
+      <div style={{ paddingBottom: 40 }}>
+
       {/* Level tabs */}
-      <div className="flex items-center gap-2 mt-6 mb-2 flex-wrap">
-        {LEVELS.map(lv => (
-          <button key={lv} onClick={() => setActiveLevel(lv)}
+      <div className="flex items-center gap-2 mt-4 mb-2 flex-wrap">
+        {levels.map(lv => (
+          <button key={lv.code} onClick={() => setActiveLevel(lv.code)}
             className="px-4 py-1.5 rounded-xl text-sm font-bold transition-all"
-            style={activeLevel === lv
-              ? { background: 'var(--primary)', color: 'white' }
+            style={activeLevel === lv.code
+              ? { background: '#2563eb', color: 'white' }
               : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
-            {lv}
+            {lv.code}
           </button>
         ))}
-        <div className="ml-auto flex gap-1">
-          <button onClick={() => setActiveSkill('')}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border"
-            style={activeSkill === ''
-              ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }
-              : { background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-            Tất cả
-          </button>
-          {SKILLS.map(s => (
-            <button key={s.value} onClick={() => setActiveSkill(s.value)}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border"
-              style={activeSkill === s.value
-                ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }
-                : { background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-              {s.label}
-            </button>
-          ))}
-        </div>
+        <select className="input ml-auto" style={{ width: 'auto' }} value={activeSkill} onChange={e => setActiveSkill(e.target.value)}>
+          <option value="">Tất cả kỹ năng</option>
+          {SKILLS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
       </div>
 
       {/* 3-column grid */}
@@ -420,12 +430,12 @@ export default function AdminLearningPage() {
                   : { background: 'transparent' }}>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate"
-                    style={{ color: activeCatId === cat.id ? 'white' : 'var(--text-base)' }}>
+                    style={{ color: activeCatId === cat.id ? 'white' : '#1e293b' }}>
                     {cat.icon && <span className="mr-1">{cat.icon}</span>}{cat.name}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs opacity-70"
-                      style={{ color: activeCatId === cat.id ? 'white' : 'var(--text-muted)' }}>
+                    <span className="text-xs opacity-80"
+                      style={{ color: activeCatId === cat.id ? 'white' : '#334155' }}>
                       {cat._count.lessons} bài học
                     </span>
                     {activeCatId !== cat.id && <SkillBadge skill={cat.skill} />}
@@ -491,18 +501,26 @@ export default function AdminLearningPage() {
                   ? { background: 'var(--primary-light)', borderLeft: '3px solid var(--primary)' }
                   : { borderLeft: '3px solid transparent' }}>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: 'var(--text-base)' }}>
+                  <div className="font-semibold text-sm truncate flex items-center gap-2" style={{ color: '#1e293b' }}>
                     {les.title}
+                    {les.requiredTier && les.requiredTier !== 'free' && (
+                      <FaLock size={12} style={{ color: '#F59E0B' }} title="Bài học bị khóa theo gói" />
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{les._count.items} mục</span>
+                    <span className="text-xs" style={{ color: '#334155' }}>{les._count.items} mục</span>
                     <span className="px-1.5 py-0.5 rounded text-xs font-medium"
-                      style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
+                      style={{ background: 'var(--bg-muted)', color: '#334155' }}>
                       {les.type}
                     </span>
+                    {les.requiredTier && (
+                      <span className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+                        {les.requiredTier === 'basic' ? 'Cơ bản' : les.requiredTier === 'premium' ? 'Nâng cao' : 'Miễn phí'}
+                      </span>
+                    )}
                   </div>
                   {les.description && (
-                    <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                    <div className="text-xs mt-0.5 truncate" style={{ color: '#64748b' }}>
                       {les.description}
                     </div>
                   )}
@@ -598,6 +616,7 @@ export default function AdminLearningPage() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* ── Modals ─────────────────────────────────────────────────────────────── */}
 
@@ -625,7 +644,7 @@ export default function AdminLearningPage() {
                   <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Cấp độ *</label>
                   <select className="input w-full text-sm" value={catForm.levelCode}
                     onChange={e => setCatForm(f => ({ ...f, levelCode: e.target.value }))}>
-                    {LEVELS.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+                    {levels.map(lv => <option key={lv.code} value={lv.code}>{lv.code}{lv.name && lv.name !== lv.code ? ` — ${lv.name}` : ''}</option>)}
                   </select>
                 </div>
                 <div>
@@ -691,7 +710,7 @@ export default function AdminLearningPage() {
             )}
 
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Tên bài học *</label>
                   <input className="input w-full" placeholder="VD: Bài 1 - Gia đình"
@@ -702,6 +721,15 @@ export default function AdminLearningPage() {
                   <select className="input w-full text-sm" value={lesForm.type}
                     onChange={e => setLesForm(f => ({ ...f, type: e.target.value }))}>
                     {LESSON_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Gói yêu cầu</label>
+                  <select className="input w-full text-sm" value={lesForm.requiredTier}
+                    onChange={e => setLesForm(f => ({ ...f, requiredTier: e.target.value }))}>
+                    <option value="free">Miễn phí</option>
+                    <option value="basic">Cơ bản</option>
+                    <option value="premium">Nâng cao</option>
                   </select>
                 </div>
               </div>

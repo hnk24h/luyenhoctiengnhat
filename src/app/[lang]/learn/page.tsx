@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
@@ -53,25 +52,24 @@ type LevelWithContent = {
   }>;
 };
 
-type LessonWithProgress = {
+/** Shape of a lesson used for the "continue / next" lanes. */
+type ContinueLesson = {
   id: string;
   title: string;
   order: number;
   categoryId: string;
-  progress: Array<{
-    completed: boolean;
-    completedAt: Date | null;
-  }>;
   category: {
-    id: string;
-    skill: string;
     name: string;
-    order: number;
-    level: {
-      code: string;
-      order: number;
-    };
+    skill: string;
+    level: { code: string; order: number };
   };
+};
+
+/** One row returned by the lightweight completed-progress query. */
+type CompletedProgressRow = {
+  lessonId: string;
+  completedAt: Date | null;
+  lesson: ContinueLesson;
 };
 
 type ExamProgressItem = {
@@ -136,7 +134,7 @@ async function getLevelsWithContent(subject: Subject) {
   });
 }
 
-function getLessonHref(lesson: LessonWithProgress, lang: string) {
+function getLessonHref(lesson: ContinueLesson, lang: string) {
   return `/${lang}/learn/${lesson.category.level.code}/${lesson.category.skill}/${lesson.categoryId}/${lesson.id}`;
 }
 
@@ -166,14 +164,17 @@ function getWeakSkill(progress: ExamProgressItem[]): WeakSkillSummary | null {
   return stats.sort((a, b) => (a.avg ?? 999) - (b.avg ?? 999))[0] ?? null;
 }
 
-function getLevelSummary(lessons: LessonWithProgress[]): LevelSummary[] {
-  return Array.from(new Set(lessons.map((lesson) => lesson.category.level.code))).map((levelCode) => {
-    const levelLessons = lessons.filter((lesson) => lesson.category.level.code === levelCode);
-    const done = levelLessons.filter((lesson) => lesson.progress.some((item) => item.completed)).length;
-    const total = levelLessons.length;
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-    return { levelCode, done, total, pct };
+/** Compute level summary from pre-grouped completed counts + structural level data.
+ *  O(levels) instead of O(all_lessons). */
+function computeLevelSummary(
+  levels: LevelWithContent[],
+  completedByLevel: Map<string, number>,
+): LevelSummary[] {
+  return levels.map((level) => {
+    const total = level.learningCategories.reduce((s, c) => s + c.lessons.length, 0);
+    const done  = completedByLevel.get(level.code) ?? 0;
+    const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { levelCode: level.code, done, total, pct };
   });
 }
 
@@ -291,99 +292,109 @@ export default async function LearnPage({ params }: { params: { lang: string } }
   const LANG_SUBJECT: Record<string, Subject> = { ja: Subject.JLPT, zh: Subject.HSK };
   const subject = LANG_SUBJECT[params.lang] ?? Subject.JLPT;
 
-  const [levels, lessons, examProgress, studyProfile, savedExamPlan] = await Promise.all([
+  // ✅ S2: Replace full lessons scan with 2 targeted queries:
+  //   - completedProgress: only completed rows for this user (small set)
+  //   - firstIncompleteLesson: single findFirst — the next lesson to study
+  const [levels, completedProgress, firstIncompleteLesson, examProgress, studyProfile, savedExamPlan] = await Promise.all([
     getLevelsWithContent(subject),
     userId
-      ? prisma.learningLesson.findMany({
-          where: { category: { level: { subject } } },
-          include: {
-            progress: {
-              where: { userId },
+      ? prisma.lessonProgress.findMany({
+          where: { userId, completed: true, lesson: { category: { level: { subject } } } },
+          select: {
+            lessonId: true,
+            completedAt: true,
+            lesson: {
               select: {
-                completed: true,
-                completedAt: true,
-              },
-            },
-            category: {
-              include: {
-                level: {
+                id: true, title: true, order: true, categoryId: true,
+                category: {
                   select: {
-                    code: true,
-                    order: true,
+                    name: true, skill: true,
+                    level: { select: { code: true, order: true } },
                   },
                 },
               },
             },
+          },
+          orderBy: { completedAt: 'desc' },
+        }) as Promise<CompletedProgressRow[]>
+      : Promise.resolve([] as CompletedProgressRow[]),
+    userId
+      ? prisma.learningLesson.findFirst({
+          where: {
+            category: { level: { subject } },
+            NOT: { progress: { some: { userId, completed: true } } },
           },
           orderBy: [
             { category: { level: { order: 'asc' } } },
             { category: { order: 'asc' } },
             { order: 'asc' },
           ],
-        })
-      : Promise.resolve([]),
-    userId
-      ? prisma.userProgress.findMany({
-          where: { userId },
           select: {
-            bestScore: true,
-            examSet: {
+            id: true, title: true, order: true, categoryId: true,
+            category: {
               select: {
-                skill: true,
+                name: true, skill: true,
+                level: { select: { code: true, order: true } },
               },
             },
           },
+        }) as Promise<ContinueLesson | null>
+      : Promise.resolve(null as ContinueLesson | null),
+    userId
+      ? prisma.userProgress.findMany({
+          where: { userId },
+          select: { bestScore: true, examSet: { select: { skill: true } } },
         })
       : Promise.resolve([]),
     userId
       ? prisma.userStudyProfile.findUnique({
           where: { userId },
-          select: {
-            weeklyGoal: true,
-            currentStreak: true,
-          },
+          select: { weeklyGoal: true, currentStreak: true },
         })
       : Promise.resolve(null),
     userId
       ? prisma.userExamPlan.findUnique({
           where: { userId },
-          select: {
-            targetLevelCode: true,
-            examDate: true,
-          },
+          select: { targetLevelCode: true, examDate: true },
         })
       : Promise.resolve(null),
   ]);
 
-  const typedLevels = levels as LevelWithContent[];
-  const typedLessons = lessons as LessonWithProgress[];
-  const typedExamProgress = examProgress as ExamProgressItem[];
-  const typedStudyProfile = studyProfile as StudyProfile | null;
-  const activeExamPlan = savedExamPlan as SavedExamPlan | null;
+  const typedLevels        = levels as LevelWithContent[];
+  const typedExamProgress  = examProgress as ExamProgressItem[];
+  const typedStudyProfile  = studyProfile as StudyProfile | null;
+  const activeExamPlan     = savedExamPlan as SavedExamPlan | null;
 
-  const levelSummary = getLevelSummary(typedLessons);
-  const currentLevel = levelSummary.find((level) => level.total > 0 && level.done < level.total) ?? levelSummary[0] ?? null;
-  const weakSkill = getWeakSkill(typedExamProgress);
+  // ✅ S2: Aggregate completed counts by level code (O(completed) not O(all lessons))
+  const completedByLevel = new Map<string, number>();
+  for (const p of completedProgress) {
+    const code = p.lesson.category.level.code;
+    completedByLevel.set(code, (completedByLevel.get(code) ?? 0) + 1);
+  }
+  const levelSummary       = computeLevelSummary(typedLevels, completedByLevel);
+  const currentLevel       = levelSummary.find((l) => l.total > 0 && l.done < l.total) ?? levelSummary[0] ?? null;
+  const weakSkill          = getWeakSkill(typedExamProgress);
   const preferredLevelCode = activeExamPlan?.targetLevelCode ?? currentLevel?.levelCode ?? typedLevels[0]?.code ?? null;
-  const mostRecentCompletedLesson = typedLessons
-    .filter((lesson) => lesson.progress.some((item) => item.completedAt))
-    .sort((a, b) => {
-      const aDate = a.progress[0]?.completedAt?.getTime() ?? 0;
-      const bDate = b.progress[0]?.completedAt?.getTime() ?? 0;
-      return bDate - aDate;
-    })[0] ?? null;
-  const nextLesson = typedLessons.find((lesson) => !lesson.progress.some((item) => item.completed)) ?? null;
-  const continueLesson = mostRecentCompletedLesson
-    ? typedLessons.find((lesson) => (
-      lesson.categoryId === mostRecentCompletedLesson.categoryId && lesson.order === mostRecentCompletedLesson.order + 1
-    )) ?? nextLesson
-    : nextLesson;
 
-  const completedLessonCount = typedLessons.filter((lesson) => lesson.progress.some((item) => item.completed)).length;
-  const totalLessonCount = typedLevels.reduce((sum, level) => (
-    sum + level.learningCategories.reduce((levelSum, category) => levelSum + category.lessons.length, 0)
-  ), 0);
-  const streak = typedStudyProfile?.currentStreak ?? 0;
+  // Most recently completed lesson (already sorted by completedAt desc)
+  const mostRecentCompleted = completedProgress[0]?.lesson ?? null;
+
+  // ✅ S2: Continue lesson — fast single-row indexed lookup (categoryId + order+1)
+  const continueLesson: ContinueLesson | null = mostRecentCompleted && userId
+    ? await prisma.learningLesson.findFirst({
+        where: { categoryId: mostRecentCompleted.categoryId, order: mostRecentCompleted.order + 1 },
+        select: {
+          id: true, title: true, order: true, categoryId: true,
+          category: { select: { name: true, skill: true, level: { select: { code: true, order: true } } } },
+        },
+      }) ?? firstIncompleteLesson
+    : firstIncompleteLesson;
+
+  const completedLessonCount = completedProgress.length;
+  const totalLessonCount     = typedLevels.reduce(
+    (sum, level) => sum + level.learningCategories.reduce((s, c) => s + c.lessons.length, 0), 0,
+  );
+  const streak    = typedStudyProfile?.currentStreak ?? 0;
   const firstName = session?.user?.name?.trim().split(/\s+/)[0] ?? null;
 
   const learnLanes: LearnLane[] = session
@@ -772,8 +783,8 @@ export default async function LearnPage({ params }: { params: { lang: string } }
                   <div className="text-xs font-bold uppercase tracking-[0.18em] mb-2" style={{ color: 'var(--primary)' }}>Gợi ý tốt nhất cho hôm nay</div>
                   <div className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{continueLesson.title}</div>
                   <p className="text-sm max-w-2xl" style={{ color: 'var(--text-muted)' }}>
-                    {mostRecentCompletedLesson
-                      ? `Bạn vừa học xong ${mostRecentCompletedLesson.title}. Tiếp tục ngay bài kế tiếp trong ${continueLesson.category.name} sẽ giúp giữ liền mạch nhận thức.`
+                    {mostRecentCompleted
+                      ? `Bạn vừa học xong ${mostRecentCompleted.title}. Tiếp tục ngay bài kế tiếp trong ${continueLesson.category.name} sẽ giúp giữ liền mạch nhận thức.`
                       : `Đây là bài tiếp theo phù hợp nhất trong level ${continueLesson.category.level.code} để bạn quay lại nhịp học ngay.`}
                   </p>
                 </div>

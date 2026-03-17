@@ -58,6 +58,121 @@ function fmtDatetime(dateStr: string) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminUsersPage() {
+      const [lessonSearch, setLessonSearch] = useState('');
+    // State cho popup cấp quyền bài học
+    interface LessonRow {
+      id: string;
+      title: string;
+      description?: string;
+      type?: string;
+      selected?: boolean;
+      selectedTier?: string;
+      granting?: boolean;
+    }
+    const [accessUser, setAccessUser] = useState<UserRow | null>(null);
+    const [levelList, setLevelList] = useState([]);
+    const [accessLevel, setAccessLevel] = useState('');
+    const [accessSkill, setAccessSkill] = useState('');
+    const [lessonList, setLessonList] = useState<LessonRow[]>([]);
+    // Khi chọn skill, lấy danh sách bài học theo cấp độ và skill
+    const handleSkillChange = async (skill: string) => {
+      setAccessSkill(skill);
+      setAccessLesson('');
+      setAccessLoading(true);
+      if (!accessLevel) { setLessonList([]); setAccessLoading(false); return; }
+      // Lấy danh sách category theo cấp độ và skill
+      const catRes = await fetch(`/api/learning/categories?levelId=${accessLevel}&skill=${skill}`);
+      const categories = catRes.ok ? await catRes.json() : [];
+      let allLessons: any[] = [];
+      for (const cat of categories) {
+        const lesRes = await fetch(`/api/learning/lessons?categoryId=${cat.id}`);
+        const lessons = lesRes.ok ? await lesRes.json() : [];
+        allLessons = allLessons.concat(lessons);
+      }
+      setLessonList(allLessons.map((l: any) => ({
+        ...l,
+        selected: false,
+        selectedTier: l.requiredTier || 'free',
+        granting: false,
+      })));
+      setAccessLoading(false);
+    };
+    const [accessLesson, setAccessLesson] = useState('');
+    const [accessNote, setAccessNote] = useState('');
+    const [accessTier, setAccessTier] = useState('');
+    const [accessList, setAccessList] = useState([]);
+    const [accessLoading, setAccessLoading] = useState(false);
+
+    // Mở popup cấp quyền
+    const openAccessPopup = async (user: UserRow) => {
+      setAccessUser(user);
+      setAccessLevel('');
+      setAccessLesson('');
+      setAccessNote('');
+      setAccessLoading(true);
+      // Lấy danh sách cấp độ
+      const res = await fetch('/api/admin/levels');
+      const levels = res.ok ? await res.json() : [];
+      setLevelList(levels);
+      setLessonList([]);
+      // Lấy danh sách quyền đã cấp
+      const res2 = await fetch(`/api/learning/user-access?userId=${user.id}`);
+      const accesses = res2.ok ? await res2.json() : [];
+      setAccessList(accesses);
+      setAccessLoading(false);
+    };
+
+    // Khi chọn cấp độ, lấy danh sách bài học theo cấp độ và skill
+    const handleLevelChange = async (levelId: string) => {
+      setAccessLevel(levelId);
+      setAccessLesson('');
+      setAccessLoading(true);
+      // Lấy danh sách category theo cấp độ và skill
+      const catRes = await fetch(`/api/learning/categories?levelId=${levelId}${accessSkill ? `&skill=${accessSkill}` : ''}`);
+      const categories = catRes.ok ? await catRes.json() : [];
+      let allLessons: any[] = [];
+      for (const cat of categories) {
+        const lesRes = await fetch(`/api/learning/lessons?categoryId=${cat.id}`);
+        const lessons = lesRes.ok ? await lesRes.json() : [];
+        allLessons = allLessons.concat(lessons);
+      }
+      setLessonList(allLessons.map((l: any) => ({
+        ...l,
+        selected: false,
+        selectedTier: l.requiredTier || 'free',
+        granting: false,
+      })));
+      setAccessLoading(false);
+    };
+
+    // Cấp quyền
+    const grantAccess = async () => {
+      if (!accessUser || !accessLesson) return alert('Chọn bài học');
+      if (!accessTier) return alert('Chọn gói quyền');
+      setAccessLoading(true);
+      await fetch('/api/learning/user-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: accessUser.id, lessonId: accessLesson, note: accessNote, tier: accessTier }),
+      });
+      setAccessLesson(''); setAccessNote(''); setAccessTier('');
+      // Refresh danh sách quyền
+      const res2 = await fetch(`/api/learning/user-access?userId=${accessUser.id}`);
+      const accesses = res2.ok ? await res2.json() : [];
+      setAccessList(accesses);
+      setAccessLoading(false);
+    };
+
+    // Thu hồi quyền
+    const revokeAccess = async (lessonId: string) => {
+      if (!accessUser) return;
+      setAccessLoading(true);
+      await fetch(`/api/learning/user-access?userId=${accessUser.id}&lessonId=${lessonId}`, { method: 'DELETE' });
+      const res2 = await fetch(`/api/learning/user-access?userId=${accessUser.id}`);
+      const accesses = res2.ok ? await res2.json() : [];
+      setAccessList(accesses);
+      setAccessLoading(false);
+    };
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -184,22 +299,23 @@ export default function AdminUsersPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 1rem' }}>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin" className="btn-ghost p-2 rounded-lg" style={{ color: 'var(--text-muted)' }}>
-          <FaArrowLeft size={14} />
-        </Link>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed' }}>
-          <FaUsers size={18} />
-        </div>
+      {/* Gradient header */}
+      <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-base)' }}>Quản lý người dùng</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tổng cộng {total} tài khoản</p>
+          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
+            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
+            {' / '}Quản lý người dùng
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>👥 Người dùng</h1>
+          <div style={{ marginTop: 8 }}>
+            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{total} tài khoản</span>
+          </div>
         </div>
       </div>
 
+      <div style={{ paddingBottom: 40 }}>
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
@@ -294,9 +410,18 @@ export default function AdminUsersPage() {
                         className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                         <FaPencil size={13} style={{ color: 'var(--text-muted)' }} />
                       </button>
+                      <button onClick={() => openAccessPopup(u)} title="Cấp quyền bài học"
+                        className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <FaLock size={13} style={{ color: '#F59E0B' }} />
+                      </button>
                       <button
                         disabled={u.id === selfId}
                         onClick={() => setDeleteTarget(u)}
+      
+      
+      
+      
+
                         title={u.id === selfId ? 'Không thể xóa chính mình' : 'Xóa'}
                         className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ opacity: u.id === selfId ? 0.3 : undefined }}>
@@ -342,6 +467,8 @@ export default function AdminUsersPage() {
         )}
       </div>
 
+      </div>{/* end main content */}
+
       {/* ── Create Modal ──────────────────────────────────────────────────────── */}
       {createOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -354,7 +481,7 @@ export default function AdminUsersPage() {
                 </div>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>Thêm người dùng mới</h2>
               </div>
-              <button onClick={() => setCreateOpen(false)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+              <button onClick={() => setCreateOpen(false)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
             </div>
 
             {createErr && (
@@ -420,7 +547,7 @@ export default function AdminUsersPage() {
           <div className="card w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>Chỉnh sửa tài khoản</h2>
-              <button onClick={() => setEditUser(null)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+              <button onClick={() => setEditUser(null)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
             </div>
             <div className="flex items-center gap-3 mb-5 px-3 py-3 rounded-xl" style={{ background: 'var(--bg-muted)' }}>
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
@@ -523,7 +650,7 @@ export default function AdminUsersPage() {
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b z-10"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
               <h2 className="font-bold" style={{ color: 'var(--text-base)' }}>Chi tiết người dùng</h2>
-              <button onClick={() => setDetail(null)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+              <button onClick={() => setDetail(null)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
             </div>
 
             {detailLoading ? (
@@ -613,6 +740,116 @@ export default function AdminUsersPage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal cấp quyền bài học */}
+      {accessUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setAccessUser(null)}>
+          <div className="card w-full max-w-4xl p-6 md:p-8 flex gap-8" style={{ minWidth: 600 }} onClick={e => e.stopPropagation()}>
+            {/* Sidebar trái: cấp độ + skill */}
+            <div className="w-64 shrink-0 border-r pr-6 flex flex-col gap-6">
+              <div>
+                <h3 className="font-bold mb-2 text-base" style={{ color: '#1e293b' }}>Cấp độ</h3>
+                <select
+                  className="input w-full text-base py-2 px-3"
+                  value={accessLevel || ''}
+                  onChange={e => {
+                    setAccessLevel(e.target.value);
+                    handleLevelChange(e.target.value);
+                  }}>
+                  <option value="">-- Chọn cấp độ --</option>
+                  {levelList.map((lv: any) => (
+                    <option key={lv.id} value={lv.id}>{lv.code} - {lv.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <h3 className="font-bold mb-2 text-base" style={{ color: '#1e293b' }}>Skill</h3>
+                <select
+                  className="input w-full text-base py-2 px-3"
+                  value={accessSkill || ''}
+                  onChange={e => {
+                    setAccessSkill(e.target.value);
+                    handleSkillChange(e.target.value);
+                  }}>
+                  <option value="">-- Chọn skill --</option>
+                  <option value="doc">Đọc</option>
+                  <option value="nghe">Nghe</option>
+                  <option value="ngu_phap">Ngữ pháp</option>
+                  <option value="tu_vung">Từ vựng</option>
+                  <option value="viet">Viết</option>
+                  <option value="noi">Nói</option>
+                </select>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <select className="input w-32" value={accessTier} onChange={e => setAccessTier(e.target.value)}>
+                  <option value="">-- Chọn tier --</option>
+                  <option value="free">Free</option>
+                  <option value="basic">Basic</option>
+                  <option value="premium">Premium</option>
+                </select>
+                <button
+                  className="btn-primary px-4 py-1.5 rounded font-semibold text-sm"
+                  disabled={!accessTier || lessonList.filter(l => l.selected).length === 0}
+                  onClick={async () => {
+                    for (let idx = 0; idx < lessonList.length; idx++) {
+                      if (lessonList[idx].selected) {
+                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, granting: true, selectedTier: accessTier } : item));
+                        setAccessLesson(lessonList[idx].id);
+                        setAccessTier(accessTier);
+                        await grantAccess();
+                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, granting: false } : item));
+                      }
+                    }
+                  }}>
+                  Save
+                </button>
+              </div>
+              <div className="mt-2">
+                <input
+                  className="input w-full text-base py-2 px-3"
+                  type="text"
+                  placeholder="Tìm bài học..."
+                  value={lessonSearch || ''}
+                  onChange={e => setLessonSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* Main content phải */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text-base)' }}>
+                  Cấp quyền truy cập bài học cho <span className="text-primary">{accessUser.name}</span>
+                </h2>
+                <button onClick={() => setAccessUser(null)} className="btn-ghost p-2"><FaXmark size={16} /></button>
+              </div>
+              <div>
+                <h3 className="font-bold mb-3 text-base" style={{ color: '#1e293b' }}>Danh sách bài học theo cấp độ và skill</h3>
+                {/* Đã xóa select tier, button Save, input search khỏi main content, chỉ còn ở sidebar */}
+                <ul className="max-h-96 overflow-y-auto border rounded bg-white shadow-sm divide-y">
+                  {lessonList.filter(l => !lessonSearch || l.title.toLowerCase().includes(lessonSearch.toLowerCase())).length === 0 && <li className="text-xs text-muted p-3">Không có bài học nào.</li>}
+                  {lessonList.filter(l => !lessonSearch || l.title.toLowerCase().includes(lessonSearch.toLowerCase())).map((l: LessonRow, idx: number) => (
+                    <li key={l.id} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition">
+                      <input type="checkbox" className="form-checkbox h-4 w-4 text-primary" checked={!!l.selected} onChange={e => {
+                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, selected: e.target.checked } : item));
+                      }} />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold truncate block" title={l.title}>{l.title}</span>
+                        {l.description && (
+                          <span className="text-xs block mt-0.5 truncate" style={{ color: '#94a3b8' }}>{l.description}</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted">{l.type === 'doc' ? 'Đọc' : l.type === 'nghe' ? 'Nghe' : 'Khác'}</span>
+                      <span className="text-xs font-semibold">{l.selectedTier || 'free'}</span>
+                      {l.granting && <span className="ml-2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin inline-block align-middle" />}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Đã ẩn danh sách quyền đã cấp, chỉ show danh sách bài học với tier */}
+            </div>
           </div>
         </div>
       )}

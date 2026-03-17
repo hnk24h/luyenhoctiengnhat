@@ -164,6 +164,23 @@ export function validateListeningImportItem(input: unknown): { ok: true; item: L
   };
 }
 
+// ─── Grammar point shape (from DB) ──────────────────────────────────────────
+export interface GrammarPointDB {
+  pattern: string;
+  reading: string | null;
+  meaning: string;
+  example: string;
+  exampleReading: string | null;
+  exampleVi: string;
+  searchIn: string;
+  levelCode: string;
+  order: number;
+}
+
+export interface GrammarPointDerived extends GrammarPointDB {
+  foundInText: boolean;
+}
+
 // ─── Unified type for shared listening page (all languages) ──────────────────
 export interface UnifiedListeningPractice {
   id: string;
@@ -182,15 +199,53 @@ export interface UnifiedListeningPractice {
   explanation: string;
   audioUrl: string | null;
   segments: ListeningSegment[];
+  grammarPoints: GrammarPointDerived[];
 }
 
-export function mapLessonToUnified(record: ListeningLessonRecord, lang: string): UnifiedListeningPractice | null {
+const LEVEL_ORDER: Record<string, number> = {
+  N5: 1, N4: 2, N3: 3, N2: 4, N1: 5,
+  HSK1: 1, HSK2: 2, HSK3: 3, HSK4: 4, HSK5: 5, HSK6: 6,
+};
+
+export function deriveGrammarPoints(
+  level: string,
+  segments: ListeningSegment[],
+  allPatterns: GrammarPointDB[],
+): GrammarPointDerived[] {
+  const fullText = segments.map(s => s.text).join('');
+
+  const withHits = allPatterns.map<GrammarPointDerived>(p => ({
+    ...p,
+    foundInText: fullText.includes(p.searchIn),
+  }));
+
+  const sorted = [...withHits].sort((a, b) => {
+    if (a.foundInText !== b.foundInText) return a.foundInText ? -1 : 1;
+    const lo = (LEVEL_ORDER[a.levelCode] ?? 99) - (LEVEL_ORDER[b.levelCode] ?? 99);
+    if (lo !== 0) return lo;
+    return a.order - b.order;
+  });
+
+  const found = sorted.filter(e => e.foundInText);
+  const sameLevel = sorted.filter(e => !e.foundInText && e.levelCode === level).slice(0, 4);
+  const results = [...found, ...sameLevel];
+  return results.length > 0
+    ? results
+    : allPatterns.filter(e => e.levelCode === level).map(e => ({ ...e, foundInText: false }));
+}
+
+export function mapLessonToUnified(
+  record: ListeningLessonRecord,
+  lang: string,
+  grammarPatterns: GrammarPointDB[] = [],
+): UnifiedListeningPractice | null {
   const parsed = parseListeningContent(record.content);
   if (!parsed?.question || !parsed.answer || !parsed.options?.length || !parsed.transcript?.length) return null;
+  const level = record.category.level.code;
   return {
     id: record.id,
     lang,
-    level: record.category.level.code,
+    level,
     category: parsed.mondai ?? 'Bài nghe',
     title: record.title,
     titleVi: parsed.titleVi ?? null,
@@ -204,6 +259,7 @@ export function mapLessonToUnified(record: ListeningLessonRecord, lang: string):
     explanation: parsed.explanation || '',
     audioUrl: parsed.audioUrl ?? null,
     segments: parsed.transcript,
+    grammarPoints: deriveGrammarPoints(level, parsed.transcript, grammarPatterns),
   };
 }
 

@@ -1,0 +1,20 @@
+{
+  "subject": "JLPT",
+  "levelCode": "N5",
+  "mode": "vocab",
+  "language": "ja",
+  "categoryCode": "n5_vocab",
+  "lessonTitle": "Từ vựng hàng ngày N5",
+  "words": [
+    { "term": "食べる",   "pronunciation": "たべる",     "meaning": "ăn" },
+    { "term": "飲む",    "pronunciation": "のむ",       "meaning": "uống" },
+    { "term": "見る",    "pronunciation": "みる",       "meaning": "nhìn, xem" },
+    { "term": "聞く",    "pronunciation": "きく",       "meaning": "nghe, hỏi" },
+    { "term": "話す",    "pronunciation": "はなす",     "meaning": "nói chuyện" },
+    { "term": "行く",    "pronunciation": "いく",       "meaning": "đi" },
+    { "term": "来る",    "pronunciation": "くる",       "meaning": "đến, đi đến" },
+    { "term": "帰る",    "pronunciation": "かえる",     "meaning": "về nhà" },
+    { "term": "起きる",  "pronunciation": "おきる",     "meaning": "thức dậy" },
+    { "term": "寝る",    "pronunciation": "ねる",       "meaning": "ngủ" }
+  ]
+}

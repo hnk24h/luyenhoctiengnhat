@@ -1,0 +1,16 @@
+{
+  "subject": "PMP",
+  "levelCode": "PMP",
+  "mode": "questions",
+  "language": "en",
+  "examSetTitle": "PMP Practice Exam - Set 1",
+  "skill": "doc",
+  "count": 10,
+  "topics": [
+    "Project integration management",
+    "Scope management và WBS",
+    "Schedule management và critical path",
+    "Risk management",
+    "Stakeholder management"
+  ]
+}

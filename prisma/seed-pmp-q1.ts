@@ -1,0 +1,500 @@
+/**
+ * seed-pmp-q1.ts — PMP Exam Questions Part 2a
+ * Phần: Integration Management (20 câu) + Scope Management (20 câu)
+ * Chạy: npx tsx prisma/seed-pmp-q1.ts
+ */
+import { PrismaClient, Difficulty } from '@prisma/client';
+const prisma = new PrismaClient();
+
+type QDef = {
+  area: string;
+  group: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  answer: string;
+  explain: string;
+  difficulty: Difficulty;
+};
+
+const QUESTIONS: QDef[] = [
+  // ─────────────────────────────────────────────────────────────────────────
+  // INTEGRATION MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'integration', group: 'initiating',
+    content: 'Đầu vào chính của quy trình Develop Project Charter là gì?',
+    optionA: 'Project Management Plan và WBS',
+    optionB: 'Business Case và Benefits Management Plan',
+    optionC: 'Project Scope Statement và Risk Register',
+    optionD: 'Project Schedule và Resource Management Plan',
+    answer: 'B',
+    explain: 'Theo PMBOK 6, Business Case và Benefits Management Plan là đầu vào quan trọng nhất của Develop Project Charter, cùng với Agreements, EEF và OPA. Chúng cung cấp cơ sở kinh doanh để ủy quyền dự án.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'planning',
+    content: 'Quy trình nào KHÔNG thuộc Knowledge Area Integration Management?',
+    optionA: 'Direct and Manage Project Work',
+    optionB: 'Perform Integrated Change Control',
+    optionC: 'Control Quality',
+    optionD: 'Close Project or Phase',
+    answer: 'C',
+    explain: 'Control Quality thuộc Quality Management Knowledge Area. Integration Management gồm 7 quy trình: Develop Charter, Develop PM Plan, Direct & Manage Work, Manage Project Knowledge, Monitor & Control Work, Perform Integrated Change Control, và Close Project/Phase.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Work Performance Information (WPI) khác Work Performance Data (WPD) ở điểm nào?',
+    optionA: 'WPI là dữ liệu thô từ hoạt động thực hiện, WPD đã được phân tích',
+    optionB: 'WPD là dữ liệu thô; WPI là WPD đã được phân tích và bối cảnh hóa',
+    optionC: 'Cả hai đều là báo cáo gửi cho stakeholder',
+    optionD: 'WPI dùng cho PM nội bộ, WPD dùng cho stakeholder bên ngoài',
+    answer: 'B',
+    explain: 'WPD (Work Performance Data) là dữ liệu thô từ Direct & Manage Project Work. WPD được phân tích trong các quy trình kiểm soát để thành WPI (Work Performance Information). WPI sau đó được tổng hợp thành WPR (Work Performance Reports).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'executing',
+    content: 'PM đang quản lý dự án phức tạp với nhiều bên liên quan. Công cụ nào phù hợp nhất để tích hợp và theo dõi tất cả các phần của kế hoạch dự án?',
+    optionA: 'Gantt Chart',
+    optionB: 'Project Management Information System (PMIS)',
+    optionC: 'Work Breakdown Structure (WBS)',
+    optionD: 'Risk Register',
+    answer: 'B',
+    explain: 'PMIS (Project Management Information System) là hệ thống tích hợp giúp PM thu thập, tổng hợp và phân phối thông tin dự án. Đây là công cụ/kỹ thuật chính trong nhiều quy trình Integration Management.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'initiating',
+    content: 'Assumptions Log lần đầu tiên được tạo ra trong quy trình nào?',
+    optionA: 'Develop Project Management Plan',
+    optionB: 'Develop Project Charter',
+    optionC: 'Plan Risk Management',
+    optionD: 'Identify Risks',
+    answer: 'B',
+    explain: 'Assumptions Log được tạo ra lần đầu trong Develop Project Charter và được cập nhật liên tục suốt dự án. Nó ghi lại các giả định và ràng buộc (assumptions & constraints) của dự án.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'closing',
+    content: 'Đầu ra quan trọng nhất của quy trình Close Project or Phase là gì?',
+    optionA: 'Project Charter mới',
+    optionB: 'Updated Project Management Plan',
+    optionC: 'Final Product/Service/Result Transition và OPA Updates (Lessons Learned)',
+    optionD: 'Work Performance Reports cuối kỳ',
+    answer: 'C',
+    explain: 'Close Project or Phase tạo ra: (1) Final Product/Service/Result Transition — bàn giao chính thức cho khách hàng/operations; (2) OPA Updates bao gồm Lessons Learned Repository và Project Documents Updates. Đây là cách tổ chức học hỏi từ dự án.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'executing',
+    content: 'Issue Log được tạo ra và cập nhật chủ yếu trong quy trình nào?',
+    optionA: 'Develop Project Charter',
+    optionB: 'Direct and Manage Project Work',
+    optionC: 'Plan Communications Management',
+    optionD: 'Identify Stakeholders',
+    answer: 'B',
+    explain: 'Issue Log là output của Direct and Manage Project Work. Khi vấn đề (issue) phát sinh trong quá trình thực thi, PM ghi lại vào Issue Log để theo dõi và giải quyết. Khác với Risk Register (rủi ro tiềm ẩn), Issue Log theo dõi vấn đề đang xảy ra.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'closing',
+    content: 'Dự án đã chính thức đóng. Sponsor phát hiện lỗi trong sản phẩm đã bàn giao. PM nên làm gì?',
+    optionA: 'Mở lại dự án để sửa lỗi ngay lập tức',
+    optionB: 'Chuyển vấn đề sang operational/maintenance team để xử lý',
+    optionC: 'Bỏ qua vì dự án đã đóng và PM không còn trách nhiệm',
+    optionD: 'Tạo một dự án mới để sửa lỗi',
+    answer: 'B',
+    explain: 'Sau khi dự án đã đóng (Close Project or Phase hoàn thành), trách nhiệm chuyển sang operational team. PM chuyển vấn đề cho maintenance/operations team xử lý. Nếu scope sửa lỗi lớn, có thể cần tạo dự án mới, nhưng đây không phải hành động đầu tiên.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Trong Perform Integrated Change Control (PICC), ai có quyền phê duyệt các thay đổi ảnh hưởng đến project baseline?',
+    optionA: 'Project Manager',
+    optionB: 'Project Sponsor',
+    optionC: 'Change Control Board (CCB)',
+    optionD: 'Customer',
+    answer: 'C',
+    explain: 'Change Control Board (CCB) là nhóm có thẩm quyền xem xét, phê duyệt hoặc từ chối các thay đổi ảnh hưởng đến baseline. Tuy nhiên, PM có thể được ủy quyền phê duyệt một số thay đổi nhỏ tùy theo Configuration Management Plan.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'planning',
+    content: 'Configuration Management System là một phần của tài liệu nào?',
+    optionA: 'Project Charter',
+    optionB: 'Issue Log',
+    optionC: 'Project Management Plan',
+    optionD: 'Change Log',
+    answer: 'C',
+    explain: 'Configuration Management System là một thành phần của Project Management Plan. Nó mô tả cách quản lý các phiên bản (versions) của deliverables và tài liệu, đảm bảo mọi người đều làm việc với phiên bản chính xác.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'planning',
+    content: 'Rolling Wave Planning trong quản lý dự án có nghĩa là gì?',
+    optionA: 'Lập kế hoạch toàn bộ dự án chi tiết ngay từ đầu',
+    optionB: 'Lập kế hoạch chi tiết cho công việc gần (near-term) và ở mức cao hơn cho công việc xa (far-term)',
+    optionC: 'Không cần lập kế hoạch cho giai đoạn tương lai',
+    optionD: 'Lập kế hoạch dựa hoàn toàn trên kinh nghiệm dự án trước',
+    answer: 'B',
+    explain: 'Rolling Wave Planning là kỹ thuật lập kế hoạch lặp (iterative). Công việc gần (near-term) được lập kế hoạch chi tiết, trong khi công việc xa hơn được lập kế hoạch ở mức độ tổng quan hơn. Khi thông tin rõ hơn, kế hoạch được chi tiết hóa dần.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Work Performance Reports khác Work Performance Information ở điều gì?',
+    optionA: 'WPR là dữ liệu thô, WPI là báo cáo chính thức',
+    optionB: 'WPI là dữ liệu phân tích nội bộ; WPR là output dạng vật lý/điện tử để phân phối cho stakeholder',
+    optionC: 'Không có sự khác biệt, cả hai đều là báo cáo',
+    optionD: 'WPR dùng cho PM, WPI dùng cho sponsor',
+    answer: 'B',
+    explain: 'Work Performance Information (WPI) là kết quả phân tích dữ liệu nội bộ trong monitoring & controlling. Work Performance Reports (WPR) là output của Monitor & Control Project Work — là tài liệu vật lý/điện tử (status reports, memos, dashboards) được phân phối cho stakeholder.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Sponsor yêu cầu thêm tính năng mới không có trong scope khi dự án đang thực hiện. PM nên làm gì đầu tiên?',
+    optionA: 'Thêm ngay vì sponsor có quyền yêu cầu',
+    optionB: 'Từ chối hoàn toàn vì không có trong scope',
+    optionC: 'Tạo Change Request và đưa qua quy trình PICC để đánh giá tác động',
+    optionD: 'Thêm tính năng nhưng không cập nhật project baseline',
+    answer: 'C',
+    explain: 'Mọi thay đổi phạm vi phải qua Perform Integrated Change Control (PICC). PM cần tạo Change Request, đánh giá tác động đến scope/schedule/cost/quality/risk, trình CCB phê duyệt. Không được thêm mà không có approved change request.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'planning',
+    content: 'Project Management Plan được tạo ra là output của quy trình nào?',
+    optionA: 'Develop Project Charter',
+    optionB: 'Develop Project Management Plan',
+    optionC: 'Direct and Manage Project Work',
+    optionD: 'Monitor and Control Project Work',
+    answer: 'B',
+    explain: 'Project Management Plan là output chính và quan trọng nhất của quá trình Develop Project Management Plan. Đây là tài liệu tổng hợp tất cả subsidiary plans (Scope, Schedule, Cost, Quality, Resource, Communications, Risk, Procurement, Stakeholder Management Plans).',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'planning',
+    content: 'Organizational Process Assets (OPA) bao gồm những gì?',
+    optionA: 'Văn hóa tổ chức và điều kiện thị trường',
+    optionB: 'Processes, policies, procedures, lessons learned và templates của tổ chức',
+    optionC: 'Cơ sở hạ tầng CNTT và PMIS',
+    optionD: 'Danh sách nhà cung cấp và hợp đồng hiện có',
+    answer: 'B',
+    explain: 'OPA (Organizational Process Assets) bao gồm: (1) Processes, policies, procedures; (2) Organizational knowledge bases (lessons learned, historical info, templates). Văn hóa tổ chức và cơ sở hạ tầng là EEF (Enterprise Environmental Factors).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'executing',
+    content: 'Manage Project Knowledge là quy trình trong Integration Management nhằm mục đích gì?',
+    optionA: 'Quản lý tài liệu kỹ thuật của sản phẩm',
+    optionB: 'Sử dụng kiến thức hiện có và tạo kiến thức mới để đạt mục tiêu dự án và đóng góp OPA',
+    optionC: 'Đào tạo team về công nghệ mới',
+    optionD: 'Cập nhật thông tin dự án lên PMIS',
+    answer: 'B',
+    explain: 'Manage Project Knowledge (PMBOK 6 - quy trình mới) nhằm tận dụng kiến thức hiện có (explicit & tacit knowledge) và tạo kiến thức mới. Output là Lessons Learned Register được lưu vào OPA, giúp tổ chức học hỏi từ dự án.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'integration', group: 'closing',
+    content: 'Lessons Learned Register sau khi dự án đóng được lưu trữ ở đâu?',
+    optionA: 'Project Charter',
+    optionB: 'Organizational Process Assets (OPA) Updates',
+    optionC: 'Project Management Plan',
+    optionD: 'Work Performance Reports',
+    answer: 'B',
+    explain: 'Lessons Learned Register được lưu vào OPA (Organizational Process Assets) như là Lessons Learned Repository. Đây là historical information có giá trị cho các dự án tương lai của tổ chức.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Quy trình nào trong Integration Management diễn ra liên tục trong suốt vòng đời dự án?',
+    optionA: 'Develop Project Charter',
+    optionB: 'Monitor and Control Project Work',
+    optionC: 'Close Project or Phase',
+    optionD: 'Develop Project Management Plan',
+    answer: 'B',
+    explain: 'Monitor and Control Project Work diễn ra liên tục (throughout the project). Nó theo dõi, xem xét và báo cáo tiến độ tổng thể để đáp ứng các mục tiêu trong Project Management Plan.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'integration', group: 'monitoring',
+    content: 'Variance Analysis trong Monitor and Control Project Work chủ yếu so sánh điều gì?',
+    optionA: 'Chi phí thực tế với chi phí ngân sách ban đầu',
+    optionB: 'Thực tế vs Kế hoạch (baseline) để xác định nguyên nhân và mức độ chênh lệch',
+    optionC: 'Chất lượng sản phẩm thực tế với yêu cầu chất lượng',
+    optionD: 'Tiến độ thực tế với lịch trình mong muốn của sponsor',
+    answer: 'B',
+    explain: 'Variance Analysis so sánh actual performance với planned baseline (scope, schedule, cost, quality) để xác định variance (chênh lệch). PM phân tích nguyên nhân và mức độ ảnh hưởng để quyết định hành động khắc phục.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'integration', group: 'initiating',
+    content: 'Project Charter chính thức ủy quyền cho PM làm gì?',
+    optionA: 'Phân bổ ngân sách cho các work packages',
+    optionB: 'Sử dụng nguồn lực của tổ chức để thực hiện dự án',
+    optionC: 'Tạo WBS và project schedule',
+    optionD: 'Ký kết hợp đồng với nhà cung cấp',
+    answer: 'B',
+    explain: 'Project Charter là tài liệu chính thức ủy quyền cho PM sử dụng nguồn lực của tổ chức (nhân lực, tài chính, thiết bị) để thực hiện dự án. Nó cũng định nghĩa mục tiêu cấp cao, deliverables, timeline và budget sơ bộ.',
+    difficulty: 'easy',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SCOPE MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'scope', group: 'planning',
+    content: 'Requirements Traceability Matrix (RTM) được sử dụng để làm gì?',
+    optionA: 'Theo dõi tiến độ hoàn thành từng task',
+    optionB: 'Liên kết requirements từ nguồn gốc qua các deliverable để đảm bảo không requirement nào bị bỏ sót',
+    optionC: 'Quản lý rủi ro liên quan đến requirements',
+    optionD: 'Phân bổ requirements cho từng thành viên team',
+    answer: 'B',
+    explain: 'RTM theo dõi requirements từ business need → requirements documentation → design → test cases → deliverables. Đảm bảo mọi requirement đều có nguồn gốc rõ ràng và được test, không bị lost trong quá trình phát triển.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'WBS Dictionary chứa thông tin gì?',
+    optionA: 'Chỉ danh sách tên các work packages',
+    optionB: 'Mô tả chi tiết về từng WBS component (scope of work, deliverable, acceptance criteria, resources, estimated cost)',
+    optionC: 'Lịch trình thực hiện chi tiết cho mỗi work package',
+    optionD: 'Danh sách rủi ro liên quan đến từng deliverable',
+    answer: 'B',
+    explain: 'WBS Dictionary cung cấp mô tả chi tiết cho mỗi WBS component, bao gồm: code of accounts identifier, description of work, assumptions and constraints, responsible organization, schedule milestones, resources required, estimated cost và acceptance criteria.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'monitoring',
+    content: 'Quy trình Validate Scope diễn ra khi nào trong vòng đời dự án?',
+    optionA: 'Chỉ một lần vào cuối dự án',
+    optionB: 'Khi mỗi deliverable hoàn thành để nhận được chấp thuận chính thức từ customer/sponsor',
+    optionC: 'Liên tục hàng tuần trong suốt dự án',
+    optionD: 'Chỉ trong giai đoạn Planning khi requirements được định nghĩa',
+    answer: 'B',
+    explain: 'Validate Scope diễn ra khi có deliverable hoàn thành (thường cuối mỗi phase hoặc milestone). Mục đích là nhận Accepted Deliverables — chấp thuận chính thức từ customer hay sponsor. Nếu không được chấp nhận, sẽ phát sinh Change Request.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Sự khác biệt cốt lõi giữa Product Scope và Project Scope là gì?',
+    optionA: 'Không có sự khác biệt trong PMBOK',
+    optionB: 'Product Scope = tính năng/chức năng của sản phẩm; Project Scope = công việc cần thực hiện để tạo ra sản phẩm',
+    optionC: 'Project Scope luôn rộng hơn và bao gồm Product Scope',
+    optionD: 'Product Scope dành cho kỹ thuật viên, Project Scope dành cho PM',
+    answer: 'B',
+    explain: 'Product Scope mô tả features và functions của sản phẩm/dịch vụ (được đo bằng product requirements). Project Scope mô tả công việc cần thực hiện để deliver sản phẩm đó (được đo bằng project management plan). Hoàn thành Project Scope dẫn đến hoàn thành Product Scope.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Scope Baseline bao gồm những thành phần nào?',
+    optionA: 'Project Charter + WBS + Project Schedule',
+    optionB: 'Project Scope Statement + WBS + WBS Dictionary',
+    optionC: 'Requirements Documentation + WBS + Risk Register',
+    optionD: 'Project Scope Statement + Schedule Baseline + Cost Baseline',
+    answer: 'B',
+    explain: 'Scope Baseline = Project Scope Statement + WBS + WBS Dictionary. Đây là baseline được phê duyệt để đo lường, theo dõi và kiểm soát phạm vi dự án. Nó là một phần của Project Management Plan.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Quy tắc "100% Rule" trong Create WBS có nghĩa là gì?',
+    optionA: 'Mỗi work package phải có giá trị tối thiểu 1% tổng ngân sách',
+    optionB: 'WBS phải nắm bắt 100% công việc của dự án — không thừa, không thiếu',
+    optionC: 'PM phải xem xét 100% WBS mỗi tuần',
+    optionD: 'Tất cả thành viên team phải hiểu 100% WBS',
+    answer: 'B',
+    explain: '100% Rule là nguyên tắc quan trọng nhất của WBS: tổng công việc ở level con phải bằng 100% công việc của level cha. WBS phải bao gồm 100% project scope và tất cả project management work — không thêm công việc ngoài scope, không bỏ sót công việc cần thiết.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Kỹ thuật nào sau đây KHÔNG được sử dụng trong quy trình Collect Requirements?',
+    optionA: 'Interviews (phỏng vấn)',
+    optionB: 'Focus Groups',
+    optionC: 'Decomposition',
+    optionD: 'Surveys/Questionnaires',
+    answer: 'C',
+    explain: 'Decomposition là kỹ thuật của Create WBS — phân tách deliverables thành các thành phần nhỏ hơn. Collect Requirements sử dụng: Interviews, Focus Groups, Surveys, Benchmarking, Facilitated Workshops, Mind Mapping, Prototyping, Nominal Group Technique, Delphi Technique.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'executing',
+    content: 'PM phát hiện team đang thực hiện "gold plating". Đây là tình huống gì?',
+    optionA: 'Team đang cố tình trì hoãn tiến độ',
+    optionB: 'Team đang thêm tính năng ngoài requirements mà không có approved change request',
+    optionC: 'Chi phí dự án vượt ngân sách do chất lượng cao',
+    optionD: 'Khách hàng yêu cầu chất lượng quá mức cần thiết',
+    answer: 'B',
+    explain: 'Gold plating là thêm tính năng/chức năng không được yêu cầu mà không có change request. Tuy vẻ tốt cho khách hàng, nhưng nó tiêu tốn nguồn lực, có thể gây ra unintended side effects và không được PMBOK khuyến khích. Team nên thực hiện đúng theo agreed scope.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Facilitated Workshops (như JAD sessions) trong Collect Requirements là gì?',
+    optionA: 'Cuộc họp 1-1 giữa PM và từng stakeholder',
+    optionB: 'Phiên làm việc nhóm tập trung với stakeholder chính để nhanh chóng xác định và reconcile requirements',
+    optionC: 'Workshop hàng tuần của team để review tiến độ',
+    optionD: 'Buổi đào tạo về quy trình dự án cho stakeholder mới',
+    answer: 'B',
+    explain: 'Facilitated Workshops (Joint Application Design/Development - JAD, Quality Function Deployment - QFD) là sessions nhóm có cấu trúc, tập hợp stakeholder chính để rapidely định nghĩa và reconcile requirements. Hiệu quả hơn interviews riêng lẻ vì build shared understanding.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Decomposition trong Create WBS nên dừng ở mức nào?',
+    optionA: 'Khi WBS đạt tối thiểu 3 levels',
+    optionB: 'Khi reach Work Package có thể estimate, schedule, assign và monitor/control được',
+    optionC: 'Khi team không thể phân chia nhỏ hơn về mặt kỹ thuật',
+    optionD: 'Khi mỗi work package có độ dài không quá 40 giờ',
+    answer: 'B',
+    explain: 'Decomposition dừng khi Work Package đủ nhỏ để có thể estimate cost/duration, assign cho một responsible party, schedule và monitor/control một cách thực tế. Không có quy tắc cứng về số levels hay thời gian (8/80 hour rule là guideline, không phải standard).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Kỹ thuật Prototyping trong Collect Requirements giúp gì?',
+    optionA: 'Xây dựng sản phẩm cuối cùng nhanh hơn',
+    optionB: 'Thu thập requirements bằng cách tạo model/mock-up để stakeholder phản hồi thực tế',
+    optionC: 'Kiểm tra chất lượng sản phẩm trước khi release',
+    optionD: 'Tạo kế hoạch kỹ thuật chi tiết',
+    answer: 'B',
+    explain: 'Prototyping tạo mô hình/mock-up/wireframe cụ thể để stakeholder "xem thấy" và phản hồi. Điều này giúp elicit implicit requirements mà stakeholder khó diễn đạt bằng lời. Đặc biệt hiệu quả khi stakeholder không rõ mình muốn gì cho đến khi thấy prototype.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'monitoring',
+    content: 'Control Scope dùng Variance Analysis để làm gì?',
+    optionA: 'So sánh chi phí thực tế với ngân sách đã phê duyệt',
+    optionB: 'So sánh scope thực tế với Scope Baseline để xác định magnitude và cause của variance',
+    optionC: 'So sánh chất lượng thực tế với tiêu chuẩn chất lượng',
+    optionD: 'So sánh tiến độ thực tế với lịch trình sponsor mong muốn',
+    answer: 'B',
+    explain: 'Trong Control Scope, Variance Analysis so sánh scope thực tế với Scope Baseline. Nếu có variance, PM phân tích nguyên nhân, mức độ ảnh hưởng và quyết định có cần corrective/preventive action hay change request không.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Acceptance Criteria là gì và được tìm thấy trong tài liệu nào?',
+    optionA: 'Tiêu chí chất lượng sản phẩm; trong Quality Management Plan',
+    optionB: 'Điều kiện phải đáp ứng để deliverable được chấp nhận chính thức; trong Project Scope Statement',
+    optionC: 'Điều kiện thanh toán; trong hợp đồng Procurement',
+    optionD: 'Chỉ số KPI của dự án; trong Project Charter',
+    answer: 'B',
+    explain: 'Acceptance Criteria là các điều kiện phải đáp ứng để deliverable được stakeholder chấp nhận chính thức. Chúng được định nghĩa trong Project Scope Statement và được sử dụng trong quy trình Validate Scope.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Kỹ thuật MoSCoW trong quản lý requirements phân loại yêu cầu thành:',
+    optionA: 'Must have, Should have, Could have, Won\'t have',
+    optionB: 'Mandatory, Optional, Secondary, Cancelled',
+    optionC: 'Main, Sub, Core, Wishlist',
+    optionD: 'Major, Standard, Common, Worth considering',
+    answer: 'A',
+    explain: 'MoSCoW là kỹ thuật prioritization requirements: M=Must have (bắt buộc), S=Should have (nên có), C=Could have (có thể có nếu đủ thời gian/ngân sách), W=Won\'t have this time (loại khỏi scope hiện tại). Giúp team focus vào điều quan trọng nhất.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'monitoring',
+    content: 'Scope Creep xảy ra khi nào?',
+    optionA: 'Khi PM chủ động thêm tính năng để làm hài lòng khách hàng',
+    optionB: 'Khi phạm vi dự án mở rộng dần mà không có change control chính thức',
+    optionC: 'Khi khách hàng thay đổi yêu cầu thông qua formal change request',
+    optionD: 'Khi WBS quá chi tiết gây khó quản lý',
+    answer: 'B',
+    explain: 'Scope Creep = phạm vi expand không kiểm soát, thường qua "nhỏ thôi", "thêm một chút". Nguy hiểm vì không có approved change request, không đánh giá tác động đến schedule/cost/quality. Phòng ngừa bằng Change Control System chặt chẽ.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Kỹ thuật Delphi Technique trong Collect Requirements là gì?',
+    optionA: 'Phỏng vấn 1-1 với chuyên gia ngành',
+    optionB: 'Thu thập ý kiến đồng thuận từ experts qua nhiều vòng anonymous questionnaire',
+    optionC: 'Workshop nhóm công khai với toàn bộ stakeholder',
+    optionD: 'Khảo sát khách hàng cuối (end users)',
+    answer: 'B',
+    explain: 'Delphi Technique sử dụng anonymous multi-round questionnaire gửi cho panel of experts. Sau mỗi vòng, kết quả được tổng hợp và gửi lại để experts điều chỉnh. Ưu điểm: tránh social pressure/groupthink, giúp đạt consensus khách quan.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Đầu ra chính của quy trình Define Scope là gì?',
+    optionA: 'WBS (Work Breakdown Structure)',
+    optionB: 'Requirements Traceability Matrix',
+    optionC: 'Project Scope Statement',
+    optionD: 'Scope Management Plan',
+    answer: 'C',
+    explain: 'Project Scope Statement là output chính của Define Scope. Nó mô tả chi tiết: project scope description, deliverables, acceptance criteria, exclusions, constraints và assumptions. Là cơ sở để tạo WBS trong Create WBS.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'scope', group: 'monitoring',
+    content: 'Trong Validate Scope, Inspection được sử dụng để làm gì?',
+    optionA: 'Kiểm tra nội bộ về quy trình quản lý dự án',
+    optionB: 'Xem xét, đo lường và kiểm tra deliverable để verify nó đáp ứng acceptance criteria',
+    optionC: 'Audit quy trình chất lượng của nhà cung cấp',
+    optionD: 'Code review để tìm technical defects',
+    answer: 'B',
+    explain: 'Inspection trong Validate Scope bao gồm: measuring, examining and validating để xác định deliverable có đáp ứng acceptance criteria và product requirements không. Kết quả là Accepted Deliverables hoặc Change Request (nếu không được chấp nhận).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'Scope Management Plan được tạo ra từ quy trình nào và định nghĩa điều gì?',
+    optionA: 'Từ Define Scope; định nghĩa acceptance criteria',
+    optionB: 'Từ Plan Scope Management; định nghĩa cách scope sẽ được defined, validated và controlled',
+    optionC: 'Từ Create WBS; định nghĩa cấu trúc WBS',
+    optionD: 'Từ Develop Project Charter; định nghĩa high-level project scope',
+    answer: 'B',
+    explain: 'Scope Management Plan là output của Plan Scope Management. Nó mô tả cách scope sẽ được defined (Collect Requirements, Define Scope), structured (Create WBS), monitored và controlled (Validate Scope, Control Scope) trong suốt dự án.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'scope', group: 'planning',
+    content: 'PM đang trong giai đoạn Collect Requirements. Stakeholder nói họ "muốn hệ thống dễ dùng". Để clarify requirement này, PM nên làm gì?',
+    optionA: 'Ghi chép nguyên văn vào Requirements Documentation',
+    optionB: 'Dùng interviews hoặc workshops để làm rõ nghĩa cụ thể, đo lường được (ví dụ: "task X hoàn thành trong 3 clicks")',
+    optionC: 'Chuyển requirement sang QA team để họ define tiêu chí',
+    optionD: 'Bỏ qua vì requirement quá mơ hồ',
+    answer: 'B',
+    explain: 'Requirements phải SMART (Specific, Measurable, Achievable, Relevant, Time-bound). "Dễ dùng" là vague requirement. PM cần dùng techniques như interviews, prototyping để clarify thành measurable criteria (ví dụ: "95% users hoàn thành task X mà không cần hỗ trợ trong lần đầu sử dụng").',
+    difficulty: 'hard',
+  },
+];
+
+async function main() {
+  console.log('🌱 Seeding PMP Exam Questions — Part 2a: Integration + Scope\n');
+  let created = 0;
+  let skipped = 0;
+
+  for (const q of QUESTIONS) {
+    const exists = await prisma.pMPExamQuestion.findFirst({
+      where: { content: q.content },
+    });
+    if (exists) {
+      process.stdout.write('○');
+      skipped++;
+      continue;
+    }
+    await prisma.pMPExamQuestion.create({ data: q });
+    process.stdout.write('✓');
+    created++;
+  }
+
+  console.log(`\n\n📊 Kết quả:`);
+  console.log(`   ✅ Tạo mới : ${created} câu`);
+  console.log(`   ⏭  Bỏ qua  : ${skipped} câu (đã tồn tại)`);
+  console.log(`   📝 Tổng    : ${QUESTIONS.length} câu`);
+  console.log(`\n👉 Chạy tiếp: npx tsx prisma/seed-pmp-q2.ts`);
+}
+
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

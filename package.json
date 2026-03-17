@@ -11,7 +11,20 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "ts-node -P tsconfig.seed.json prisma/seed.ts",
-    "db:seed-reading": "ts-node -P tsconfig.seed.json prisma/seed-reading.ts"
+    "db:seed-reading": "ts-node -P tsconfig.seed.json prisma/seed-reading.ts",
+    "db:seed-minna": "tsx prisma/seed-minna.ts",
+    "db:seed-minna-n4": "tsx prisma/seed-minna-n4.ts",
+    "db:seed-alphabet": "tsx prisma/seed-alphabet.ts",
+    "ollama:gen": "npx tsx prisma/ollama-gen.ts",
+    "ollama:lessons": "npx tsx prisma/ollama-gen.ts --mode lessons --dataset ./prisma/data/jlpt-n5-topics.json",
+    "ollama:words": "npx tsx prisma/ollama-gen.ts --mode vocab --dataset ./prisma/data/jlpt-n5-words.json",
+    "ollama:exam": "npx tsx prisma/ollama-gen.ts --mode questions --dataset ./prisma/data/jlpt-n5-exam.json",
+    "ollama:dry": "npx tsx prisma/ollama-gen.ts --mode lessons --dataset ./prisma/data/jlpt-n5-topics.json --dry-run --limit 1",
+    "ollama:hsk:lessons": "npx tsx prisma/ollama-gen.ts --mode lessons --dataset ./prisma/data/hsk1-topics.json",
+    "ollama:hsk:words": "npx tsx prisma/ollama-gen.ts --mode vocab --dataset ./prisma/data/hsk1-words.json",
+    "ollama:hsk:exam": "npx tsx prisma/ollama-gen.ts --mode questions --dataset ./prisma/data/hsk1-exam.json",
+    "ollama:pmp:lessons": "npx tsx prisma/ollama-gen.ts --mode lessons --dataset ./prisma/data/pmp-topics.json",
+    "ollama:pmp:exam": "npx tsx prisma/ollama-gen.ts --mode questions --dataset ./prisma/data/pmp-exam.json"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.1",

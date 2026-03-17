@@ -23,15 +23,27 @@ export default async function AdminQuestionsPage({ params }: Props) {
   if (!examSet) notFound();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <div className="mb-6">
-        <Link href="/admin/examsets" className="text-sm text-gray-500 hover:text-red-600">← Danh sách bộ đề</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-1">
-          Câu hỏi: {examSet.title}
-        </h1>
-        <p className="text-gray-500 text-sm mt-0.5">
-          {examSet.level.code} · {examSet.skill} · {examSet.questions.length} câu hỏi
-        </p>
+    <div className="px-4 py-8" style={{ maxWidth: 1200, margin: '0 auto' }}>
+      {/* Page header */}
+      <div className="rounded-2xl mb-6 px-6 py-5"
+        style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #5B5EA6 100%)' }}>
+        <Link href="/admin/examsets"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold mb-3 opacity-80 hover:opacity-100 transition-opacity"
+          style={{ color: '#fff' }}>
+          ← Danh sách bộ đề
+        </Link>
+        <h1 className="text-xl font-bold text-white mb-1">{examSet.title}</h1>
+        <div className="flex items-center gap-2">
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
+            {examSet.level.code}
+          </span>
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
+            {examSet.skill}
+          </span>
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)' }}>
+            {examSet.questions.length} câu hỏi
+          </span>
+        </div>
       </div>
       <AdminQuestionsClient examSetId={examSet.id} questions={examSet.questions} />
     </div>

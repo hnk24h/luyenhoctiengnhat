@@ -1,15 +1,17 @@
 'use client';
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   FaNewspaper, FaAlignLeft, FaAlignJustify,
   FaClock, FaBookmark, FaBook, FaGraduationCap,
   FaListUl, FaArrowUpRightFromSquare, FaChevronRight,
+  FaFilter, FaBolt,
 } from 'react-icons/fa6';
 import { JapaneseText } from '@/components/JapaneseText';
+import { AppSidebar } from '@/components/AppSidebar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -380,6 +382,7 @@ function ReadingPageContent() {
   const lang         = (routeParams?.lang as string) ?? 'ja';
   const isChinese    = lang === 'zh';
   const searchParams = useSearchParams();
+  const router       = useRouter();
   const { data: session } = useSession();
 
   const [passages,      setPassages]      = useState<PassageSummary[]>([]);
@@ -443,184 +446,95 @@ function ReadingPageContent() {
     ? ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6']
     : ['N5', 'N4', 'N3', 'N2', 'N1'];
 
+  // ── 10. URL persistence ────────────────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (level) params.set('level', level); else params.delete('level');
+    if (type && !isChinese) params.set('type', type); else params.delete('type');
+    const qs = params.toString();
+    const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    router.replace(newUrl, { scroll: false });
+  }, [level, type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const accentColor = isChinese ? '#DC2626' : '#3D3A8C';
+
   return (
     <div className="flex" style={{ height: 'calc(100vh - 64px)', background: 'var(--bg-base)' }}>
 
       {/* ── Left sidebar: passage list ── */}
-      <aside className="hidden lg:flex flex-col w-72 shrink-0 border-r overflow-hidden"
-        style={{
-          borderColor: 'var(--border)', background: 'var(--bg-surface)',
-          position: 'sticky', top: '56px', height: 'calc(100vh - 64px)',
-        }}>
-
-        {/* Sidebar header + filters */}
-        <div className="px-4 pt-4 pb-3 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-          <div className="text-[11px] font-bold uppercase tracking-widest mb-3"
-            style={{ color: 'var(--primary)' }}>
-            {isChinese ? 'Đọc tiếng Trung' : 'Đọc hiểu tiếng Nhật'}
-          </div>
-
-          {/* Level filter */}
-          <div className="flex flex-wrap gap-1 mb-2">
-            <button onClick={() => { setLevel(''); setSelectedId(null); }}
-              className="text-[11px] px-2 py-0.5 rounded-lg font-semibold transition-all"
-              style={level === ''
-                ? { background: 'var(--primary)', color: 'white' }
-                : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-              Tất cả
-            </button>
-            {levelOptions.map(lv => {
-              const lm = LEVEL_META[lv];
-              return (
-                <button key={lv} onClick={() => { setLevel(lv); setSelectedId(null); }}
-                  className="text-[11px] px-2 py-0.5 rounded-lg font-bold transition-all"
-                  style={level === lv
-                    ? { background: lm.color, color: 'white' }
-                    : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  {lv}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Type filter (JLPT only) */}
-          {!isChinese && (
-            <div className="flex gap-1 flex-wrap">
-              {(['', 'short', 'long', 'news'] as const).map(tp => (
-                <button key={tp} onClick={() => { setType(tp); setSelectedId(null); }}
-                  className="text-[11px] px-2 py-0.5 rounded-lg font-semibold transition-all"
-                  style={type === tp
-                    ? { background: 'var(--primary)', color: 'white' }
-                    : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  {tp === '' ? 'Tất cả' : TYPE_META[tp]?.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Count */}
-          {!listLoading && (
-            <div className="mt-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              {passages.length} bài đọc
-            </div>
-          )}
-        </div>
-
-        {/* Passage list */}
-        <div className="flex-1 overflow-y-auto py-2">
-          {listLoading ? (
-            <div className="flex flex-col gap-1.5 px-3 pt-1">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
-              ))}
-            </div>
-          ) : passages.length === 0 ? (
-            <div className="text-center py-12 px-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Không có bài đọc nào
-            </div>
-          ) : (
-            <div className="flex flex-col gap-0.5 px-2">
-              {passages.map((p, idx) => {
-                const lm  = LEVEL_META[p.level] ?? LEVEL_META.N5;
-                const tm  = TYPE_META[p.type];
-                const sel = selectedId === p.id;
-                return (
-                  <button key={p.id} onClick={() => setSelectedId(p.id)}
-                    className="flex flex-col gap-1 px-3 py-2.5 rounded-xl text-left w-full transition-all border"
-                    style={sel
-                      ? { background: 'var(--primary-light)', borderColor: 'var(--primary)' }
-                      : { background: 'transparent', borderColor: 'transparent' }}>
-
-                    {/* Top row: badges + time */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded shrink-0"
-                        style={{ background: lm.bg, color: lm.color }}>{idx + 1}</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                        style={{ background: lm.bg, color: lm.color }}>{p.level}</span>
-                      {tm && !isChinese && (
-                        <span className="text-[10px] font-medium px-1 py-0.5 rounded shrink-0 flex items-center gap-0.5"
-                          style={{ background: tm.bg, color: tm.color }}>
-                          {tm.icon}
-                        </span>
-                      )}
-                      <span className="ml-auto text-[10px] flex items-center gap-0.5 shrink-0"
-                        style={{ color: 'var(--text-muted)' }}>
-                        <FaClock size={8} />{readTime(p.charCount)}
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <div className="text-xs font-semibold leading-snug line-clamp-2"
-                      style={{ color: sel ? 'var(--primary)' : 'var(--text-base)',
-                        fontFamily: isChinese ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                      {p.title}
-                    </div>
-                    {p.titleVi && (
-                      <div className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                        {p.titleVi}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── Mobile: horizontal scroll tabs ── */}
-      <div className="lg:hidden fixed top-14 left-0 right-0 z-10 border-b overflow-x-auto"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <div className="flex gap-1.5 px-3 py-2 min-w-max">
-          {/* Level filter on mobile */}
-          <div className="flex gap-1 mr-2 shrink-0">
-            {levelOptions.map(lv => {
-              const lm = LEVEL_META[lv];
-              return (
-                <button key={lv} onClick={() => { setLevel(prev => prev === lv ? '' : lv); setSelectedId(null); }}
-                  className="text-[10px] px-2 py-1 rounded-lg font-bold transition-all"
-                  style={level === lv
-                    ? { background: lm.color, color: 'white' }
-                    : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  {lv}
-                </button>
-              );
-            })}
-          </div>
-          {/* Passage list */}
-          {passages.map((p, idx) => {
-            const lm  = LEVEL_META[p.level] ?? LEVEL_META.N5;
-            const sel = selectedId === p.id;
-            return (
-              <button key={p.id} onClick={() => setSelectedId(p.id)}
-                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all"
-                style={sel
-                  ? { background: 'var(--primary)', color: '#fff' }
-                  : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                <span className="text-[9px] font-bold"
-                  style={sel ? { opacity: 0.75 } : { color: lm.color }}>
-                  {idx + 1}
-                </span>
-                <span className="max-w-[100px] truncate">{p.title}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <AppSidebar
+        headerIcon={<FaBook size={16} color="#fff" />}
+        title={isChinese ? 'Đọc tiếng Trung' : 'Đọc hiểu tiếng Nhật'}
+        subtitle={listLoading ? '…' : `${passages.length} bài đọc`}
+        accentColor={accentColor}
+        loading={listLoading}
+        emptyText="Không có bài đọc nào"
+        filters={[
+          {
+            label: 'Cấp độ',
+            value: level,
+            onChange: (v) => { setLevel(v); setSelectedId(null); },
+            chips: [
+              { value: '', label: 'Tất cả' },
+              ...levelOptions.map(lv => {
+                const lm = LEVEL_META[lv];
+                return { value: lv, label: lv, bg: lm.bg, color: lm.color, activeColor: lm.color };
+              }),
+            ],
+          },
+          ...(!isChinese ? [{
+            label: 'Loại bài',
+            value: type,
+            onChange: (v: string) => { setType(v as '' | 'short' | 'long' | 'news'); setSelectedId(null); },
+            chips: [
+              { value: '', label: 'Tất cả' },
+              { value: 'short', label: TYPE_META.short.label },
+              { value: 'long',  label: TYPE_META.long.label },
+              { value: 'news',  label: TYPE_META.news.label },
+            ],
+          }] : []),
+        ]}
+        items={passages.map(p => {
+          const lm = LEVEL_META[p.level] ?? LEVEL_META.N5;
+          return {
+            id: p.id,
+            title: p.title,
+            levelLabel: p.level,
+            levelBg: lm.bg,
+            levelColor: lm.color,
+            tag: !isChinese && TYPE_META[p.type] ? TYPE_META[p.type].label : undefined,
+            meta: readTime(p.charCount),
+            metaIcon: <FaClock size={7} />,
+            fontFamily: isChinese ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif',
+          };
+        })}
+        selectedId={selectedId}
+        onSelect={(id) => setSelectedId(id)}
+        searchable
+        searchPlaceholder={isChinese ? '找找标题…' : 'タイトル検索…'}
+      />
 
       {/* ── Main content panel ── */}
-      <div ref={detailRef} className="flex-1 overflow-y-auto lg:pt-0 pt-14">
+      <div ref={detailRef} className="flex-1 overflow-y-auto">
         {detailLoading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="w-10 h-10 rounded-full border-4 animate-spin"
-              style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+              style={{ borderColor: accentColor, borderTopColor: 'transparent' }} />
           </div>
         ) : !loadedPassage ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <div className="opacity-40"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-              {listLoading ? 'Đang tải danh sách...' : 'Chọn một bài đọc từ danh sách'}
-            </p>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
+              style={{ background: `color-mix(in srgb, ${accentColor} 10%, var(--bg-base))` }}>
+              <FaNewspaper size={36} style={{ color: accentColor, opacity: 0.7 }} />
+            </div>
+            <div className="text-center">
+              <p className="text-[15px] font-semibold" style={{ color: 'var(--text-base)' }}>
+                {listLoading ? 'Đang tải danh sách...' : 'Chọn một bài đọc'}
+              </p>
+              <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                Lựa chọn cấp độ và loại bài phù hợp để bắt đầu đọc
+              </p>
+            </div>
           </div>
         ) : (
           <ReadingDetail
@@ -634,241 +548,5 @@ function ReadingPageContent() {
         )}
       </div>
     </div>
-  );
-}
-
-import {
-  FaBook, FaNewspaper, FaAlignLeft, FaAlignJustify,
-  FaFilter, FaChevronRight, FaClock, FaBolt,
-} from 'react-icons/fa6';
-
-interface Passage {
-  id:        string;
-  title:     string;
-  titleVi:   string | null;
-  summary:   string | null;
-  level:     string;
-  type:      string;
-  source:    string | null;
-  tags:      string | null;
-  charCount: number;
-  createdAt: string;
-}
-
-const LEVEL_META: Record<string, { bg: string; color: string }> = {
-  N5:   { bg: '#DCFCE7', color: '#15803D' },
-  N4:   { bg: '#DBEAFE', color: '#1D4ED8' },
-  N3:   { bg: '#FEF9C3', color: '#92400E' },
-  N2:   { bg: '#FFEDD5', color: '#C2410C' },
-  N1:   { bg: '#FFE4E6', color: '#BE123C' },
-  HSK1: { bg: '#DCFCE7', color: '#15803D' },
-  HSK2: { bg: '#DBEAFE', color: '#1D4ED8' },
-  HSK3: { bg: '#FEF9C3', color: '#92400E' },
-  HSK4: { bg: '#FFEDD5', color: '#C2410C' },
-  HSK5: { bg: '#F3E8FF', color: '#6B21A8' },
-  HSK6: { bg: '#FFE4E6', color: '#BE123C' },
-};
-
-const TYPE_META: Record<string, { icon: React.ReactNode; label: string; bg: string; color: string }> = {
-  short: { icon: <FaAlignLeft  size={12} />, label: 'Đoạn ngắn', bg: '#EFF6FF', color: '#2563EB' },
-  long:  { icon: <FaAlignJustify size={12} />, label: 'Bài dài',  bg: '#F5F3FF', color: '#7C3AED' },
-  news:  { icon: <FaNewspaper size={12} />, label: 'Tin tức',   bg: '#FFF7ED', color: '#EA580C' },
-};
-
-function readTime(chars: number) {
-  const mins = Math.ceil(chars / 400);
-  return `${mins} phút`;
-}
-
-export default function ReadingPage() {
-  return (
-    <Suspense fallback={<ReadingPageFallback />}>
-      <ReadingPageContent />
-    </Suspense>
-  );
-}
-
-function ReadingPageContent() {
-  const routeParams = useParams();
-  const lang = (routeParams?.lang as string) ?? 'ja';
-  const searchParams = useSearchParams();
-  const queryLevel = searchParams.get('level') ?? '';
-  const queryType = searchParams.get('type') ?? '';
-  const [passages, setPassages] = useState<Passage[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [level,    setLevel]    = useState(queryLevel);
-  const [type,     setType]     = useState(queryType);
-
-  useEffect(() => {
-    setLevel(queryLevel);
-    setType(queryType);
-  }, [queryLevel, queryType]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (level) params.set('level', level);
-    if (type && lang !== 'zh') params.set('type', type);
-    params.set('lang', lang);
-    const res = await fetch(`/api/reading?${params}`);
-    if (res.ok) setPassages(await res.json());
-    setLoading(false);
-  }, [level, type, lang]);
-
-  useEffect(() => { load(); }, [load]);
-
-  return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
-
-      {/* Back link */}
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
-        style={{ color: 'var(--text-muted)' }}>
-        <FaBook size={11} /> Trang chủ
-      </Link>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--primary)' }}>
-          KỸ NĂNG ĐỌC HIỂU
-        </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-base)' }}>
-          {lang === 'zh' ? 'Đọc tiếng Trung' : 'Đọc tiếng Nhật'}
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {lang === 'zh' ? 'Luyện đọc theo cấp độ HSK.' : 'Click vào từ bất kỳ để tra nghĩa và lưu vào bộ sưu tập từ vựng.'}
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="card mb-6 flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2">
-          <FaFilter size={12} style={{ color: 'var(--text-muted)' }} />
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-base)' }}>Lọc:</span>
-        </div>
-
-        {/* Level filter */}
-        <div className="flex gap-1.5 flex-wrap">
-          {(['', ...(lang === 'zh' ? ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6'] : ['N5', 'N4', 'N3', 'N2', 'N1'])]).map(lv => (
-            <button key={lv} onClick={() => setLevel(lv)}
-              className="px-3 py-1 rounded-full text-xs font-bold transition-all"
-              style={level === lv
-                ? { background: 'var(--primary)', color: 'white' }
-                : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              {lv || 'Tất cả cấp'}
-            </button>
-          ))}
-        </div>
-
-        {lang !== 'zh' && (
-        <>
-        <div className="w-px h-5 hidden sm:block" style={{ background: 'var(--border)' }} />
-
-        {/* Type filter */}
-        <div className="flex gap-1.5 flex-wrap">
-          {['', 'short', 'long', 'news'].map(tp => (
-            <button key={tp} onClick={() => setType(tp)}
-              className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all"
-              style={type === tp
-                ? { background: 'var(--primary)', color: 'white' }
-                : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              {tp ? TYPE_META[tp]?.label : 'Tất cả loại'}
-            </button>
-          ))}
-        </div>
-        </>
-        )}
-      </div>
-
-      {/* Passages grid */}
-      {loading ? (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card animate-pulse" style={{ height: 160, background: 'var(--border)' }} />
-          ))}
-        </div>
-      ) : passages.length === 0 ? (
-        <div className="card text-center py-16">
-          <div className="mb-4 opacity-40"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
-          <p className="font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Chưa có bài đọc nào</p>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Thử chọn bộ lọc khác</p>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {passages.map(p => {
-            const lm = LEVEL_META[p.level] ?? LEVEL_META.N5;
-            const tm = TYPE_META[p.type]   ?? TYPE_META.short;
-            const tags: string[] = p.tags ? (p.tags as unknown as string[]) : [];
-            return (
-              <Link key={p.id} href={`/${lang}/reading/${p.id}`}
-                className="card card-hover group flex flex-col gap-3 no-underline"
-                style={{ textDecoration: 'none' }}>
-
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: lm.bg, color: lm.color }}>{p.level}</span>
-                    <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: tm.bg, color: tm.color }}>
-                      {tm.icon}{tm.label}
-                    </span>
-                  </div>
-                  <FaChevronRight size={12} className="shrink-0 mt-0.5 transition-transform group-hover:translate-x-1"
-                    style={{ color: 'var(--text-muted)' }} />
-                </div>
-
-                <div>
-                  <div className="font-bold text-base mb-1"
-                    style={{ color: 'var(--text-base)', fontFamily: '"Noto Sans JP", serif', lineHeight: 1.5 }}>
-                    {p.title}
-                  </div>
-                  {p.titleVi && (
-                    <div className="text-sm font-medium" style={{ color: 'var(--primary)' }}>{p.titleVi}</div>
-                  )}
-                </div>
-
-                {p.summary && (
-                  <p className="text-xs line-clamp-2" style={{ color: 'var(--text-muted)' }}>{p.summary}</p>
-                )}
-
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span className="flex items-center gap-1">
-                      <FaClock size={10} /> {readTime(p.charCount)}
-                    </span>
-                    {p.source && <span>📰 {p.source}</span>}
-                  </div>
-                  <div className="flex gap-1 flex-wrap justify-end">
-                    {tags.slice(0, 3).map(t => (
-                      <span key={t} className="text-xs px-1.5 py-0.5 rounded"
-                        style={{ background: 'var(--border)', color: 'var(--text-muted)' }}>#{t}</span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </main>
-  );
-}
-
-function ReadingPageFallback() {
-  return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8 animate-pulse">
-        <div className="h-4 w-32 rounded mb-2" style={{ background: 'var(--border)' }} />
-        <div className="h-10 w-72 rounded-xl mb-3" style={{ background: 'var(--border)' }} />
-        <div className="h-5 w-full max-w-xl rounded" style={{ background: 'var(--border)' }} />
-      </div>
-      <div className="rounded-3xl p-6 mb-6 animate-pulse" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <div className="h-6 w-48 rounded" style={{ background: 'var(--border)' }} />
-      </div>
-      <div className="grid sm:grid-cols-2 gap-4 animate-pulse">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="rounded-3xl h-40" style={{ background: 'var(--border)' }} />
-        ))}
-      </div>
-    </main>
   );
 }

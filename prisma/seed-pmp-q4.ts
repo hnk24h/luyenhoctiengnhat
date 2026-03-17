@@ -1,0 +1,500 @@
+/**
+ * seed-pmp-q4.ts — PMP Exam Questions Part 2d
+ * Phần: Communications Management (20 câu) + Risk Management (20 câu)
+ * Chạy: npx tsx prisma/seed-pmp-q4.ts
+ */
+import { PrismaClient, Difficulty } from '@prisma/client';
+const prisma = new PrismaClient();
+
+type QDef = {
+  area: string;
+  group: string;
+  content: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+  answer: string;
+  explain: string;
+  difficulty: Difficulty;
+};
+
+const QUESTIONS: QDef[] = [
+  // ─────────────────────────────────────────────────────────────────────────
+  // COMMUNICATIONS MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'communications', group: 'planning',
+    content: 'PM dành bao nhiêu phần trăm thời gian cho hoạt động giao tiếp (communication) theo PMBOK?',
+    optionA: '50%',
+    optionB: '75%',
+    optionC: '90%',
+    optionD: '100%',
+    answer: 'C',
+    explain: 'Theo PMBOK, PM dành khoảng 90% thời gian cho communicating. Điều này nhấn mạnh tầm quan trọng của communication skills. PM cần communicate với team, stakeholders, sponsors, vendors và management.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Khi dự án có 10 stakeholders, số lượng kênh giao tiếp (communication channels) tiềm năng là bao nhiêu?',
+    optionA: '40',
+    optionB: '45',
+    optionC: '50',
+    optionD: '55',
+    answer: 'B',
+    explain: 'Communication Channels = n(n-1)/2 = 10×9/2 = 45 channels. Khi thêm 1 stakeholder từ 10 lên 11: channels tăng từ 45 lên 11×10/2=55 (tăng 10). Lý do PM control project size: communication complexity tăng theo bình phương.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Ba loại communication methods trong PMBOK là gì?',
+    optionA: 'Formal, Informal, Written',
+    optionB: 'Interactive, Push, Pull',
+    optionC: 'Verbal, Non-verbal, Written',
+    optionD: 'Synchronous, Asynchronous, Broadcast',
+    answer: 'B',
+    explain: 'PMBOK 3 communication methods: (1) Interactive = 2-way, real-time (meetings, calls, video conference); (2) Push = 1-way sent to specific recipients (emails, memos, reports, fax); (3) Pull = large audience pulls info when needed (intranet, knowledge repos, e-learning). Chọn method phù hợp với nhu cầu.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Communication Management Plan xác định những gì?',
+    optionA: 'Danh sách tất cả stakeholders và thông tin liên lạc',
+    optionB: 'WHO cần WHAT information, WHEN, HOW và với FORMAT gì — framework cho tất cả communications',
+    optionC: 'Template cho project status reports',
+    optionD: 'Chi phí cho communication activities',
+    answer: 'B',
+    explain: 'Communications Management Plan bao gồm: stakeholder communication requirements, information to communicate, reason for distribution, timeframe/frequency, person responsible, methods/technologies, format, escalation process, glossary, flowcharts và constraints.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Communication Requirements Analysis xác định điều gì?',
+    optionA: 'Tốc độ đường truyền internet cần thiết',
+    optionB: 'Tổng hợp information needs của stakeholders — what info, từ ai, khi nào, để làm gì',
+    optionC: 'Ngân sách cho communication tools',
+    optionD: 'Số lượng cuộc họp cần tổ chức',
+    answer: 'B',
+    explain: 'Communication Requirements Analysis tổng hợp information needs bằng cách xem xét: organizational charts, stakeholder register, logistics (locations), internal/external communication needs, legal requirements, existing information. Quyết định WHAT thực sự cần communicate.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Active Listening trong quản lý dự án bao gồm những gì?',
+    optionA: 'Ghi chép nhanh tất cả những gì được nói',
+    optionB: 'Chú ý đầy đủ, hiểu message, reflect back để confirm hiểu đúng, và respond thoughtfully',
+    optionC: 'Nghe mà không interrupt người nói',
+    optionD: 'Ghi âm tất cả cuộc họp để nghe lại',
+    answer: 'B',
+    explain: 'Active Listening = fully concentrating, understanding, responding and reflecting. Bao gồm: eye contact, nodding, paraphrasing ("Ý bạn là..."), asking clarifying questions, không interrupt và không formulate response khi họ đang nói. Là critical skill cho PM.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Noise trong Sender-Receiver Communication Model là gì?',
+    optionA: 'Âm thanh ồn ào trong phòng họp',
+    optionB: 'Bất kỳ yếu tố nào can thiệp vào transmission hoặc understanding của message (ngôn ngữ, culture, bias, distance)',
+    optionC: 'Khi nhiều người nói cùng lúc',
+    optionD: 'Poor quality audio trong video call',
+    answer: 'B',
+    explain: 'Trong Communication Model (Sender → Encode → Channel → Decode → Receiver với Feedback), Noise là bất kỳ yếu tố nào làm distort message: language barriers, cultural differences, distance, technical jargon, assumptions, distractions, emotional state.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Khi nào nên dùng Formal Written Communication thay vì Informal Verbal?',
+    optionA: 'Khi giao tiếp hàng ngày với team',
+    optionB: 'Khi cần documentation (contracts, complex problems, project charter, change requests, legal matters)',
+    optionC: 'Khi stakeholder ở xa',
+    optionD: 'Luôn dùng formal written để có record',
+    answer: 'B',
+    explain: 'Formal Written: contracts, project charter, complex issues needing documentation, performance reports, change requests, legal matters — khi cần official record. Informal Verbal: daily team interaction, brainstorming, quick updates. Formal Verbal: presentations, speeches. Chọn phù hợp context.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Feedback (phản hồi) trong communication hai chiều quan trọng vì?',
+    optionA: 'Giúp PM đánh giá performance của người nghe',
+    optionB: 'Xác nhận message đã được nhận và hiểu đúng như người gửi dự định',
+    optionC: 'Bắt buộc theo quy định PMBOK',
+    optionD: 'Tăng số lượng communication channels',
+    answer: 'B',
+    explain: 'Feedback là phần quan trọng của interactive communication: xác nhận receiver đã decode message correctly. Không có feedback, sender không biết message có được hiểu đúng không. Đặc biệt quan trọng khi có language/cultural barriers.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'PM vừa gửi email thông báo thay đổi quan trọng đến toàn team. Đây là loại communication method nào?',
+    optionA: 'Interactive communication',
+    optionB: 'Push communication',
+    optionC: 'Pull communication',
+    optionD: 'Formal verbal communication',
+    answer: 'B',
+    explain: 'Email là push communication: thông tin được gửi ("pushed") đến người nhận cụ thể. Người nhận không cần chủ động tìm. Push phù hợp khi người nhận cụ thể và cần nhận ngay. Interactive (hai chiều real-time) phù hợp cho complex issues cần thảo luận.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Information Overload ảnh hưởng đến dự án như thế nào?',
+    optionA: 'Không ảnh hưởng, nhiều thông tin là tốt',
+    optionB: 'Quá nhiều thông tin làm stakeholders overwhelmed, giảm khả năng tìm và sử dụng thông tin quan trọng',
+    optionC: 'Chỉ ảnh hưởng đến team IT',
+    optionD: 'Làm tăng communication channel costs',
+    answer: 'B',
+    explain: 'Information Overload xảy ra khi stakeholders nhận quá nhiều thông tin đến mức không thể process effectively. Dẫn đến: important messages bị buried, decision quality giảm, người nhận ignore emails. PM nên use Communication Requirements Analysis để gửi right info to right people.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Trong Communication Technology Selection, yếu tố nào ít quan trọng nhất?',
+    optionA: 'Availability và reliability của technology',
+    optionB: 'Tính năng (features) mới nhất của tool',
+    optionC: 'Ease of use và familiarity của stakeholders',
+    optionD: 'Project duration và meeting frequency',
+    answer: 'B',
+    explain: 'Communication Technology Selection nên dựa trên: urgency, availability (có sẵn không), ease of use, project environment, sensitivity/confidentiality. "Newest features" không phải yếu tố quan trọng — thậm chí technology mới nhất nhưng stakeholders không biết dùng sẽ phản tác dụng.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Meeting Management (Meetings) trong Manage Communications nhằm mục đích gì?',
+    optionA: 'Tổ chức meetings để show project progress',
+    optionB: 'Sử dụng meetings hiệu quả với agenda rõ ràng, đúng thành phần và document action items',
+    optionC: 'Tránh meetings không cần thiết bằng cách dùng email',
+    optionD: 'Meetings hàng ngày là bắt buộc theo PMBOK',
+    answer: 'B',
+    explain: 'Effective Meetings: (1) Published agenda trước; (2) Right people in room; (3) Start/end on time; (4) Facilitator keeps discussion on track; (5) Document action items, owners, deadlines; (6) Distribute minutes promptly. "Meeting without agenda is a waste of everyone time."',
+    difficulty: 'easy',
+  },
+  {
+    area: 'communications', group: 'monitoring',
+    content: 'Monitor Communications trong dự án nhằm mục đích gì?',
+    optionA: 'Theo dõi chi phí của communication activities',
+    optionB: 'Đảm bảo information needs của project và stakeholders được đáp ứng — verify communications effective',
+    optionC: 'Ghi lại tất cả conversations để có legal record',
+    optionD: 'Kiểm tra team có đọc emails không',
+    answer: 'B',
+    explain: 'Monitor Communications đảm bảo Communications Management Plan đang được execute hiệu quả. Nếu communications không effective, PM cần điều chỉnh plan. Kết quả: Work Performance Information về how communications working, và có thể trigger Change Requests.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Cultural Awareness trong Communications Management quan trọng vì?',
+    optionA: 'PMBOK yêu cầu PM hiểu văn hóa địa phương',
+    optionB: 'Khác biệt văn hóa (ngôn ngữ, communication styles, non-verbal cues, time perception) ảnh hưởng đến hiệu quả giao tiếp',
+    optionC: 'Để tránh offensive jokes trong meetings',
+    optionD: 'Multicultural teams luôn performing kém hơn',
+    answer: 'B',
+    explain: 'Cultural differences ảnh hưởng communication: (1) Direct vs Indirect communication; (2) Eye contact meanings; (3) Silence interpretation; (4) Hierarchical vs flat communication; (5) High-context vs Low-context cultures. PM phải culturally aware để avoid misunderstandings và build effective communication.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Project dự án có 5 stakeholders mới được thêm vào, tổng team từ 8 lên 13. Số kênh giao tiếp mới thêm vào là bao nhiêu?',
+    optionA: '28',
+    optionB: '50',
+    optionC: '22',
+    optionD: '78',
+    answer: 'D',
+    explain: 'Ban đầu: 8×7/2 = 28 channels. Sau khi thêm 5: 13×12/2 = 78 channels. Mới thêm = 78-28 = 50 channels. Đáp án D=78 là tổng channels cuối. Nếu câu hỏi hỏi "tổng channels sau khi cộng thêm" thì D đúng. Sự gia tăng explosive này minh họa tại sao team size control quan trọng.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Non-verbal communication chiếm bao nhiêu phần trăm của tổng thông điệp được truyền đạt (theo nghiên cứu)?',
+    optionA: '10-20%',
+    optionB: '30-40%',
+    optionC: '55-80%',
+    optionD: '100%',
+    answer: 'C',
+    explain: 'Nghiên cứu (Mehrabian) cho thấy communication = ~7% words (verbal) + ~38% tone/voice + ~55% body language. Non-verbal (tone + body language) chiếm ~93%. Trong face-to-face, non-verbal cực kỳ quan trọng. Khó communicate qua text/email vì mất non-verbal cues.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Khi PM nhận được conflicting information từ các stakeholders, bước đầu tiên nên làm là gì?',
+    optionA: 'Tin theo stakeholder có quyền hạn cao nhất',
+    optionB: 'Xác minh và clarify thông tin từ các nguồn liên quan trước khi đưa ra quyết định',
+    optionC: 'Bỏ qua conflicting information',
+    optionD: 'Tổ chức họp khẩn với tất cả stakeholders',
+    answer: 'B',
+    explain: 'Khi gặp conflicting information: (1) Identify source of conflict; (2) Gather more data để clarify; (3) Refer to project documents (charter, plan) làm baseline; (4) Consult với relevant parties; (5) Escalate nếu cần. Không nên assume hay decide mà không đủ thông tin.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'planning',
+    content: 'Escalation Process trong Communications Management là gì?',
+    optionA: 'Quy trình tăng ngân sách khi cần',
+    optionB: 'Quy trình đưa issues/decisions lên cấp quản lý cao hơn khi PM không có authority giải quyết',
+    optionC: 'Kế hoạch xử lý crisis communication',
+    optionD: 'Quy trình thay đổi scope',
+    answer: 'B',
+    explain: 'Escalation Process định nghĩa: loại issues nào cần escalate, khi nào escalate và escalate lên ai. PM escalate khi: (1) Issue vượt PM authority; (2) Cần sponsor decision; (3) Conflicts không resolve được. Communications Management Plan phải bao gồm escalation path rõ ràng.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'communications', group: 'executing',
+    content: 'Trong Project Status Meeting, PM nên đặc biệt chú ý đến điều gì?',
+    optionA: 'Đảm bảo tất cả team members tham dự',
+    optionB: 'Report actual status, issues, risks và decisions needed — không chỉ "everything is fine"',
+    optionC: 'Giữ cho meeting không quá 15 phút',
+    optionD: 'Chia sẻ slide deck với nhiều data',
+    answer: 'B',
+    explain: 'Effective Project Status Meetings: focus vào actual status (EV/SPI/CPI), current issues, emerging risks và decisions needed. Tránh "happy talk" (chỉ báo tốt). PM không nên filter bad news — stakeholders cần accurate information để support dự án và make informed decisions.',
+    difficulty: 'medium',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RISK MANAGEMENT (20 câu)
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Appetite, Risk Tolerance và Risk Threshold khác nhau như thế nào?',
+    optionA: 'Ba thuật ngữ đồng nghĩa trong PMBOK',
+    optionB: 'Risk Appetite = mức sẵn lòng chấp nhận rủi ro; Tolerance = variation chấp nhận được; Threshold = điểm cụ thể triggering action',
+    optionC: 'Chỉ áp dụng cho financial risks',
+    optionD: 'Risk Threshold cao hơn Risk Tolerance',
+    answer: 'B',
+    explain: 'Risk Appetite = overall attitude toward risk (conservative/moderate/aggressive). Risk Tolerance = acceptable range of variation (ví dụ: +/-10% budget). Risk Threshold = specific point requiring action (ví dụ: nếu SPI < 0.9 phải escalate). Threshold defines boundary of tolerance.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Sự khác biệt giữa Qualitative và Quantitative Risk Analysis là gì?',
+    optionA: 'Qualitative dùng số, Quantitative dùng mô tả',
+    optionB: 'Qualitative = prioritize risks by probability×impact (High/Medium/Low); Quantitative = numerical analysis (EMV, Monte Carlo, Decision Tree)',
+    optionC: 'Qualitative cho risks lớn, Quantitative cho risks nhỏ',
+    optionD: 'Không có sự khác biệt thực tế',
+    answer: 'B',
+    explain: 'Qualitative Risk Analysis prioritizes risks dùng Probability×Impact matrix (subjective scales like High/Medium/Low) — nhanh, ít tốn kém. Quantitative Risk Analysis assigns numerical values (probability %, dollar amounts) và dùng statistical models (Monte Carlo, Decision Tree, EMV). Xác định risks cần quantitative analysis từ qualitative results.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Response Strategies cho THREATS (rủi ro tiêu cực) theo PMBOK là gì?',
+    optionA: 'Exploit, Enhance, Share, Accept',
+    optionB: 'Avoid, Transfer, Mitigate, Accept',
+    optionC: 'Escalate, Transfer, Monitor, Accept',
+    optionD: 'Eliminate, Transfer, Manage, Ignore',
+    answer: 'B',
+    explain: 'Threat responses (5T-ETMAA in PMBOK 6): Escalate (vượt PM scope), Avoid (eliminate threat/protect project), Transfer (shift to 3rd party: insurance, contracts), Mitigate (reduce probability/impact), Accept (active: contingency plan; passive: acknowledge). Escalate được thêm mới trong PMBOK 6.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Response Strategies cho OPPORTUNITIES (rủi ro tích cực) theo PMBOK là gì?',
+    optionA: 'Avoid, Transfer, Mitigate, Accept',
+    optionB: 'Escalate, Exploit, Enhance, Share, Accept',
+    optionC: 'Accept, Ignore, Monitor, Report',
+    optionD: 'Manage, Track, Review, Capture',
+    answer: 'B',
+    explain: 'Opportunity responses (EESEA in PMBOK 6): Escalate (vượt PM scope), Exploit (ensure opportunity occurs: assign best person), Enhance (increase probability/impact), Share (partner with 3rd party), Accept (benefit if occurs but not chase). Exploit ↔ Avoid, Enhance ↔ Mitigate, Share ↔ Transfer.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Secondary Risk là gì?',
+    optionA: 'Risk không quan trọng, secondary priority',
+    optionB: 'Risk mới xuất hiện trực tiếp từ việc implement một risk response',
+    optionC: 'Risk xảy ra sau khi risk chính đã xảy ra',
+    optionD: 'Risk không có trong Risk Register',
+    answer: 'B',
+    explain: 'Secondary Risk là risk phát sinh từ implementing risk response. Ví dụ: bạn hire thêm contractor để mitigate schedule risk (risk chính), nhưng contractor mới tạo ra coordination risk (secondary risk). Secondary risks cũng phải được tracked trong Risk Register.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Residual Risk là gì?',
+    optionA: 'Risk còn lại sau khi risk response đã được triển khai',
+    optionB: 'Danh sách risks chưa được xử lý',
+    optionC: 'Risk trong phần Work Breakdown Structure chưa hoàn thành',
+    optionD: 'Risk từ phase trước chuyển sang phase hiện tại',
+    answer: 'A',
+    explain: 'Residual Risk là phần risk còn lại sau khi đã áp dụng risk response. Ví dụ: bạn mua insurance (transfer) cho một risk, nhưng deductible vẫn là residual risk. Residual risks should be documented và accepted với contingency reserve nếu cần.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Register là output của quy trình nào và chứa thông tin gì?',
+    optionA: 'Output của Plan Risk Management; chứa risk management approach',
+    optionB: 'Output của Identify Risks; chứa list of identified risks, potential responses và root causes',
+    optionC: 'Output của Perform Qualitative Analysis; chứa priority ranking',
+    optionD: 'Output của Plan Risk Responses; chứa risk owners và responses',
+    answer: 'B',
+    explain: 'Risk Register được tạo ra trong Identify Risks và được cập nhật liên tục. Initial content: list of identified risks, potential risk owners, potential responses. Sau đó được updated với probability/impact ratings (Qualitative), numerical estimates (Quantitative) và agreed responses (Plan Responses).',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Management Plan (output của Plan Risk Management) định nghĩa gì?',
+    optionA: 'Danh sách tất cả risks trong dự án',
+    optionB: 'HOW risk management activities sẽ được thực hiện: methodology, roles, budget, timing, risk categories (RBS), definitions, probability/impact matrix',
+    optionC: 'Risk responses cho các risks đã identified',
+    optionD: 'Số lượng contingency reserve cần thiết',
+    answer: 'B',
+    explain: 'Risk Management Plan (≠ Risk Register) mô tả APPROACH: methodology, roles & responsibilities, funding for risk activities, timing, risk categories/RBS, probability & impact definitions, probability-impact matrix, risk appetite/tolerance, reporting formats và tracking.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'EMV (Expected Monetary Value) được tính như thế nào?',
+    optionA: 'EMV = Probability + Impact',
+    optionB: 'EMV = Probability × Impact (monetary value)',
+    optionC: 'EMV = Impact / Probability',
+    optionD: 'EMV = (Optimistic + Pessimistic) / 2',
+    answer: 'B',
+    explain: 'EMV = Probability × Monetary Impact. Threats có negative impact (EMV âm), Opportunities có positive impact (EMV dương). Ví dụ: Risk có P=30%, Impact=$100,000 → EMV = -$30,000. Tổng EMV của tất cả risks dùng trong Decision Tree Analysis và contingency reserve calculation.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Breakdown Structure (RBS) trong Risk Management là gì?',
+    optionA: 'WBS áp dụng cho risk activities',
+    optionB: 'Hierarchical representation của risk categories để organize và group identified risks',
+    optionC: 'Danh sách risks theo mức độ priority',
+    optionD: 'Cấu trúc team quản lý rủi ro',
+    answer: 'B',
+    explain: 'RBS (Risk Breakdown Structure) là hierarchical structure của risk sources/categories (như WBS nhưng cho risks): Level 1 = All Project Risks, Level 2 = Technical, External, Organizational, PM risks, Level 3 = sub-categories. Giúp ensure comprehensive risk identification.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Trigger Conditions (Warning Signs) trong Risk Management là gì?',
+    optionA: 'Điều kiện để kích hoạt toàn bộ dự án',
+    optionB: 'Early warning indicators rằng một risk sắp xảy ra — giúp PM kích hoạt risk response kịp thời',
+    optionC: 'Điều kiện để release contingency reserve',
+    optionD: 'Sự kiện kích hoạt phase mới của dự án',
+    answer: 'B',
+    explain: 'Risk Triggers (cũng gọi là risk symptoms, warning signs) là events/conditions cho thấy một risk sắp materialize. Ví dụ: trigger cho "key vendor delay" có thể là "vendor không gửi weekly progress report". PM dùng triggers để activate contingency plans sớm.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'monitoring',
+    content: 'Workarounds khác Contingency Plans ở điểm gì?',
+    optionA: 'Không có sự khác biệt',
+    optionB: 'Contingency Plans được chuẩn bị trước cho identified risks; Workarounds là responses unplanned, developed khi risk không lường trước xảy ra',
+    optionC: 'Workarounds tốn kém hơn Contingency Plans',
+    optionD: 'Contingency Plans dùng cho threats, Workarounds dùng cho opportunities',
+    answer: 'B',
+    explain: 'Contingency Plans: được chuẩn bị sẵn khi planning, triggered khi identified risk xảy ra. Workarounds: unplanned responses đến risks không identified hoặc accepted (unknown-unknown đã xảy ra). Workarounds cần documented và có thể trigger permanent fixes sau.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'risk', group: 'monitoring',
+    content: 'Risk Audit trong Monitor Risks nhằm mục đích gì?',
+    optionA: 'Kiểm tra tài chính của dự án',
+    optionB: 'Đánh giá effectiveness của risk response plans và risk management process',
+    optionC: 'Xác định risks mới xuất hiện',
+    optionD: 'Kiểm tra compliance với risk policy',
+    answer: 'B',
+    explain: 'Risk Audit đánh giá: (1) Effectiveness của risk responses đã implement (có work không?); (2) Effectiveness của risk management process; (3) Documented và communicated properly chưa. Khác với Risk Reviews (identify new risks/changes). Risk Audit là process evaluation, không phải risk identification.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Overall Project Risk khác Individual Project Risks ở điểm nào?',
+    optionA: 'Overall Risk là risk lớn nhất trong list',
+    optionB: 'Overall Project Risk = effect of uncertainty on project as a whole; không phải sum của individual risks',
+    optionC: 'Chỉ Senior Management quan tâm đến overall risk',
+    optionD: 'Individual risks quan trọng hơn overall risk',
+    answer: 'B',
+    explain: 'Overall Project Risk là tổng hợp effect của tất cả uncertainties lên project objectives — bao gồm cả positive và negative risks. Không chỉ là sum/average của individual risks vì có correlations và interdependencies. Overall risk có thể higher hoặc lower than sum of parts.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Risk Owner trong Risk Management có trách nhiệm gì?',
+    optionA: 'Người phát hiện risk trong Identify Risks',
+    optionB: 'Người chịu trách nhiệm monitor risk, implement response khi triggered và report status',
+    optionC: 'PM luôn là risk owner của mọi risks',
+    optionD: 'Tổ chức sponsor chịu trách nhiệm về risks',
+    answer: 'B',
+    explain: 'Risk Owner là người được assigned để monitor assigned risk: watch for triggers, implement response if risk materializes, report risk status. Được identify trong Plan Risk Responses. Mỗi risk nên có một designated owner (specific person, không phải team/role chung).',
+    difficulty: 'easy',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Decision Tree Analysis trong Risk Management dùng để làm gì?',
+    optionA: 'Xác định cây phân cấp của risk categories',
+    optionB: 'Phân tích decision alternatives khi có nhiều lựa chọn với outcomes không chắc chắn, dùng EMV để so sánh',
+    optionC: 'Tạo risk breakdown structure',
+    optionD: 'Document decision history của dự án',
+    answer: 'B',
+    explain: 'Decision Tree Analysis là quantitative tool: vẽ sơ đồ cây với decision nodes (□) và chance nodes (○). Tính EMV cho mỗi branch (probability × payoff) và aggregate ngược về decision node để chọn alternative với highest EMV. Tích hợp probability, impact và cost of response.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'risk', group: 'monitoring',
+    content: 'Fallback Plan trong Risk Management là gì?',
+    optionA: 'Kế hoạch dự phòng backup khi contingency plan không hiệu quả',
+    optionB: 'Kế hoạch khi dự án thất bại hoàn toàn',
+    optionC: 'Kế hoạch giải tán team',
+    optionD: 'Kế hoạch chuyển dự án sang vendor khác',
+    answer: 'A',
+    explain: 'Fallback Plan = "Plan C": kế hoạch dự phòng được kích hoạt khi Contingency Plan (Plan B) không đủ effective hoặc risk impact nghiêm trọng hơn dự đoán. Ví dụ: nếu primary vendor fail và backup vendor cũng fail, fallback plan là insource. Phải được planned trước.',
+    difficulty: 'hard',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Probability and Impact Matrix dùng để làm gì trong Perform Qualitative Risk Analysis?',
+    optionA: 'Tính toán EMV chính xác cho từng risk',
+    optionB: 'Priority risks theo kết hợp probability (xác suất) và impact (ảnh hưởng) bằng thang điểm',
+    optionC: 'Xác định contingency reserve cần thiết',
+    optionD: 'So sánh risks giữa các dự án khác nhau',
+    answer: 'B',
+    explain: 'P×I Matrix cho phép: assign probability rating (0.1-0.9) và impact rating (Very Low to Very High) cho mỗi risk. Nhân P×I để xem risk ở zone nào (Red/High, Yellow/Medium, Green/Low). Prioritize High risks cho attention sớm nhất. Là primary tool của Qualitative Risk Analysis.',
+    difficulty: 'easy',
+  },
+  {
+    area: 'risk', group: 'planning',
+    content: 'Identify Risks sử dụng kỹ thuật nào sau đây?',
+    optionA: 'Monte Carlo Simulation',
+    optionB: 'SWOT Analysis, Brainstorming, Checklists, Interviews, Root Cause Analysis',
+    optionC: 'Decision Tree và EMV',
+    optionD: 'Earned Value Analysis',
+    answer: 'B',
+    explain: 'Identify Risks techniques: Brainstorming, Checklists (historical risk lists), Interviews, Root Cause Analysis, SWOT Analysis (Strengths-Weaknesses-Opportunities-Threats), Assumption Analysis, Document Reviews, Diagramming (cause-effect, flow charts). Monte Carlo và Decision Tree là Quantitative Risk Analysis tools.',
+    difficulty: 'medium',
+  },
+  {
+    area: 'risk', group: 'monitoring',
+    content: 'Khi nào nên perform Identify Risks (không phải chỉ một lần)?',
+    optionA: 'Chỉ một lần trong giai đoạn Planning',
+    optionB: 'Liên tục suốt dự án vì risks mới có thể xuất hiện bất cứ lúc nào',
+    optionC: 'Mỗi khi có change request',
+    optionD: 'Đầu mỗi phase của project lifecycle',
+    answer: 'B',
+    explain: 'Identify Risks là iterative process: risks mới có thể emerge bất cứ lúc nào (new technology, changes in environment, scope changes, new stakeholders). PM và team nên continuously identify risks suốt dự án, không chỉ lúc planning. Risk Register được updated liên tục.',
+    difficulty: 'medium',
+  },
+];
+
+async function main() {
+  console.log('🌱 Seeding PMP Exam Questions — Part 2d: Communications + Risk\n');
+  let created = 0;
+  let skipped = 0;
+
+  for (const q of QUESTIONS) {
+    const exists = await prisma.pMPExamQuestion.findFirst({
+      where: { content: q.content },
+    });
+    if (exists) {
+      process.stdout.write('○');
+      skipped++;
+      continue;
+    }
+    await prisma.pMPExamQuestion.create({ data: q });
+    process.stdout.write('✓');
+    created++;
+  }
+
+  console.log(`\n\n📊 Kết quả:`);
+  console.log(`   ✅ Tạo mới : ${created} câu`);
+  console.log(`   ⏭  Bỏ qua  : ${skipped} câu (đã tồn tại)`);
+  console.log(`   📝 Tổng    : ${QUESTIONS.length} câu`);
+  console.log(`\n👉 Chạy tiếp: npx tsx prisma/seed-pmp-q5.ts`);
+}
+
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

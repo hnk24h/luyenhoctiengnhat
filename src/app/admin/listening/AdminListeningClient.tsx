@@ -16,6 +16,7 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 import { LISTENING_PRACTICES, type ListeningMondai, type ListeningPractice } from '@/modules/listeningContent';
+import { MediaUploadField } from '@/components/MediaUploadField';
 
 type AdminListeningItem = ListeningPractice & {
   lessonId: string;
@@ -305,29 +306,34 @@ export default function AdminListeningClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1rem' }}>
+      {/* Gradient header */}
+      <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-            <Link href="/admin" className="hover:underline">Admin</Link> / Luyện nghe
+          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
+            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
+            {' / '}Quản lý bài nghe
           </div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Quản lý bài nghe JLPT</h1>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-            Thêm bài nghe theo level và mondai, gắn `audioUrl` nếu có. Nếu để trống thì page public sẽ fallback sang Web Speech.
-          </p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>🎧 Bài nghe JLPT</h1>
+          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{items.length} bài nghe</span>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/ja/listening" className="btn-secondary">
-            <FaHeadphones size={12} /> Xem page nghe
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link href="/ja/listening" style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FaHeadphones size={12} /> Xem page
           </Link>
-          <a href="/samples/jlpt-listening-sample.json" download className="btn-secondary">
+          <a href="/samples/jlpt-listening-sample.json" download style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
             <FaDownload size={12} /> JSON mẫu
           </a>
-          <button onClick={openCreateDialog} className="btn-primary">
+          <button onClick={openCreateDialog} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.9)', color: '#7c3aed', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <FaPlus size={12} /> Bài nghe mới
           </button>
         </div>
       </div>
+
+      <div style={{ paddingBottom: 40 }}>
+        <div>
 
       {(message || error) && (
         <div className="rounded-2xl px-4 py-3 mb-6 text-sm font-medium"
@@ -446,6 +452,9 @@ export default function AdminListeningClient() {
         </div>
       </div>
 
+        </div>{/* end content */}
+      </div>{/* end wrapper */}
+
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center px-4 py-8 sm:py-10">
           <div className="absolute inset-0 bg-black/40" onClick={closeDialog} />
@@ -509,11 +518,13 @@ export default function AdminListeningClient() {
                   <label className="label">Thời lượng (giây)</label>
                   <input className="input" type="number" min="10" value={form.durationSec} onChange={(event) => updateField('durationSec', event.target.value)} />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="label">Audio URL</label>
-                  <input className="input" value={form.audioUrl} onChange={(event) => updateField('audioUrl', event.target.value)} placeholder="https://...mp3" />
-                </div>
               </div>
+              <MediaUploadField
+                type="audio"
+                value={form.audioUrl}
+                onChange={url => updateField('audioUrl', url)}
+                label="🎧 Audio"
+              />
 
               <div>
                 <label className="label">Trọng tâm</label>

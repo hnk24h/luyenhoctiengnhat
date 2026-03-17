@@ -1,0 +1,29 @@
+{
+  "subject": "HSK",
+  "levelCode": "HSK1",
+  "mode": "lessons",
+  "language": "zh",
+  "categoryName": "Bài học cơ bản HSK1",
+  "topics": [
+    {
+      "title": "Chào hỏi tiếng Trung cơ bản",
+      "keywords": ["你好", "谢谢", "再见", "对不起", "不客气"]
+    },
+    {
+      "title": "Con số và đếm 1-10",
+      "keywords": ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+    },
+    {
+      "title": "Gia đình và người thân",
+      "keywords": ["爸爸", "妈妈", "哥哥", "姐姐", "弟弟", "妹妹", "家"]
+    },
+    {
+      "title": "Thức ăn và đồ uống",
+      "keywords": ["水", "茶", "米饭", "面条", "好吃", "吃", "喝"]
+    },
+    {
+      "title": "Màu sắc cơ bản",
+      "keywords": ["红色", "蓝色", "白色", "黑色", "黄色", "颜色"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "subject": "JLPT",
+  "levelCode": "N5",
+  "mode": "questions",
+  "language": "ja",
+  "examSetTitle": "Luyện tập từ vựng N5 - Bộ 1",
+  "skill": "vocab",
+  "count": 10,
+  "topics": [
+    "Chào hỏi và giao tiếp cơ bản",
+    "Con số và đếm",
+    "Màu sắc",
+    "Ngày tháng và thời gian",
+    "Từ vựng về gia đình"
+  ]
+}

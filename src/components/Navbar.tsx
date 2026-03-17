@@ -3,32 +3,35 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle } from 'react-icons/fa6';
+import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle, FaFont } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
 import { useTheme, type AppearanceMode } from '@/context/ThemeContext';
+import { LogoMark } from '@/components/Logo';
 
 type NavLink = { href: string; label: string; icon: IconType; authRequired?: boolean };
 
 // ── ISO-coded nav links ─────────────────────────────────────────────────────
 
 const JLPT_NAV_LINKS: NavLink[] = [
-  { href: '/ja/learn',     label: 'Cấp độ',    icon: FaBookOpen },
-  { href: '/ja/levels',    label: 'Luyện thi',  icon: FaPencil },
-  { href: '/ja/listening', label: 'Luyện nghe', icon: FaHeadphones },
-  { href: '/ja/vocab',     label: 'Từ vựng',    icon: FaBookmark },
+  { href: '/ja/learn',     label: 'Cấp độ',       icon: FaBookOpen },
+  { href: '/ja/levels',    label: 'Luyện thi',    icon: FaPencil },
+  { href: '/ja/listening', label: 'Luyện nghe',   icon: FaHeadphones },
+  { href: '/ja/vocab',     label: 'Từ vựng',      icon: FaBookmark },
+  { href: '/ja/grammar',   label: 'Ngữ pháp',     icon: FaCompass },
   { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
   { href: '/ja/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
   { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar,   authRequired: true },
 ];
 
 const CHINESE_NAV_LINKS: NavLink[] = [
+  { href: '/zh/alphabet',  label: 'Bảng chữ cái', icon: FaFont },
   { href: '/zh/learn',     label: 'Cấp độ',    icon: FaBookOpen },
   { href: '/zh/levels',    label: 'Luyện thi',  icon: FaPencil },
   { href: '/zh/listening', label: 'Luyện nghe', icon: FaHeadphones },
   { href: '/zh/vocab',     label: 'Từ vựng',    icon: FaBookmark },
   { href: '/zh/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
   { href: '/zh/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
-  { href: '/zh/grammar',   label: 'Ngữ pháp',   icon: FaCompass },
+  { href: '/zh/grammar',   label: 'Ngữ pháp',     icon: FaCompass },
 ];
 
 const PMP_NAV_LINKS: NavLink[] = [
@@ -71,7 +74,7 @@ export function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam' | 'grammar' | 'alphabet' | null>(null);
   const { appearance, resolvedAppearance, setAppearance } = useTheme();
   const navMenuRef = useRef<HTMLElement | null>(null);
 
@@ -83,8 +86,10 @@ export function Navbar() {
   const listeningOpen  = openMenu === 'listening';
   const vocabOpen      = openMenu === 'vocab';
   const examOpen       = openMenu === 'exam';
+  const grammarOpen    = openMenu === 'grammar';
+  const alphabetOpen   = openMenu === 'alphabet';
 
-  function toggleMenu(name: 'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam') {
+  function toggleMenu(name: 'modules' | 'explore' | 'appearance' | 'profile' | 'learn' | 'listening' | 'vocab' | 'exam' | 'grammar' | 'alphabet') {
     setOpenMenu(prev => (prev === name ? null : name));
   }
 
@@ -116,6 +121,7 @@ export function Navbar() {
       `/${currentLang}/levels`,
       `/${currentLang}/listening`,
       `/${currentLang}/vocab`,
+      `/${currentLang}/grammar`,
     ]);
     return visibleLinks.filter(l => primaryHrefs.has(l.href));
   }, [visibleLinks, currentLang]);
@@ -159,7 +165,11 @@ export function Navbar() {
   return (
     <>
       <header ref={navMenuRef}
-        style={{ background: 'color-mix(in srgb, var(--bg-surface) 90%, transparent)', borderBottom: '1px solid var(--border)' }}
+        style={{
+          background: 'linear-gradient(to bottom, color-mix(in srgb, var(--primary) 11%, var(--bg-surface)), color-mix(in srgb, var(--primary) 5%, var(--bg-surface)))',
+          borderBottom: '1px solid color-mix(in srgb, var(--primary) 28%, transparent)',
+          boxShadow: '0 4px 28px -4px color-mix(in srgb, var(--primary) 14%, transparent)',
+        }}
         className="sticky top-0 z-50 backdrop-blur-xl">
         <div className="mx-auto px-4 sm:px-6 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
           <div className="flex h-14 items-center gap-3">
@@ -167,12 +177,11 @@ export function Navbar() {
             {/* ── Logo + language switcher ── */}
             <div className="flex items-center gap-1 shrink-0">
               <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl text-white text-sm font-bold shadow-sm transition-transform group-hover:scale-105"
-                  style={{ background: currentSubjectMeta.color }}>
-                  {currentLang === 'ja' ? '日' : currentLang === 'zh' ? '中' : '📊'}
+                <span className="transition-transform group-hover:scale-105">
+                  <LogoMark size={32} />
                 </span>
                 <span className="hidden sm:flex flex-col leading-none gap-0.5">
-                  <span className="font-bold text-[13px] tracking-tight" style={{ color: 'var(--text-primary)' }}>LuyệnThi</span>
+                  <span className="font-bold text-[13px] tracking-tight" style={{ color: 'var(--text-primary)' }}>IkagiLearn</span>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{currentSubjectMeta.flag} {currentSubjectMeta.label}</span>
                 </span>
               </Link>
@@ -215,8 +224,9 @@ export function Navbar() {
                 const isListeningLink = link.href === `/${currentLang}/listening`;
                 const isVocabLink     = link.href === `/${currentLang}/vocab`;
                 const isExamLink      = link.href === `/${currentLang}/levels`;
+                const isGrammarLink   = link.href === `/${currentLang}/grammar`;
+                const isAlphabetLink  = link.href === `/${currentLang}/alphabet`;
                 const levels = LANG_LEVELS[currentLang];
-
                 const activeStyle   = { background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--primary)', fontWeight: 600 } as const;
                 const inactiveStyle = { color: 'var(--text-secondary)' } as const;
 
@@ -341,6 +351,92 @@ export function Navbar() {
                             className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
                             style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
                             Xem tổng quan
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (isGrammarLink && levels) {
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('grammar')}
+                        aria-expanded={grammarOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={grammarOpen || pathname.startsWith(`/${currentLang}/grammar`) ? activeStyle : inactiveStyle}>
+                        <link.icon size={13} />
+                        <span>Ngữ pháp</span>
+                        <FaChevronDown size={9} style={{ transform: grammarOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {grammarOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn cấp độ</div>
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/grammar?level=${level.code}`;
+                            return (
+                              <Link key={level.code} href={levelHref}
+                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                                style={{ color: 'var(--text-secondary)' }}>
+                                <span className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg text-white min-w-[36px] text-center" style={{ background: level.color }}>{level.label}</span>
+                                  <span>{level.desc}</span>
+                                </span>
+                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                              </Link>
+                            );
+                          })}
+                          <Link href={`/${currentLang}/grammar`}
+                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                            Xem tất cả
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (isAlphabetLink) {
+                  const alphabetBase = `/${currentLang}/alphabet`;
+                  const alphabetActive = pathname.startsWith(alphabetBase);
+                  const ALPHABET_SUBMENU = currentLang === 'zh'
+                    ? [{ href: alphabetBase,                         label: 'Bính âm Pinyin', sub: '拼音',   color: '#DC2626', bg: '#FEE2E2' }]
+                    : [
+                        { href: `${alphabetBase}?script=hiragana`,  label: 'Hiragana',        sub: 'ひらがな', color: '#15803D', bg: '#DCFCE7' },
+                        { href: `${alphabetBase}?script=katakana`,  label: 'Katakana',        sub: 'カタカナ', color: '#1D4ED8', bg: '#DBEAFE' },
+                      ];
+                  return (
+                    <div key={link.href} className="relative">
+                      <button
+                        onClick={() => toggleMenu('alphabet')}
+                        aria-expanded={alphabetOpen}
+                        aria-haspopup="true"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={alphabetOpen || alphabetActive ? activeStyle : inactiveStyle}>
+                        <link.icon size={13} />
+                        <span>Bảng chữ cái</span>
+                        <FaChevronDown size={9} style={{ transform: alphabetOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+                      </button>
+                      {alphabetOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          {ALPHABET_SUBMENU.map(item => (
+                            <Link key={item.href} href={item.href}
+                              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                              style={{ color: 'var(--text-secondary)' }}>
+                              <span className="flex items-center gap-2">
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg" style={{ background: item.bg, color: item.color }}>{item.sub}</span>
+                                <span>{item.label}</span>
+                              </span>
+                              <FaArrowRight size={10} style={{ opacity: 0.4 }} />
+                            </Link>
+                          ))}
+                          <Link href={alphabetBase}
+                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                            Xem tất cả
                           </Link>
                         </div>
                       )}
@@ -581,6 +677,8 @@ export function Navbar() {
                   const isListeningLink = link.href === `/${currentLang}/listening`;
                   const isVocabLink     = link.href === `/${currentLang}/vocab`;
                   const isExamLink      = link.href === `/${currentLang}/levels`;
+                  const isGrammarLink   = link.href === `/${currentLang}/grammar`;
+                  const isAlphabetLink  = link.href === `/${currentLang}/alphabet`;
                   const levels = LANG_LEVELS[currentLang];
                   if (isVocabLink) {
                     const vocabBase = `/${currentLang}/vocab`;
@@ -649,6 +747,51 @@ export function Navbar() {
                               </Link>
                             );
                           })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isGrammarLink && levels) {
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Ngữ pháp</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {levels.map(level => {
+                            const levelHref = `/${currentLang}/grammar?level=${level.code}`;
+                            const levelActive = pathname === `/${currentLang}/grammar`;
+                            return (
+                              <Link key={level.code} href={levelHref} onClick={() => setMobileOpen(false)}
+                                className="flex flex-col items-center gap-0.5 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
+                                style={{ background: 'var(--bg-muted)', color: 'var(--text-primary)' }}>
+                                <span>{level.label}</span>
+                                <span className="font-normal text-[10px] opacity-70">{level.desc}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (isAlphabetLink) {
+                    const alphabetBase = `/${currentLang}/alphabet`;
+                    const ALPHABET_SUBMENU = currentLang === 'zh'
+                      ? [{ href: alphabetBase,                         label: 'Pinyin',   sub: '拼音',   color: '#DC2626', bg: '#FEE2E2' }]
+                      : [
+                          { href: `${alphabetBase}?script=hiragana`,  label: 'Hiragana', sub: 'ひらがな', color: '#15803D', bg: '#DCFCE7' },
+                          { href: `${alphabetBase}?script=katakana`,  label: 'Katakana', sub: 'カタカナ', color: '#1D4ED8', bg: '#DBEAFE' },
+                        ];
+                    return (
+                      <div key={link.href} className="col-span-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] mb-2 px-0.5" style={{ color: 'var(--text-muted)' }}>Bảng chữ cái</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {ALPHABET_SUBMENU.map(item => (
+                            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
+                              className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-bold transition-all text-center"
+                              style={{ background: item.bg, color: item.color }}>
+                              <span className="text-base" style={{ fontFamily: '"Noto Sans JP", "Noto Sans SC", sans-serif' }}>{item.sub}</span>
+                              <span>{item.label}</span>
+                            </Link>
+                          ))}
                         </div>
                       </div>
                     );

@@ -547,7 +547,7 @@ html[data-appearance="dark"] .border-gray-400 {
 .lp-hero-inner { display: flex; align-items: center; gap: 48px; position: relative; }
 .lp-hero-left { flex: 1; min-width: 0; }
 .lp-hero-right { flex-shrink: 0; width: 320px; position: relative; display: none; }
-@media (min-width: 900px) { .lp-hero-right { display: block; } }
+@media (min-width: 768px) { .lp-hero-right { display: block; } }
 
 .lp-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -714,3 +714,98 @@ html[data-appearance="dark"] .border-gray-400 {
 .lp-cta-btn-reg:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.26); }
 .lp-cta-btn-try { display: inline-flex; align-items: center; gap: 8px; color: rgba(255,255,255,.8); font-weight: 600; font-size: 15px; padding: 15px 28px; border-radius: 14px; border: 1.5px solid rgba(255,255,255,.28); background: rgba(255,255,255,.05); transition: all .2s; }
 .lp-cta-btn-try:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.5); color: #fff; }
+
+.lp-skills-section { background: #F8F9FF; }
+.lp-float-label { font-size: 12px; font-weight: 800; color: #0F0D1A; }
+.lp-float-sub   { font-size: 10px; color: #6B7280; }
+
+.lp-testimonials-section { background: #F8F9FF; }
+.lp-testimonial-card {
+  background: #fff; border: 1.5px solid #E5E7EB; border-radius: 20px;
+  padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,.04);
+  display: flex; flex-direction: column; gap: 14px; transition: all .25s;
+}
+.lp-testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.08); border-color: #DDD6FE; }
+.lp-testimonial-stars { display: flex; gap: 3px; }
+.lp-testimonial-text { font-size: 14px; color: #374151; line-height: 1.7; flex: 1; font-style: italic; }
+.lp-testimonial-author { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.lp-testimonial-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.lp-testimonial-name  { font-size: 14px; font-weight: 700; color: #0F0D1A; }
+.lp-testimonial-level { font-size: 12px; font-weight: 600; }
+
+/* ── Landing Page — Dark Mode ─────────────────────────────────────────────── */
+html[data-appearance="dark"] .lp-root {
+  background: #0D1117;
+}
+html[data-appearance="dark"] .lp-hero {
+  background: linear-gradient(-45deg, #0f1320 0%, #130d1f 30%, #0a1510 60%, #0d1220 100%);
+}
+html[data-appearance="dark"] .lp-badge {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.1);
+  color: #D1D5DB;
+}
+html[data-appearance="dark"] .lp-h1 { color: #F9FAFB; }
+html[data-appearance="dark"] .lp-subhead { color: #9CA3AF; }
+html[data-appearance="dark"] .lp-btn-outline {
+  color: #D1D5DB;
+  border-color: rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+}
+html[data-appearance="dark"] .lp-btn-outline:hover {
+  background: rgba(255,255,255,.1);
+  border-color: #7C3AED;
+  color: #A78BFA;
+}
+html[data-appearance="dark"] .lp-trust-item { color: #9CA3AF; }
+html[data-appearance="dark"] .lp-vocab-vn {
+  color: #D1D5DB;
+  background: rgba(255,255,255,.1);
+}
+html[data-appearance="dark"] .lp-float-badge {
+  background: #1C2030;
+  border-color: rgba(255,255,255,.1);
+}
+html[data-appearance="dark"] .lp-section-tag {
+  background: rgba(124,58,237,.15);
+  border-color: rgba(124,58,237,.3);
+  color: #A78BFA;
+}
+html[data-appearance="dark"] .lp-section-title { color: #F9FAFB; }
+html[data-appearance="dark"] .lp-section-sub { color: #9CA3AF; }
+html[data-appearance="dark"] .lp-level-card {
+  background: #161B26;
+  border-color: rgba(255,255,255,.08);
+}
+html[data-appearance="dark"] .lp-level-body {
+  background: #161B26;
+}
+html[data-appearance="dark"] .lp-level-name { color: #F3F4F6; }
+html[data-appearance="dark"] .lp-level-arrow {
+  background: rgba(255,255,255,.08);
+  color: #6B7280;
+}
+html[data-appearance="dark"] .lp-skill-card {
+  background: #161B26;
+  border-color: rgba(255,255,255,.08);
+}
+html[data-appearance="dark"] .lp-skill-name { color: #F9FAFB; }
+html[data-appearance="dark"] .lp-skill-desc { color: #9CA3AF; }
+html[data-appearance="dark"] .lp-step-card {
+  background: #161B26;
+  border-color: rgba(255,255,255,.08);
+}
+html[data-appearance="dark"] .lp-step-title { color: #F9FAFB; }
+html[data-appearance="dark"] .lp-step-desc { color: #9CA3AF; }
+html[data-appearance="dark"] .lp-skills-section      { background: #111622; }
+html[data-appearance="dark"] .lp-testimonials-section { background: #0D1117; }
+html[data-appearance="dark"] .lp-testimonial-card     { background: #161B26; border-color: rgba(255,255,255,.08); }
+html[data-appearance="dark"] .lp-testimonial-card:hover { border-color: rgba(124,58,237,.4); }
+html[data-appearance="dark"] .lp-testimonial-text     { color: #D1D5DB; }
+html[data-appearance="dark"] .lp-testimonial-name     { color: #F9FAFB; }
+html[data-appearance="dark"] .lp-float-label { color: #F3F4F6; }
+html[data-appearance="dark"] .lp-float-sub   { color: #9CA3AF; }

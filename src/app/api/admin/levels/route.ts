@@ -21,10 +21,11 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (adminOnly(session)) return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
-  const { code, name, description, order } = await req.json();
+  const { code, name, description, order, subject } = await req.json();
   if (!code || !name) return NextResponse.json({ message: 'Thiếu thông tin.' }, { status: 400 });
   const existing = await prisma.level.findUnique({ where: { code } });
   if (existing) return NextResponse.json({ message: 'Cấp độ đã tồn tại.' }, { status: 409 });
-  const level = await prisma.level.create({ data: { code, name, description, order: order ?? 0 } });
+  const subjectVal = subject && ['JLPT', 'HSK', 'PMP'].includes(subject) ? subject : 'JLPT';
+  const level = await prisma.level.create({ data: { code, name, description, order: order ?? 0, subject: subjectVal as Subject } });
   return NextResponse.json(level, { status: 201 });
 }
