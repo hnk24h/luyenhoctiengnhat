@@ -572,12 +572,8 @@ async function seedLevel(
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
+export async function seeder08() {
   console.log('🌸 Seeding Minna no Nihongo N4 (Bài 26~50) — Full data...');
   await seedLevel('N4', MINNA_N4, 'Minna no Nihongo II');
   console.log('🎉 Done!');
 }
-
-main()
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());

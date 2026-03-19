@@ -13,14 +13,14 @@ type NavLink = { href: string; label: string; icon: IconType; authRequired?: boo
 // ── ISO-coded nav links ─────────────────────────────────────────────────────
 
 const JLPT_NAV_LINKS: NavLink[] = [
+  { href: '/ja/vocab',     label: 'Từ vựng',      icon: FaBookmark },
   { href: '/ja/learn',     label: 'Cấp độ',       icon: FaBookOpen },
   { href: '/ja/levels',    label: 'Luyện thi',    icon: FaPencil },
   { href: '/ja/listening', label: 'Luyện nghe',   icon: FaHeadphones },
-  { href: '/ja/vocab',     label: 'Từ vựng',      icon: FaBookmark },
   { href: '/ja/grammar',   label: 'Ngữ pháp',     icon: FaCompass },
-  { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
+  { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup },
   { href: '/ja/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
-  { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar,   authRequired: true },
+  { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar },
 ];
 
 const CHINESE_NAV_LINKS: NavLink[] = [
@@ -29,7 +29,7 @@ const CHINESE_NAV_LINKS: NavLink[] = [
   { href: '/zh/levels',    label: 'Luyện thi',  icon: FaPencil },
   { href: '/zh/listening', label: 'Luyện nghe', icon: FaHeadphones },
   { href: '/zh/vocab',     label: 'Từ vựng',    icon: FaBookmark },
-  { href: '/zh/practice',  label: 'Flashcard',  icon: FaLayerGroup, authRequired: true },
+  { href: '/zh/practice',  label: 'Flashcard',  icon: FaLayerGroup },
   { href: '/zh/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
   { href: '/zh/grammar',   label: 'Ngữ pháp',     icon: FaCompass },
 ];
@@ -117,10 +117,10 @@ export function Navbar() {
   const primaryLinks = useMemo(() => {
     if (currentLang === 'en') return visibleLinks;
     const primaryHrefs = new Set([
+      `/${currentLang}/vocab`,
       `/${currentLang}/learn`,
       `/${currentLang}/levels`,
       `/${currentLang}/listening`,
-      `/${currentLang}/vocab`,
       `/${currentLang}/grammar`,
     ]);
     return visibleLinks.filter(l => primaryHrefs.has(l.href));
@@ -171,8 +171,8 @@ export function Navbar() {
           boxShadow: '0 4px 28px -4px color-mix(in srgb, var(--primary) 14%, transparent)',
         }}
         className="sticky top-0 z-50 backdrop-blur-xl">
-        <div className="mx-auto px-4 sm:px-6 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
-          <div className="flex h-14 items-center gap-3">
+        <div className="mx-auto px-6 sm:px-10 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
+          <div className="flex h-14 items-center gap-6">
 
             {/* ── Logo + language switcher ── */}
             <div className="flex items-center gap-1 shrink-0">
@@ -217,7 +217,7 @@ export function Navbar() {
             </div>
 
             {/* ── Desktop navigation ── */}
-            <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
+            <nav className="hidden md:flex items-center gap-2 flex-1 justify-center">
               {primaryLinks.map(link => {
                 const active = isActive(link.href);
                 const isLearnLink     = link.href === `/${currentLang}/learn`;
@@ -244,7 +244,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('vocab')}
                         aria-expanded={vocabOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={vocabOpen || vocabActive ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Từ vựng</span>
@@ -283,7 +283,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('listening')}
                         aria-expanded={listeningOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={listeningOpen || listeningActive ? activeStyle : inactiveStyle}>
                         <FaHeadphones size={13} />
                         <span>Luyện nghe</span>
@@ -320,7 +320,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('exam')}
                         aria-expanded={examOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={examOpen || pathname.startsWith(`/${currentLang}/levels`) ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Luyện thi</span>
@@ -364,7 +364,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('grammar')}
                         aria-expanded={grammarOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={grammarOpen || pathname.startsWith(`/${currentLang}/grammar`) ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Ngữ pháp</span>
@@ -413,7 +413,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('alphabet')}
                         aria-expanded={alphabetOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={alphabetOpen || alphabetActive ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Bảng chữ cái</span>
@@ -450,7 +450,7 @@ export function Navbar() {
                         onClick={() => toggleMenu('learn')}
                         aria-expanded={learnOpen}
                         aria-haspopup="true"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
                         style={learnOpen || pathname.startsWith(`/${currentLang}/learn/`) ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>{link.label}</span>
@@ -508,7 +508,7 @@ export function Navbar() {
                       ? { color: 'var(--text-primary)', fontWeight: 600 }
                       : { color: 'var(--text-secondary)' }}>
                     <FaCompass size={13} />
-                    <span>Thêm</span>
+                    <span>Khám phá</span>
                     <FaChevronDown size={9} style={{ transform: exploreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
                   </button>
                   {exploreOpen && (

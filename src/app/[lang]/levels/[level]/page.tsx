@@ -10,6 +10,21 @@ import LevelPostsSection, { type LevelPostData } from '@/components/LevelPostsSe
 
 interface Props { params: { lang: string; level: string } }
 
+// Tối ưu type cho examSets props
+interface ExamSet {
+  id: string;
+  title: string;
+  description: string;
+  skill: string;
+  timeLimit: number;
+  questionCount: number;
+  progress: {
+    bestScore: number | null;
+    attempts: number;
+    completed: boolean;
+  } | null;
+}
+
 // ─── Level visual meta ────────────────────────────────────────────────────────
 
 const LEVEL_META: Record<string, { heroGrad: string; accent: string; desc: string }> = {
@@ -36,7 +51,6 @@ const SKILL_INFO: Record<string, { label: string; icon: string; color: string; b
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-
 const getCachedLevel = unstable_cache(
   (code: string) =>
     prisma.level.findUnique({
@@ -277,69 +291,3 @@ export default async function LevelTopPage({ params }: Props) {
     </div>
   );
 }
-
-
-interface Props { params: { lang: string; level: string } }
-
-const getCachedLevel = unstable_cache(
-  (code: string) =>
-    prisma.level.findUnique({
-      where: { code: code.toUpperCase() },
-      include: {
-        examSets: {
-          include: { _count: { select: { questions: true } } },
-          orderBy: [{ skill: 'asc' }, { createdAt: 'asc' }],
-        },
-      },
-    }),
-  ['level-exam-structure'],
-  { revalidate: 3600, tags: ['level-exam-structure'] },
-);
-
-export default async function LevelDetailPage({ params }: Props) {
-  const session = await getServerSession(authOptions);
-  const userId = (session?.user as { id?: string } | undefined)?.id;
-
-  // ✅ Structural data from cache — fast, shared across all users
-  const level = await getCachedLevel(params.level);
-  if (!level) notFound();
-
-  // Fetch user progress separately if authenticated
-  const progressMap: Record<string, { bestScore: number | null; attempts: number; completed: boolean }> = {};
-  if (userId) {
-    const progressRows = await prisma.userProgress.findMany({
-      where: {
-        userId,
-        examSetId: { in: level.examSets.map(s => s.id) },
-      },
-      select: { examSetId: true, bestScore: true, attempts: true, completed: true },
-    });
-    for (const row of progressRows) {
-      progressMap[row.examSetId] = {
-        bestScore: row.bestScore,
-        attempts: row.attempts,
-        completed: row.completed,
-      };
-    }
-  }
-
-  const examSets = level.examSets.map(s => ({
-    id: s.id,
-    title: s.title,
-    description: s.description,
-    skill: s.skill,
-    timeLimit: s.timeLimit,
-    questionCount: s._count.questions,
-    progress: progressMap[s.id] ?? null,
-  }));
-
-  return (
-    <LevelDetailClient
-      lang={params.lang}
-      level={{ code: level.code, name: level.name, description: level.description }}
-      examSets={examSets}
-      isLoggedIn={Boolean(userId)}
-    />
-  );
-}
-

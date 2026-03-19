@@ -463,7 +463,7 @@ const VOCAB: Record<string, [string, string, string][]> = {
 };
 
 // ─── Main ────────────────────────────────────────────────────
-async function main() {
+export async function seeder06() {
   console.log('🌱 Seeding HSK module...\n');
 
   // 1. Upsert Levels
@@ -531,7 +531,3 @@ async function main() {
   const itemCount = await prisma.content.count();
   console.log(`✅ Total Content rows: ${itemCount}`);
 }
-
-main()
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());

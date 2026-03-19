@@ -7,7 +7,7 @@
   /* ── Layout ────────────────────────────────────────── */
   /* Narrower than 1280px to leave ~80-200px per side for future ad banners.
      160px skyscraper fits at 1440px+; 300px display fits at 1700px+. */
-  --page-max-w: 1100px;
+  --page-max-w: 1440px;
 
   --bg-base:    #F7F6F2;
   --bg-surface: #FFFFFF;

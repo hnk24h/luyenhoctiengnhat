@@ -141,7 +141,7 @@ const VOCAB: Record<string, WordRow[]> = {
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
+export async function seeder07() {
   console.log('🌱 Seeding JLPT reference vocabulary...\n');
 
   for (const levelCode of ['N5', 'N4', 'N3', 'N2', 'N1']) {
@@ -238,5 +238,3 @@ async function main() {
   });
   console.log(`\n✅ Done! Total JLPT reference vocab items: ${total}`);
 }
-
-main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

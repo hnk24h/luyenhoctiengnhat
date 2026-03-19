@@ -258,7 +258,7 @@ export default function LearnLevelClient({
                     const isDone     = isLessonCompleted(lesson.id);
                     const requiredTier = lesson.requiredTier || 'free';
                     const locked = tierRank(userTier) < tierRank(requiredTier);
-                    const ref = isSelected ? (el => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }) : undefined;
+                    const ref = isSelected ? (el: HTMLButtonElement | null) => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } : undefined;
                     return (
                       <button
                         key={lesson.id}

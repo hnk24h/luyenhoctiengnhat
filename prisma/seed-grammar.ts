@@ -109,13 +109,8 @@ const patterns: Array<{
   { lang: 'zh', levelCode: 'HSK6', order: 4, searchIn: '诚然', pattern: '诚然 (chéngrán)',           meaning: 'Đành rằng ~ / đúng là ~ nhưng',  example: '诚然，这很难，但值得尝试。',  exampleVi: 'Đành rằng điều này khó, nhưng đáng để thử.' },
 ];
 
-async function main() {
+export async function seeder03() {
   await prisma.grammarPattern.deleteMany();
   await prisma.grammarPattern.createMany({ data: patterns });
   console.log(`Seeded ${patterns.length} grammar patterns`);
 }
-
-main()
-  .then(() => process.exit(0))
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());

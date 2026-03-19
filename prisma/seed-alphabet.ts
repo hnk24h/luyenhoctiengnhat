@@ -528,7 +528,7 @@ async function seedAlphabetCategory(
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
+export async function seeder01() {
   console.log('\n🔤 Seeding bảng chữ cái tiếng Nhật — Hiragana (N5)...');
   await seedAlphabetCategory(
     'N5', 'ja',
@@ -561,8 +561,3 @@ async function main() {
     PINYIN,
   );
 }
-
-main()
-  .then(() => { console.log('\n🎉 Bảng chữ cái seeded thành công!'); process.exit(0); })
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());

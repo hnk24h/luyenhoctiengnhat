@@ -12,7 +12,7 @@ import { CHINESE_LISTENING_PRACTICES } from '../src/modules/chineseListeningCont
 
 const prisma = new PrismaClient();
 
-async function main() {
+export async function seeder02() {
   console.log('Seeding Chinese listening practices...\n');
 
   // Load HSK levels
@@ -93,5 +93,3 @@ async function main() {
 
   console.log('\nDone!');
 }
-
-main().catch(console.error).finally(() => prisma.$disconnect());

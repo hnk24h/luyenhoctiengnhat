@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -84,7 +85,7 @@ function SkillBadge({ skill }: { skill: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AdminLearningPage() {
+function AdminLearningPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -203,20 +204,33 @@ export default function AdminLearningPage() {
     setSaving(true); setModalErr('');
     const level = levels.find(l => l.code === catForm.levelCode);
     if (!level) { setModalErr('Không tìm thấy level'); setSaving(false); return; }
+    // Chỉ cho phép giá trị skill đúng enum
+    const allowedSkills = ['doc', 'nghe', 'vocab', 'grammar', 'viet', 'noi'];
+    const skill = allowedSkills.includes(catForm.skill) ? catForm.skill : 'vocab';
     try {
       let res: Response;
       if (modal === 'cat-create') {
         res = await fetch('/api/learning/categories', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...catForm, levelId: level.id }),
+          body: JSON.stringify({ ...catForm, skill, levelId: level.id }),
         });
       } else {
         res = await fetch(`/api/learning/categories/${editId}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(catForm),
+          body: JSON.stringify({ ...catForm, skill }),
         });
       }
-      if (!res.ok) { const e = await res.json(); setModalErr(e.error ?? 'Lỗi'); setSaving(false); return; }
+      if (!res.ok) {
+        let e = {};
+        try {
+          if (res.headers.get('content-type')?.includes('application/json')) {
+            e = await res.json();
+          }
+        } catch {}
+        setModalErr(typeof e === 'object' && e && 'error' in e && typeof (e as any).error === 'string' ? (e as any).error : 'Lỗi');
+        setSaving(false);
+        return;
+      }
       setModal(null);
       loadCategories();
     } finally { setSaving(false); }
@@ -975,5 +989,13 @@ export default function AdminLearningPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminLearningPage />
+    </Suspense>
   );
 }

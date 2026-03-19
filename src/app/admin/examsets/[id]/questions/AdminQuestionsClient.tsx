@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   FaLightbulb, FaPlus, FaFloppyDisk,
   FaTrash, FaPen, FaCheck, FaCircleCheck,
+  FaHeadphones, FaImage,
 } from 'react-icons/fa6';
 import { MediaUploadField } from '@/components/MediaUploadField';
 

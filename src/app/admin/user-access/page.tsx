@@ -1,10 +1,26 @@
 "use client";
 import { useState, useEffect } from 'react';
 
+type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+type Lesson = {
+  id: string;
+  title: string;
+};
+
+type Access = {
+  lesson: Lesson;
+  note?: string;
+};
+
 export default function AdminUserLessonAccess() {
-  const [users, setUsers] = useState([]);
-  const [lessons, setLessons] = useState([]);
-  const [accesses, setAccesses] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [accesses, setAccesses] = useState<Access[]>([]);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedLesson, setSelectedLesson] = useState('');
   const [note, setNote] = useState('');
@@ -13,7 +29,7 @@ export default function AdminUserLessonAccess() {
   useEffect(() => {
     fetch('/api/admin/users/all').then(r => r.json()).then(data => {
       if (Array.isArray(data)) {
-        setUsers(data);
+        setUsers(data as User[]);
       } else {
         alert('Bạn không có quyền admin để truy cập trang này!');
       }
@@ -42,7 +58,7 @@ export default function AdminUserLessonAccess() {
     fetch(`/api/learning/user-access?userId=${selectedUser}`).then(r => r.json()).then(setAccesses);
   };
 
-  const revokeAccess = async (lessonId) => {
+  const revokeAccess = async (lessonId: string) => {
     await fetch(`/api/learning/user-access?userId=${selectedUser}&lessonId=${lessonId}`, { method: 'DELETE' });
     fetch(`/api/learning/user-access?userId=${selectedUser}`).then(r => r.json()).then(setAccesses);
   };
@@ -81,3 +97,5 @@ export default function AdminUserLessonAccess() {
     </div>
   );
 }
+
+

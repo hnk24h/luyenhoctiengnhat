@@ -233,12 +233,13 @@ export default function AdminDashboardClient({ global, languages }: Props) {
         {/* ── System tools ─────────────────────────────────────────── */}
         <section>
           <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={S.textMuted}>Công cụ hệ thống</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { href: '/admin/seed',   icon: <FaSeedling size={16}/>,  label: 'Seed dữ liệu', desc: 'Khởi tạo dữ liệu mẫu',   iconBg: 'rgba(161,98,7,.15)',    iconColor: '#d97706' },
               { href: '/admin/users',  icon: <FaUsers size={16}/>,     label: 'Người dùng',   desc: 'Quản lý tài khoản',       iconBg: 'rgba(124,58,237,.15)',  iconColor: '#7c3aed' },
               { href: '/admin/theme',  icon: <FaPalette size={16}/>,   label: 'Theme',         desc: 'Giao diện & màu sắc',     iconBg: 'rgba(219,39,119,.15)',  iconColor: '#db2777' },
               { href: '/admin/import', icon: <FaUpload size={16}/>,    label: 'Import JSON',   desc: 'Nhập dữ liệu hàng loạt', iconBg: 'rgba(67,56,202,.15)',   iconColor: '#4338ca' },
+              { href: '/admin/normalize', icon: <FaBookOpen size={16}/>, label: 'Chuẩn hóa data', desc: 'Chuẩn hóa txt/csv flashcard', iconBg: 'rgba(37,99,235,.10)', iconColor: '#2563eb' },
             ].map(t => (
               <Link key={t.href} href={t.href}
                 className="group flex items-center gap-3 p-4 rounded-xl transition-all duration-150 hover:-translate-y-0.5"

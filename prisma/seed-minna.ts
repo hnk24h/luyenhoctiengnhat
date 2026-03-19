@@ -525,7 +525,7 @@ async function seedLevel(
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-async function main() {
+export async function seeder08() {
   console.log('🌸 Seeding Minna no Nihongo N5 (Bài 1~25)...');
   await seedLevel('N5', MINNA_N5, 'Minna no Nihongo I');
 
@@ -540,8 +540,3 @@ async function main() {
   console.log('🌸 Seeding Minna no Nihongo N4 (Bài 26~50)...');
   await seedLevel('N4', MINNA_N4, 'Minna no Nihongo II');
 }
-
-main()
-  .then(() => { console.log('🎉 Done!'); process.exit(0); })
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());

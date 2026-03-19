@@ -370,7 +370,7 @@ AIと共存する社会を築くためには、技術の発展を妨げること
 //  MAIN
 // ─────────────────────────────────────────────────────────────
 
-async function main() {
+export async function seeder09() {
   console.log('🌱  Seeding reading passages...\n');
 
   let created = 0;
@@ -421,7 +421,3 @@ async function main() {
     console.log(`     ${c.level}  ${c.type.padEnd(6)}  ${c._count} bài`);
   }
 }
-
-main()
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());
