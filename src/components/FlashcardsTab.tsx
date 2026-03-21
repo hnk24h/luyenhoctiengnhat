@@ -1,0 +1,200 @@
+import React, { useState } from 'react';
+import { VocabRefItem } from './../app/[lang]/vocab/page';
+import { FaVolumeHigh } from 'react-icons/fa6';
+
+interface FlashcardsTabProps {
+  items: VocabRefItem[];
+  color: string;
+  font: string;
+}
+
+export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font }) => {
+  const [index, setIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [known, setKnown] = useState<Set<string>>(new Set());
+  const [unknown, setUnknown] = useState<Set<string>>(new Set());
+  const [finished, setFinished] = useState(false);
+  const [displayMode, setDisplayMode] = useState<'flashcard' | 'grid'>('flashcard');
+
+  const total = items.length;
+  const current = items[index];
+
+  // Ref for grid container and item
+  const gridContainerRef = React.useRef<HTMLDivElement>(null);
+  const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+
+  // Scroll to current item when index changes
+  React.useEffect(() => {
+    if (itemRefs.current[index] && gridContainerRef.current) {
+      itemRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [index]);
+
+  function next() {
+    if (index + 1 >= total) { setFinished(true); return; }
+    setIndex(i => i + 1); setFlipped(false);
+  }
+  function prev() {
+    if (index > 0) { setIndex(i => i - 1); setFlipped(false); }
+  }
+  function markKnown() {
+    setKnown(s => new Set([...s, current.id]));
+    next();
+  }
+  function markUnknown() {
+    setUnknown(s => new Set([...s, current.id]));
+    next();
+  }
+  function restart() {
+    setIndex(0); setFlipped(false); setKnown(new Set()); setUnknown(new Set()); setFinished(false);
+  }
+
+  if (total === 0) return <div className="text-center py-20" style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu từ vựng.</div>;
+  if (finished) return (
+    <div className="card rounded-3xl p-8 text-center">
+      <div className="text-4xl mb-4">🎉</div>
+      <h2 className="text-2xl font-extrabold mb-2" style={{ color: 'var(--text-base)' }}>Hoàn thành!</h2>
+      <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+        Bạn đã ôn tập {total} từ vựng
+      </p>
+      <div className="flex gap-6 justify-center mb-6">
+        <div className="text-center">
+          <div className="text-3xl font-extrabold" style={{ color: '#48BB78' }}>{known.size}</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Đã thuộc</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-extrabold" style={{ color: '#F56565' }}>{unknown.size}</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Cần ôn thêm</div>
+        </div>
+      </div>
+      <button onClick={restart}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white"
+        style={{ background: color }}>
+        Làm lại
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Progress bar */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+          <div className="h-2 rounded-full transition-all"
+            style={{ width: `${(index / total) * 100}%`, background: color }} />
+        </div>
+        <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-muted)' }}>
+          {index + 1} / {total}
+        </span>
+      </div>
+      {/* Stats badges */}
+      <div className="flex gap-4 mb-2">
+        <span className="text-xs px-2 py-1 rounded-xl font-bold"
+          style={{ background: '#48BB7820', color: '#48BB78' }}>{known.size} đã thuộc</span>
+        <span className="text-xs px-2 py-1 rounded-xl font-bold"
+          style={{ background: '#F5656520', color: '#F56565' }}>{unknown.size} cần ôn</span>
+      </div>
+      {/* Flip card */}
+      <button onClick={() => setFlipped(f => !f)}
+        className="w-full rounded-3xl border p-10 text-center transition-all hover:shadow-lg cursor-pointer"
+        style={{ background: flipped ? `${color}12` : 'var(--bg-surface)', borderColor: flipped ? color : 'var(--border)', minHeight: '220px' }}>
+        {!flipped ? (
+          <div className="flex flex-col items-center justify-center gap-2">
+            <span className="text-5xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: font }}>{current.term}</span>
+            {current.pronunciation && (
+              <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+            )}
+            <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2">
+            <span className="text-2xl font-bold" style={{ color }}>{current.meanings?.[0]?.meaning ?? ''}</span>
+            <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)', fontFamily: font }}>{current.term}</span>
+            {current.pronunciation && (
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+            )}
+          </div>
+        )}
+      </button>
+      {/* Action buttons */}
+      {flipped ? (
+        <div className="flex gap-3 mt-4">
+          <button onClick={markUnknown}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
+            style={{ borderColor: '#F56565', color: '#F56565' }}>
+            Chưa thuộc
+          </button>
+          <button onClick={markKnown}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+            style={{ background: '#48BB78' }}>
+            Đã thuộc
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-3 mt-2">
+          <button onClick={prev} disabled={index === 0}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border transition-all"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', opacity: index === 0 ? 0.4 : 1 }}>
+            Trước
+          </button>
+          <button onClick={next}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+            style={{ background: color }}>
+            Tiếp
+          </button>
+        </div>
+      )}
+
+      {/* Divider between flashcard and grid */}
+      <div className="my-8 border-t border-dashed border-gray-300" />
+
+      {/* Grid list of vocab with scroll and clear separation */}
+      <h3 className="font-bold text-lg mb-3 text-blue-700 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 inline-block shadow-sm">Danh sách từ vựng</h3>
+    <div
+        className="max-h-80 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 bg-gray-50 border border-gray-300 rounded-2xl p-4 shadow-md"
+        ref={gridContainerRef}
+    >
+        {items.map((item, idx) => (
+        <div
+            key={item.id}
+            ref={el => itemRefs.current[idx] = el}
+            className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
+            style={{ borderColor: idx === index ? '#3B82F6' : 'var(--border)' }}
+        >
+            <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold text-base truncate" style={{ color: 'var(--primary)', fontFamily: font }}>{idx + 1}. {item.term}</span>
+            <button
+                className="p-1 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-label="Phát âm"
+                onClick={() => {
+                const utter = new window.SpeechSynthesisUtterance(item.term);
+                utter.lang = 'ja-JP';
+                window.speechSynthesis.speak(utter);
+                }}>
+                <FaVolumeHigh size={16} style={{ color: 'var(--primary)' }} />
+            </button>
+            {item.pronunciation && <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>}
+            <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
+            </div>
+            {item.examples && item.examples[0] && (
+            <div className="text-xs mt-1 italic truncate" style={{ color: 'var(--text-secondary)' }}>
+                {(() => {
+                const parts = item.examples[0].exampleText.split(item.term);
+                if (parts.length > 1) {
+                    return <>{parts[0]}<span style={{ color: 'var(--primary)', fontWeight: 600 }}>{item.term}</span>{parts[1]}</>;
+                }
+                return item.examples[0].exampleText;
+                })()}
+                {item.examples[0].translation && (
+                <span className="ml-1 font-semibold text-blue-700" style={{ color: 'var(--primary)' }}>
+                    {item.examples[0].translation}
+                </span>
+                )}
+            </div>
+            )}
+        </div>
+        ))}
+    </div>
+    </div>
+  );
+};

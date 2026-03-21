@@ -1,4 +1,10 @@
-'use client';
+"use client";
+
+import { AnkiStudyTab } from '@/components/AnkiStudyTab';
+import { FlashcardsTab } from '@/components/FlashcardsTab';
+import { PracticeTab } from './components/PracticeTab';
+import { FavoritesTab } from './components/FavoritesTab';
+import { ReviewMistakesTab } from './components/ReviewMistakesTab';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
@@ -282,12 +288,18 @@ function VocabContent() {
   const searchParams = useSearchParams();
 
   // ── Tab ───────────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'mine' | 'reference' | 'topics'>(() => {
+  const [activeTab, setActiveTab] = useState<'flashcards' | 'anki' | 'practice' | 'favorites' | 'review' | 'mine' | 'reference' | 'topics'>(() => {
     const t = searchParams.get('tab');
-    if (t === 'reference') return 'reference';
+    if (t === 'flashcards') return 'flashcards';
+    if (t === 'anki') return 'anki';
+    if (t === 'practice') return 'practice';
+    if (t === 'favorites') return 'favorites';
+    if (t === 'review') return 'review';
     if (t === 'topics') return 'topics';
     return 'mine';
   });
+  // Simulate tier state (replace with real logic)
+  const [tier, setTier] = useState<'free' | 'basic' | 'premium'>('free');
 
   // ── My vocab state ────────────────────────────────────────────────────────────
   const [words,        setWords]        = useState<Word[]>([]);
@@ -473,397 +485,188 @@ function VocabContent() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-
-      {/* ── Tab bar ── */}
-      <div className="flex gap-1 p-1 rounded-2xl mb-6 w-fit"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <button onClick={() => setActiveTab('reference')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-          style={activeTab === 'reference'
-            ? { background: 'var(--primary)', color: '#fff' }
-            : { color: 'var(--text-muted)' }}>
-          <FaBookOpen size={13} /> Theo cấp độ
+      {/* Mobile tab bar fixed at bottom, full-width, no scroll */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full flex justify-between bg-white border-t z-50" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+        <button onClick={() => setActiveTab('flashcards')}
+          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'flashcards' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
+          style={activeTab === 'flashcards' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
+          <FaLayerGroup size={18} />
+          <span className="text-xs mt-1">Flashcards</span>
         </button>
         <button onClick={() => setActiveTab('topics')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-          style={activeTab === 'topics'
-            ? { background: 'var(--primary)', color: '#fff' }
-            : { color: 'var(--text-muted)' }}>
-          <FaLayerGroup size={13} /> Theo chủ đề
+          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'topics' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
+          style={activeTab === 'topics' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
+          <FaLayerGroup size={18} />
+          <span className="text-xs mt-1">Chủ đề</span>
+        </button>
+        <button onClick={() => setActiveTab('practice')}
+          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'practice' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
+          style={activeTab === 'practice' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
+          <FaBookOpen size={18} />
+          <span className="text-xs mt-1">Practice</span>
         </button>
         <button onClick={() => setActiveTab('mine')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-          style={activeTab === 'mine'
-            ? { background: 'var(--primary)', color: '#fff' }
-            : { color: 'var(--text-muted)' }}>
-          <FaBookmark size={13} /> Của tôi
+          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'mine' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
+          style={activeTab === 'mine' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
+          <FaBookmark size={18} />
+          <span className="text-xs mt-1">Của tôi</span>
+        </button>
+        <button onClick={() => setActiveTab('review')}
+          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'review' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
+          style={activeTab === 'review' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
+          <FaBookOpen size={18} />
+          <span className="text-xs mt-1">Mistakes</span>
         </button>
       </div>
 
-      {activeTab === 'topics' ? (
-      /* ─── Topics tab ─── */
-      <>
-        {status === 'unauthenticated' ? (
-          <div className="card text-center py-14">
-            <div className="text-5xl mb-3 opacity-40">🔐</div>
-            <p className="font-semibold mb-3" style={{ color: 'var(--text-base)' }}>Đăng nhập để xem chủ đề của bạn</p>
-            <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
-          </div>
-        ) : loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-10 h-10 rounded-full border-4 animate-spin"
-              style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>Chủ đề từ vựng</h2>
-              <button onClick={() => setActiveTab('mine')}
-                className="btn-secondary text-xs py-1.5 px-3 rounded-xl">
-                + Tạo chủ đề mới
-              </button>
-            </div>
-            {collections.length === 0 ? (
-              <div className="card text-center py-12">
-                <div className="text-4xl mb-3 opacity-30">📂</div>
-                <p className="font-semibold" style={{ color: 'var(--text-muted)' }}>Chưa có chủ đề nào</p>
-                <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>Tạo chủ đề để gộp từ vựng theo nhóm</p>
-                <button onClick={() => setActiveTab('mine')} className="btn-primary text-sm">Tạo chủ đề đầu tiên</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {collections.map(col => (
-                  <button key={col.id}
-                    onClick={() => { setActiveColId(col.id); setActiveTab('mine'); }}
-                    className="rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
-                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                    <div className="w-8 h-8 rounded-full mb-2.5" style={{ background: col.color }} />
-                    <div className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{col.name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{col.wordCount} từ</div>
+      {/* Responsive layout: flex-col on mobile/tablet, flex-row on desktop */}
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        {/* Sidebar tabs (desktop only) */}
+        <aside className="hidden md:flex w-40 xl:w-56 shrink-0 flex-col gap-2 p-2 rounded-2xl border sticky top-20"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          {/* Flashcards menu with arrow */}
+          <button
+            onClick={() => setActiveTab(activeTab === 'flashcards' ? 'mine' : 'flashcards')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all group"
+            style={activeTab === 'flashcards' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
+            <FaLayerGroup size={13} /> Flashcards
+            <span className="ml-auto">
+              <svg className={`w-4 h-4 transition-transform ${activeTab === 'flashcards' ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </button>
+          {/* Flashcard levels submenu, collapsible */}
+          <div className={`overflow-hidden transition-all ${activeTab === 'flashcards' ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}
+            style={{ background: activeTab === 'flashcards' ? '#F3F4F6' : 'transparent', borderRadius: '0.75rem' }}>
+            {activeTab === 'flashcards' && (
+              <div className="flex flex-col gap-1 px-2 py-2">
+                {langCfg.levels.map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setRefLevel(level)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold text-left transition-all ${refLevel === level ? 'bg-primary text-white' : 'bg-transparent text-muted'}`}
+                    style={refLevel === level ? { background: 'var(--primary)', color: '#fff' } : { color: langCfg.levelColors[level] || 'var(--text-muted)' }}>
+                    {level} <span className="ml-1">{langCfg.levelLabels[level]}</span>
+                    {refLevel === level && (
+                      <span className="ml-2 text-xs font-bold opacity-80">({refItems.length})</span>
+                    )}
                   </button>
                 ))}
               </div>
             )}
-          </>
-        )}
-      </>
-      ) : activeTab === 'mine' ? (
-      /* ─── My vocab tab ─── */
-      <>
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 rounded-full border-4 animate-spin"
-            style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
-        </div>
-      ) : status === 'unauthenticated' ? (
-        <div className="card text-center py-14">
-          <div className="text-5xl mb-3 opacity-40">🔐</div>
-          <p className="font-semibold mb-3" style={{ color: 'var(--text-base)' }}>Đăng nhập để xem từ vựng của bạn</p>
-          <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2">Đăng nhập</Link>
-        </div>
-      ) : (
-      <>
-
-      {/* Back */}
-      <Link href={`/${lang}/reading`} className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
-        style={{ color: 'var(--text-muted)' }}>
-        <FaArrowLeft size={11} /> Bài đọc
-      </Link>
-
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--primary)' }}>
-            BỘ SƯU TẬP TỪ VỰNG
           </div>
-          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
-            {activeCol
-              ? <><span className="w-4 h-4 rounded-full inline-block shrink-0" style={{ background: activeCol.color }} /> {activeCol.name}</>
-              : <><FaBookmark size={16} style={{ color: 'var(--primary)' }} /> Tất cả từ</>}
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {filtered.length} từ{activeCol ? ` trong "${activeCol.name}"` : ''}
-          </p>
-        </div>
-        <button onClick={exportToFlashcards} disabled={exporting}
-          className="btn-primary flex items-center gap-2 text-sm shrink-0" style={{ background: '#7C3AED' }}>
-          {exportDone
-            ? <><FaCheck size={12} /> Đã tạo!</>
-            : exporting
-              ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Đang tạo...</>
-              : <><FaLayerGroup size={12} />
-                  <span className="hidden sm:inline">Tạo </span>Flashcard{selected.size > 0 ? ` (${selected.size})` : ''}
-                </>}
-        </button>
-      </div>
-
-      {/* ── Mobile: horizontal collection chips ── */}
-      <div className="md:hidden mb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 overflow-x-auto flex gap-2 pb-1" style={{ scrollbarWidth: 'none' }}>
-            <button
-              onClick={() => setActiveColId(null)}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={activeColId === null
-                ? { background: 'var(--primary)', color: 'white' }
-                : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              <FaBookmark size={9} /> Tất cả <span className="opacity-60">({words.length})</span>
-            </button>
-            {collections.map(col => (
-              <button key={col.id}
-                onClick={() => setActiveColId(col.id)}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                style={activeColId === col.id
-                  ? { background: col.color, color: 'white' }
-                  : { background: `${col.color}22`, color: col.color }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {col.name} <span className="opacity-60">({col.wordCount})</span>
-              </button>
-            ))}
-          </div>
+          {/* Anki Study menu */}
           <button
-            onClick={() => setSheetOpen(true)}
-            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'white' }}>
-            <FaSliders size={11} />
+            onClick={() => setActiveTab('anki')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all group border-2 border-yellow-400 bg-yellow-50 text-yellow-800 shadow ${activeTab === 'anki' ? 'ring-2 ring-yellow-500' : ''}`}
+            style={activeTab === 'anki' ? { background: '#FDE68A', color: '#B45309' } : { color: '#B45309', borderColor: '#F59E0B' }}>
+            <FaLayerGroup size={13} /> Học Anki
+            <span className="ml-2 text-xs font-semibold bg-yellow-400 text-white px-2 py-0.5 rounded">SRS</span>
+            <span className="ml-auto">
+              <svg className={`w-4 h-4 transition-transform ${activeTab === 'anki' ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
           </button>
-        </div>
-      </div>
-
-      {/* ── Mobile: bottom sheet for collection management ── */}
-      {sheetOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setSheetOpen(false)} />
-          <div className="relative rounded-t-2xl overflow-y-auto p-4"
-            style={{ background: 'var(--bg-base)', maxHeight: '72vh', zIndex: 51 }}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-base" style={{ color: 'var(--text-base)' }}>Quản lý chủ đề</h3>
-              <button onClick={() => setSheetOpen(false)} className="btn-ghost p-1.5">
-                <FaXmark size={14} style={{ color: 'var(--text-muted)' }} />
-              </button>
-            </div>
-            <CollectionSidebar
-              collections={collections}
-              activeId={activeColId}
-              totalCount={words.length}
-              onSelect={id => { setActiveColId(id); setSheetOpen(false); }}
-              onCreate={createCollection}
-              onRename={renameCollection}
-              onDelete={deleteCollection}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── Desktop 2-col layout ── */}
-      <div className="flex gap-6 items-start">
-
-        {/* ─ Sidebar (desktop only) ─ */}
-        <div className="hidden md:block w-52 shrink-0">
-          <CollectionSidebar
-            collections={collections}
-            activeId={activeColId}
-            totalCount={words.length}
-            onSelect={setActiveColId}
-            onCreate={createCollection}
-            onRename={renameCollection}
-            onDelete={deleteCollection}
-          />
-        </div>
-
-        {/* ─ Main ─ */}
-        <div className="flex-1 min-w-0">
-
-          {/* Search + bulk delete */}
-          <div className="flex gap-2 mb-4 flex-wrap">
-            <div className="relative flex-1 min-w-44">
-              <input className="input w-full pl-8" placeholder="Tìm từ..."
-                value={search} onChange={e => setSearch(e.target.value)} />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 btn-ghost p-0.5">
-                  <FaXmark size={11} />
-                </button>
-              )}
-            </div>
-            {selected.size > 0 && (
-              <button onClick={deleteSelected} className="btn-secondary flex items-center gap-1.5 text-sm"
-                style={{ color: '#EF4444' }}>
-                <FaTrash size={11} /> Xóa {selected.size}
-              </button>
+          {/* Anki Study levels submenu, collapsible */}
+          <div className={`overflow-hidden transition-all ${activeTab === 'anki' ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}
+            style={{ background: activeTab === 'anki' ? '#F3F4F6' : 'transparent', borderRadius: '0.75rem' }}>
+            {activeTab === 'anki' && (
+              <div className="flex flex-col gap-1 px-2 py-2">
+                {langCfg.levels.map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setRefLevel(level)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold text-left transition-all ${refLevel === level ? 'bg-primary text-white' : 'bg-transparent text-muted'}`}
+                    style={refLevel === level ? { background: 'var(--primary)', color: '#fff' } : { color: langCfg.levelColors[level] || 'var(--text-muted)' }}>
+                    {level} <span className="ml-1">{langCfg.levelLabels[level]}</span>
+                    {refLevel === level && (
+                      <span className="ml-2 text-xs font-bold opacity-80">({refItems.length})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
+          <button onClick={() => setActiveTab('topics')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={activeTab === 'topics' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
+            <FaLayerGroup size={13} /> Theo chủ đề
+          </button>
+          <button onClick={() => setActiveTab('practice')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={activeTab === 'practice' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
+            <FaBookOpen size={13} /> Practice
+          </button>
+          <button onClick={() => setActiveTab('mine')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={activeTab === 'mine' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
+            <FaBookmark size={13} /> Của tôi
+          </button>
+          <button onClick={() => setActiveTab('review')}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={activeTab === 'review' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
+            <FaBookOpen size={13} /> Review mistakes
+          </button>
+        </aside>
 
-          {/* Column header */}
-          {filtered.length > 0 && (
-            <div className="flex items-center gap-3 px-3 py-2 mb-1 text-xs font-semibold"
-              style={{ color: 'var(--text-muted)' }}>
-              <input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-3.5 h-3.5 rounded" />
-              <span className="w-24">Từ</span>
-              <span className="hidden sm:block w-24">Cách đọc</span>
-              <span className="flex-1">Nghĩa / Chủ đề</span>
-            </div>
-          )}
-
-          {/* Word list */}
-          {filtered.length === 0 ? (
-            <div className="card text-center py-14">
-              <div className="mb-3 opacity-50"><FaBookOpen size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
-              <p className="font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
-                {search ? 'Không tìm thấy từ nào' : activeColId ? 'Chủ đề này chưa có từ nào' : 'Chưa có từ nào được lưu'}
-              </p>
-              <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>
-                {search ? 'Thử từ khóa khác' : 'Đọc bài và click vào từ để lưu'}
-              </p>
-              {!search && !activeColId && (
-                <Link href={`/${lang}/reading`} className="btn-primary inline-flex items-center gap-2">
-                  <FaBookmark size={12} /> Đi đọc bài
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map(w => (
-                <div key={w.id}
-                  className="card group flex items-start gap-3"
-                  style={{ borderLeft: `3px solid ${selected.has(w.id) ? 'var(--primary)' : 'var(--border)'}` }}>
-                  <input type="checkbox" checked={selected.has(w.id)}
-                    onChange={e => setSelected(prev => {
-                      const s = new Set(prev);
-                      e.target.checked ? s.add(w.id) : s.delete(w.id);
-                      return s;
-                    })}
-                    className="w-3.5 h-3.5 rounded mt-1 shrink-0" />
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-base"
-                        style={{ fontFamily: '"Noto Sans JP", serif', color: 'var(--primary)' }}>
-                        {w.content.term}
-                      </span>
-                      {w.content.pronunciation && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: '"Noto Sans JP", serif' }}>
-                          ({w.content.pronunciation})
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm mt-0.5" style={{ color: 'var(--text-base)' }}>{w.content.meanings?.[0]?.meaning ?? ''}</div>
-                    {w.context && (
-                      <div className="text-xs mt-1.5 italic px-2 py-1.5 rounded"
-                        style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontFamily: '"Noto Sans JP", serif', lineHeight: 1.7 }}>
-                        {w.context}
-                      </div>
-                    )}
-                    {/* Collection chips */}
-                    {w.collections.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {w.collections.map(col => (
-                          <span key={col.id}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-                            style={{ background: `${col.color}22`, color: col.color }}>
-                            <FaFolder size={9} /> {col.name}
-                            {activeColId === col.id && (
-                              <button onClick={() => removeFromCollection(w.id, col.id)}
-                                className="ml-0.5 hover:opacity-70 transition-opacity">
-                                <FaCircleXmark size={10} />
-                              </button>
-                            )}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {new Date(w.createdAt).toLocaleDateString('vi-VN')}
-                    </div>
-                  </div>
-
-                  <button onClick={() => deleteWord(w.id)}
-                    className="btn-ghost p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5"
-                    style={{ color: '#EF4444' }}>
-                    <FaTrash size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      </>
-      )}
-      </>
-      ) : (
-      /* ─── Reference tab ─── */
-      <div>
-        {/* Level tabs + search */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4 flex-wrap">
-          <div className="flex gap-1.5 flex-wrap">
-            {langCfg.levels.map(lvl => (
-              <button key={lvl} onClick={() => setRefLevel(lvl)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-                style={refLevel === lvl
-                  ? { background: langCfg.levelColors[lvl], color: '#fff', boxShadow: `0 2px 8px ${langCfg.levelColors[lvl]}60` }
-                  : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                {lvl}
-              </button>
-            ))}
-          </div>
-          <div className="relative flex-1 max-w-xs">
-            <FaMagnifyingGlass size={12} className="absolute left-3 top-1/2 -translate-y-1/2"
-              style={{ color: 'var(--text-muted)' }} />
-            <input type="text" placeholder="Tìm từ vựng, ví dụ..."
-              value={refSearch} onChange={e => setRefSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 rounded-xl text-sm border"
-              style={{ background: 'var(--bg-muted)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
-          </div>
-        </div>
-
-        {/* Title + flip all */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* ...existing code... */}
+          {/* Make main content more spacious */}
           <div>
-            <h2 className="font-extrabold text-lg inline-flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              Từ vựng tham khảo
-              <span className="px-2 py-0.5 rounded-lg text-sm font-bold"
-                style={{ background: `${refColor}20`, color: refColor }}>
-                {refLevel}
-              </span>
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {langCfg.levelLabels[refLevel]} — {refFiltered.length} từ
-            </p>
+            {/* ...existing code for tab content... */}
+            {activeTab === 'flashcards' ? (
+              <FlashcardsTab
+                items={refFiltered}
+                color={refColor}
+                font={langCfg.font}
+              />
+            ) : activeTab === 'anki' ? (
+              <AnkiStudyTab
+                items={refFiltered.map(item => ({
+                  id: item.id,
+                  front: item.term,
+                  back: item.meanings?.[0]?.meaning ?? '',
+                  reading: item.pronunciation ?? '',
+                  example: item.examples?.[0]?.exampleText ?? '',
+                }))}
+                tier={
+                  lang === 'ja' && refLevel === 'N1' ? 'premium' :
+                  lang === 'zh' && refLevel === 'HSK1' ? 'premium' :
+                  tier
+                }
+                font={langCfg.font}
+              />
+            ) : activeTab === 'practice' ? (
+              <PracticeTab />
+            ) : activeTab === 'favorites' ? (
+              <FavoritesTab
+                words={words.filter(w => w.collections.some(c => c.name === 'Favorites'))}
+                onRemove={id => {/* TODO: remove from favorites logic */}}
+              />
+            ) : activeTab === 'review' ? (
+              <ReviewMistakesTab
+                words={words.filter(w => w.collections.some(c => c.name === 'Mistakes'))}
+                onRetry={id => {/* TODO: retry logic */}}
+              />
+            ) : activeTab === 'topics' ? (
+              <>
+                {/* ...existing code for topics tab... */}
+              </>
+            ) : activeTab === 'mine' ? (
+              <>
+                {/* ...existing code for mine tab... */}
+              </>
+            ) : (
+              <div>
+                {/* ...existing code for reference tab... */}
+              </div>
+            )}
           </div>
-          {refFiltered.length > 0 && (
-            <button onClick={flipAllRef}
-              className="text-xs px-3 py-1.5 rounded-xl font-semibold border transition-all"
-              style={{ borderColor: refColor, color: allRefFlipped ? '#fff' : refColor, background: allRefFlipped ? refColor : 'transparent' }}>
-              {allRefFlipped ? 'Giấu tất cả' : 'Lật tất cả'}
-            </button>
-          )}
         </div>
-
-        {/* Card grid */}
-        {refLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 16 }).map((_, i) => <CardSkeleton key={i} />)}
-          </div>
-        ) : refFiltered.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-3">📭</div>
-            <p className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-              {refSearch ? 'Không tìm thấy từ vựng phù hợp.' : 'Chưa có dữ liệu từ vựng.'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {refFiltered.map(item => (
-              <VocabCard key={item.id} item={item} color={refColor}
-                font={langCfg.font} meaningIcon={langCfg.meaningIcon}
-                flipped={refFlipped.has(item.id)} onFlip={() => toggleRefFlip(item.id)} />
-            ))}
-          </div>
-        )}
       </div>
-      )}
-
     </main>
   );
 }

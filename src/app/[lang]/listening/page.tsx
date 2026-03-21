@@ -13,6 +13,11 @@ import {
   FaStar, FaRegStar,
 } from 'react-icons/fa6';
 import { AppSidebar } from '@/components/AppSidebar';
+import { LevelFilterBar } from '@/components/listening/LevelFilterBar';
+import { SearchInput } from '@/components/listening/SearchInput';
+import { ListeningList } from '@/components/listening/ListeningList';
+import { ListeningPlayer } from '@/components/listening/ListeningPlayer';
+import ListeningTabs from '@/components/listening/ListeningTabs';
 
 // ─── Unified practice type (matches /api/listening?lang= response) ────────────
 interface Segment { speaker: string; text: string; pinyin?: string }
@@ -145,51 +150,52 @@ function ListeningPageContent() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const [practices, setPractices]               = useState<ListeningPractice[]>([]);
-  const [loading, setLoading]                   = useState(true);
-  const [selectedLevel, setSelectedLevel]       = useState(() => searchParams.get('level') ?? cfg.levelCodes[0]);
+  const [practices, setPractices] = useState<ListeningPractice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedLevel, setSelectedLevel] = useState(() => searchParams.get('level') ?? cfg.levelCodes[0]);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedId, setSelectedId]             = useState('');
-  const [showTranscript, setShowTranscript]     = useState(false);
-  const [showPinyin, setShowPinyin]             = useState(false);
-  const [showAnswer, setShowAnswer]             = useState(false);
-  const [playbackRate, setPlaybackRate]         = useState(lang === 'ja' ? 0.92 : 1.0);
-  const [isSpeaking, setIsSpeaking]             = useState(false);
-  const [speechSupported, setSpeechSupported]   = useState(false);
-  const [savedIds, setSavedIds]                 = useState<Set<string>>(new Set());
-  const [savingId, setSavingId]                 = useState<string | null>(null);
-  const [showDictation, setShowDictation]       = useState(false);
-  const [dictationText, setDictationText]       = useState('');
-  const [dictationResult, setDictationResult]   = useState<DictResult | null>(null);
-  const [activeTab, setActiveTab]               = useState<'transcript'|'quiz'|'dictation'|'grammar'>('quiz');
+  const [selectedId, setSelectedId] = useState('');
+  const [search, setSearch] = useState('');
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [showPinyin, setShowPinyin] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(lang === 'ja' ? 0.92 : 1.0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [showDictation, setShowDictation] = useState(false);
+  const [dictationText, setDictationText] = useState('');
+  const [dictationResult, setDictationResult] = useState<DictResult | null>(null);
+  const [activeTab, setActiveTab] = useState<'transcript' | 'quiz' | 'dictation' | 'grammar'>('quiz');
   const [favoriteGrammarKeys, setFavoriteGrammarKeys] = useState<Set<string>>(() => {
     try { return new Set<string>(JSON.parse(typeof localStorage !== 'undefined' ? (localStorage.getItem('favGrammar') ?? '[]') : '[]')); }
     catch { return new Set<string>(); }
   });
-  const [audioCurrent, setAudioCurrent]         = useState(0);
-  const [audioDuration, setAudioDuration]       = useState(0);
-  const [speakingSegIdx, setSpeakingSegIdx]     = useState(0);
+  const [audioCurrent, setAudioCurrent] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [speakingSegIdx, setSpeakingSegIdx] = useState(0);
   // Quiz flow
-  const [selectedAnswer, setSelectedAnswer]     = useState<string | null>(null);
-  const [quizChecked, setQuizChecked]           = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [quizChecked, setQuizChecked] = useState(false);
   // Word lookup
-  const [lookupWord, setLookupWord]             = useState<string | null>(null);
-  const [lookupPos, setLookupPos]               = useState<{ x: number; y: number } | null>(null);
+  const [lookupWord, setLookupWord] = useState<string | null>(null);
+  const [lookupPos, setLookupPos] = useState<{ x: number; y: number } | null>(null);
   // Practice / Exam mode
-  const [appMode, setAppMode]                   = useState<'practice' | 'exam'>('practice');
-  const [examReplayCount, setExamReplayCount]   = useState(0);
-  const [examTimeLeft, setExamTimeLeft]         = useState(600);
-  const [examTimerActive, setExamTimerActive]   = useState(false);
-  const [examFinished, setExamFinished]         = useState(false);
+  const [appMode, setAppMode] = useState<'practice' | 'exam'>('practice');
+  const [examReplayCount, setExamReplayCount] = useState(0);
+  const [examTimeLeft, setExamTimeLeft] = useState(600);
+  const [examTimerActive, setExamTimerActive] = useState(false);
+  const [examFinished, setExamFinished] = useState(false);
   // Grammar expanded rows
   const [expandedGrammarIdxs, setExpandedGrammarIdxs] = useState<Set<number>>(new Set());
 
-  const synthRef     = useRef<SpeechSynthesis | null>(null);
-  const voicesRef    = useRef<SpeechSynthesisVoice[]>([]);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const playTokenRef = useRef(0);
-  const audioRef     = useRef<HTMLAudioElement | null>(null);
-  const autoPlayRef  = useRef(false);
-  const mainRef      = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoPlayRef = useRef(false);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   // ── Load practices from API ───────────────────────────────────────────────
   useEffect(() => {
@@ -226,11 +232,17 @@ function ListeningPageContent() {
     return Array.from(new Set(base.map(p => p.category)));
   }, [practices, selectedLevel]);
 
+  // Filter by level, category, and search
   const filteredPractices = useMemo(() =>
     practices.filter(p =>
       (selectedLevel === 'ALL' || p.level === selectedLevel) &&
-      (selectedCategory === 'ALL' || p.category === selectedCategory)
-    ), [practices, selectedLevel, selectedCategory]);
+      (selectedCategory === 'ALL' || p.category === selectedCategory) &&
+      (!search.trim() ||
+        p.title.toLowerCase().includes(search.trim().toLowerCase()) ||
+        (p.titleVi && p.titleVi.toLowerCase().includes(search.trim().toLowerCase())) ||
+        (p.situation && p.situation.toLowerCase().includes(search.trim().toLowerCase()))
+      )
+    ), [practices, selectedLevel, selectedCategory, search]);
 
   // ── 10. URL persistence ────────────────────────────────────────────────────
   useEffect(() => {
@@ -253,7 +265,7 @@ function ListeningPageContent() {
     setFavoriteGrammarKeys(prev => {
       const next = new Set(prev);
       if (next.has(pattern)) next.delete(pattern); else next.add(pattern);
-      try { localStorage.setItem('favGrammar', JSON.stringify([...next])); } catch {}
+      try { localStorage.setItem('favGrammar', JSON.stringify([...next])); } catch { }
       return next;
     });
   }
@@ -445,68 +457,69 @@ function ListeningPageContent() {
 
   return (
     <>
-      <div className="flex" style={{ height: 'calc(100vh - 64px)', background: 'var(--bg-base)' }}>
+      <div className="flex flex-col md:flex-row h-full min-h-screen bg-[var(--bg-base)]">
+        {/* Sidebar: responsive, collapsible */}
+        <aside
+          className="w-full md:w-80 shrink-0 border-b md:border-b-0 md:border-r bg-gradient-to-b from-[var(--bg-surface)] to-[var(--bg-base)] z-20"
+          style={{ borderColor: 'var(--border)', minHeight: 'auto', boxShadow: '2px 0 16px 0 rgba(80,80,120,0.04)' }}
+        >
+          {/* Sticky header for desktop, normal for mobile */}
+          <div className="sticky md:static top-0 z-10 bg-[var(--bg-surface)]/80 backdrop-blur-md shadow-sm px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 rounded-b-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-[#a18fff] to-[#6C5CE7] shadow-md">
+                <FaHeadphones size={18} className="md:!hidden" color="#fff" />
+                <FaHeadphones size={20} className="hidden md:!block" color="#fff" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] md:text-[15px] font-extrabold leading-snug truncate tracking-tight" style={{ color: '#6C5CE7', letterSpacing: '-0.5px' }}>{cfg.hasPinyin ? 'Nghe tiếng Trung' : 'Nghe tiếng Nhật'}</div>
+                <div className="text-[10px] md:text-[11px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {loading ? 'Đang tải…' : `${filteredPractices.length} bài${selectedLevel !== 'ALL' ? ` · ${selectedLevel}` : ''}${selectedCategory !== 'ALL' ? ` · ${selectedCategory}` : ''}`}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 md:gap-3">
+              <SearchInput
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={cfg.hasPinyin ? '找找标题…' : 'Tìm kiếm tiêu đề…'}
+              />
+              <LevelFilterBar
+                levels={cfg.levelCodes}
+                selected={selectedLevel}
+                onSelect={lvl => { setSelectedLevel(lvl); setSelectedCategory('ALL'); }}
+                allLabel="Tất cả"
+                colorMap={Object.fromEntries(cfg.levelCodes.map(lvl => [lvl, { bg: cfg.levelMeta[lvl].badgeBg, color: cfg.levelMeta[lvl].badgeText, activeColor: cfg.levelMeta[lvl].accent }]))}
+                accent={accent}
+              />
+              {availableCategories.length > 1 && (
+                <LevelFilterBar
+                  levels={availableCategories}
+                  selected={selectedCategory}
+                  onSelect={setSelectedCategory}
+                  allLabel="Tất cả"
+                  colorMap={Object.fromEntries(availableCategories.map(cat => [cat, { bg: cfg.heroBg, color: accent }]))}
+                  accent={accent}
+                />
+              )}
+            </div>
+          </div>
+          {/* List section */}
+          <div className="flex-1 overflow-y-auto px-1 md:px-2 pb-3 md:pb-4 pt-1 md:pt-2 mt-1 md:mt-2">
+            <div className="rounded-2xl bg-[var(--bg-surface)] shadow-sm p-1 md:p-2">
+              <ListeningList
+                items={filteredPractices}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                levelMeta={cfg.levelMeta}
+                heroBg={cfg.heroBg}
+                accent={accent}
+              />
+            </div>
+          </div>
+        </aside>
 
-        {/* ── Left sidebar ── */}
-        <AppSidebar
-          headerIcon={<FaHeadphones size={16} color="#fff" />}
-          title={cfg.hasPinyin ? 'Nghe tiếng Trung' : 'Nghe tiếng Nhật'}
-          subtitle={
-            loading ? '…'
-            : `${filteredPractices.length} bài nghe`
-              + (selectedLevel !== 'ALL' ? ` · ${selectedLevel}` : '')
-              + (selectedCategory !== 'ALL' ? ` · ${selectedCategory}` : '')
-          }
-          accentColor={accent}
-          loading={loading}
-          emptyText="Không có bài nghe nào"
-          filters={[
-            {
-              label: 'Cấp độ',
-              value: selectedLevel,
-              onChange: (v) => { setSelectedLevel(v); setSelectedCategory('ALL'); },
-              chips: [
-                { value: 'ALL', label: 'Tất cả' },
-                ...cfg.levelCodes.map(lvl => {
-                  const m = cfg.levelMeta[lvl];
-                  return { value: lvl, label: lvl, bg: m?.badgeBg, color: m?.badgeText, activeColor: m?.accent ?? accent };
-                }),
-              ],
-            },
-            ...(availableCategories.length > 1 ? [{
-              label: cfg.categoryLabel,
-              value: selectedCategory,
-              onChange: (v: string) => setSelectedCategory(v),
-              chips: [
-                { value: 'ALL', label: 'Tất cả' },
-                ...availableCategories.map(cat => ({ value: cat, label: cat, bg: cfg.heroBg, color: accent })),
-              ],
-            }] : []),
-          ]}
-          items={filteredPractices.map(p => {
-            const m = cfg.levelMeta[p.level];
-            return {
-              id: p.id,
-              title: p.title,
-              levelLabel: p.level,
-              levelBg: m?.badgeBg,
-              levelColor: m?.badgeText,
-              tag: p.category,
-              meta: formatDuration(p.durationSec),
-              metaIcon: <FaClock size={7} />,
-              fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif',
-              progress: savedIds.has(p.id) ? 'done' as const : undefined,
-            };
-          })}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          showSoundBars
-          searchable
-          searchPlaceholder={cfg.hasPinyin ? '找找标题…' : 'タイトル検索…'}
-        />
-
-        {/* ── Main content panel ── */}
-        <div ref={mainRef} className="flex-1 overflow-y-auto">
+        {/* Main content panel: responsive */}
+        <div ref={mainRef} className="flex-1 overflow-y-auto px-0 md:px-2">
           {loading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-10 h-10 rounded-full border-4 animate-spin"
@@ -524,8 +537,7 @@ function ListeningPageContent() {
               </div>
             </div>
           ) : (
-            <div className="p-4 lg:p-5 max-w-[900px] mx-auto">
-
+            <div className="p-2 sm:p-4 lg:p-5 max-w-full md:max-w-[900px] mx-auto">
               {/* ── Mode toggle ── */}
               <div className="flex items-center gap-2 mb-3">
                 <button
@@ -573,576 +585,115 @@ function ListeningPageContent() {
               <div className="rounded-2xl overflow-hidden"
                 style={{ background: 'var(--bg-surface)', border: `1px solid ${appMode === 'exam' ? '#7C3AED40' : 'var(--border)'}`, boxShadow: appMode === 'exam' ? '0 4px 20px -4px #7C3AED25' : '0 4px 20px -4px rgba(0,0,0,0.10)' }}>
 
-                    {/* Coloured top bar */}
-                    <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${activeMeta?.accent ?? accent}, ${accent})` }} />
+                {/* Coloured top bar */}
+                <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${activeMeta?.accent ?? accent}, ${accent})` }} />
 
-                    {/* ── Compact header: badges + title + save ── */}
-                    <div className="px-4 pt-3 pb-3 flex items-start gap-3">
-                      {/* Left: meta */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                          {activeMeta && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: activeMeta.badgeBg, color: activeMeta.badgeText }}>
-                              {selectedPractice.level}
-                            </span>
-                          )}
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                            style={{ background: cfg.heroBg, color: accent }}>
-                            {selectedPractice.category}
-                          </span>
-                          <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                            <FaClock size={8} />{formatDuration(selectedPractice.durationSec)}
-                          </span>
-                        </div>
-                        <h2 className="text-base font-bold leading-snug"
-                          style={{ color: 'var(--text-primary)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                          {selectedPractice.title}
-                          {selectedPractice.titleVi && (
-                            <span className="text-xs font-semibold ml-2" style={{ color: accent }}>{selectedPractice.titleVi}</span>
-                          )}
-                        </h2>
-                        <p className="text-[11px] mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{selectedPractice.situation}</p>
-                      </div>
-                      {/* Right: save */}
-                      {session && (
-                        <button onClick={() => saveLesson(selectedPractice.id)}
-                          disabled={savingId === selectedPractice.id}
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all mt-0.5"
-                          style={isActiveSaved
-                            ? { background: '#DCFCE7', color: '#15803D' }
-                            : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                          <FaBookmark size={9} />
-                          {isActiveSaved ? 'Đã lưu' : 'Lưu'}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* ── Inline player bar ── */}
-                    <div className="mx-4 mb-3 rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-base)' }}>
-                      {/* Row 1: play + time + speed */}
-                      <div className="flex items-center gap-2 mb-2">
-                        {/* Sound bars (animated) */}
-                        <div className="flex items-end gap-[2px] h-5 shrink-0">
-                          {[4,7,10,6,9,12,5,8].map((h, i) => (
-                            <div key={i} className="w-[3px] rounded-full"
-                              style={{
-                                height: isSpeaking ? undefined : `${h * 2}px`,
-                                minHeight: 3,
-                                background: accent,
-                                opacity: isSpeaking ? 1 : 0.25,
-                                animation: isSpeaking ? `soundBar ${0.5 + (i % 4) * 0.15}s ease-in-out ${i * 0.07}s infinite alternate` : 'none',
-                              }} />
-                          ))}
-                        </div>
-
-                        {/* Play / Stop */}
-                        {(speechSupported || selectedPractice.audioUrl) ? (
-                          <button
-                            disabled={appMode === 'exam' && examReplayCount >= MAX_EXAM_REPLAYS && !isSpeaking}
-                            onClick={() => {
-                              if (isSpeaking) {
-                                stopPlayback();
-                              } else {
-                                if (appMode === 'exam') {
-                                  setExamReplayCount(p => p + 1);
-                                  if (!examTimerActive) setExamTimerActive(true);
-                                }
-                                playDialogue(0);
-                              }
-                            }}
-                            className="flex items-center justify-center w-9 h-9 rounded-full shrink-0 transition-all active:scale-95 disabled:opacity-40"
-                            style={isSpeaking
-                              ? { background: '#FEE2E2', color: '#DC2626' }
-                              : { background: accent, color: '#fff', boxShadow: `0 2px 8px ${accent}40` }}>
-                            {isSpeaking ? <FaPause size={12} /> : <FaPlay size={12} style={{ marginLeft: 2 }} />}
-                          </button>
-                        ) : (
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                            style={{ background: 'var(--border)', color: 'var(--text-muted)' }}>
-                            <FaMusic size={12} />
-                          </div>
-                        )}
-
-                        {/* Time */}
-                        <span className="text-[11px] font-bold tabular-nums shrink-0" style={{ color: accent }}>
-                          {audioDuration > 0
-                            ? `${formatDuration(Math.floor(audioCurrent))} / ${formatDuration(Math.floor(audioDuration))}`
-                            : formatDuration(selectedPractice.durationSec)}
+                {/* ── Compact header: badges + title + save ── */}
+                <div className="px-4 pt-3 pb-3 flex items-start gap-3">
+                  {/* Left: meta */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      {activeMeta && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: activeMeta.badgeBg, color: activeMeta.badgeText }}>
+                          {selectedPractice.level}
                         </span>
-
-                        {appMode === 'exam' && (
-                          <span className="text-[10px] shrink-0" style={{ color: 'var(--text-muted)' }}>
-                            {examReplayCount}/{MAX_EXAM_REPLAYS} lần nghe
-                          </span>
-                        )}
-
-                        <div className="flex-1" />
-
-                        {/* Speed select */}
-                        <select
-                          value={playbackRate}
-                          onChange={e => setPlaybackRate(Number(e.target.value))}
-                          className="text-[11px] font-bold rounded-lg px-1.5 py-1 border outline-none"
-                          style={{ background: 'var(--bg-muted)', borderColor: 'var(--border)', color: accent }}>
-                          {[0.5, 0.75, 1.0, 1.25, 1.5].map(s => (
-                            <option key={s} value={s}>{s}x</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Row 2: Simple seekbar */}
-                      {selectedPractice.audioUrl ? (
-                        /* Audio file: click/drag to seek */
-                        <div
-                          className="relative h-8 flex items-center cursor-pointer group select-none"
-                          onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                            const t = pct * (audioDuration || selectedPractice.durationSec);
-                            setAudioCurrent(t);
-                            if (audioRef.current) audioRef.current.currentTime = t;
-                          }}>
-                          {/* Track */}
-                          <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: `${accent}25` }}>
-                            {/* Fill */}
-                            <div className="h-full rounded-full"
-                              style={{
-                                width: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
-                                background: accent,
-                                transition: 'width 0.1s linear',
-                              }} />
-                          </div>
-                          {/* Thumb */}
-                          <div
-                            className="absolute w-3.5 h-3.5 rounded-full shadow-md transition-transform group-hover:scale-125"
-                            style={{
-                              left: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
-                              transform: 'translateX(-50%)',
-                              background: accent,
-                              top: '50%',
-                              marginTop: '-7px',
-                              boxShadow: `0 0 0 3px ${accent}30`,
-                            }} />
-                        </div>
-                      ) : (
-                        /* TTS: segment pills */
-                        <div className="flex items-center gap-1 py-2">
-                          {selectedPractice.segments.map((seg, i) => {
-                            const isPlayed = i < speakingSegIdx;
-                            const isCurrent = i === speakingSegIdx && isSpeaking;
-                            return (
-                              <button
-                                key={i}
-                                title={`${seg.speaker}: ${seg.text.slice(0, 24)}…`}
-                                onClick={() => {
-                                  if (isSpeaking) {
-                                    playTokenRef.current += 1;
-                                    synthRef.current?.cancel();
-                                    setSpeakingSegIdx(i);
-                                    window.setTimeout(() => playDialogue(i), 60);
-                                  } else {
-                                    playDialogue(i);
-                                  }
-                                }}
-                                className="flex-1 h-1.5 rounded-full transition-all hover:h-2.5"
-                                style={{
-                                  background: isCurrent ? accent : isPlayed ? `${accent}80` : `${accent}25`,
-                                  animation: isCurrent ? `soundBar ${0.4 + (i % 3) * 0.12}s ease-in-out ${i * 0.04}s infinite alternate` : 'none',
-                                }} />
-                            );
-                          })}
-                        </div>
                       )}
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: cfg.heroBg, color: accent }}>
+                        {selectedPractice.category}
+                      </span>
+                      <span className="text-[10px] flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                        <FaClock size={8} />{formatDuration(selectedPractice.durationSec)}
+                      </span>
                     </div>
-
-                    {/* ── Tabs ── */}
-                    <div className="border-t" style={{ borderColor: 'var(--border)' }}>
-                      <div className="flex">
-                        {([
-                          { id: 'quiz',       label: 'Câu hỏi' },
-                          ...(appMode === 'practice' ? [
-                            { id: 'dictation',  label: '✏️ Nghe và viết' },
-                            { id: 'transcript', label: 'Hội thoại' },
-                            { id: 'grammar',    label: '文法' },
-                          ] : []),
-                        ] as const).map(tab => (
-                          <button key={tab.id} onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className="flex-1 py-2 text-[11px] font-semibold transition-all border-b-2"
-                            style={activeTab === tab.id
-                              ? { borderColor: appMode === 'exam' ? '#7C3AED' : accent, color: appMode === 'exam' ? '#7C3AED' : accent }
-                              : { borderColor: 'transparent', color: 'var(--text-muted)' }}>
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Tab: Transcript */}
-                      {activeTab === 'transcript' && appMode === 'practice' && (
-                        <div className="px-4 py-3 space-y-1.5">
-                          {cfg.hasPinyin && (
-                            <div className="flex justify-end mb-2">
-                              <button onClick={() => setShowPinyin(p => !p)}
-                                className="text-xs px-2.5 py-1 rounded-lg font-semibold"
-                                style={showPinyin ? { background: accent, color: '#fff' } : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                                拼音 Pinyin {showPinyin ? '✓' : ''}
-                              </button>
-                            </div>
-                          )}
-                          {selectedPractice.segments.map((seg, i) => {
-                            const activeIdx = selectedPractice.audioUrl ? estimatedAudioSegIdx : speakingSegIdx;
-                            const isActive = isSpeaking && i === activeIdx;
-                            return (
-                              <div key={i}
-                                className="flex gap-2 px-3 py-2 rounded-xl transition-all"
-                                style={{
-                                  background: isActive ? `color-mix(in srgb, ${accent} 10%, var(--bg-muted))` : 'transparent',
-                                  borderLeft: isActive ? `3px solid ${accent}` : '3px solid transparent',
-                                }}>
-                                {/* Speaker badge + repeat button */}
-                                <div className="flex flex-col items-center gap-1 shrink-0">
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg h-fit"
-                                    style={{ background: cfg.heroBg, color: accent }}>
-                                    {seg.speaker}
-                                  </span>
-                                  <button
-                                    title="Nghe lại câu này"
-                                    onClick={() => {
-                                      if (selectedPractice.audioUrl) {
-                                        const startSec = getSegmentStartSec(i);
-                                        if (!audioRef.current || audioRef.current.src !== selectedPractice.audioUrl) {
-                                          const a = new Audio(selectedPractice.audioUrl);
-                                          a.addEventListener('loadedmetadata', () => setAudioDuration(a.duration));
-                                          a.addEventListener('timeupdate', () => setAudioCurrent(a.currentTime));
-                                          audioRef.current = a;
-                                        }
-                                        audioRef.current.currentTime = startSec;
-                                        audioRef.current.play().catch(() => {});
-                                        setIsSpeaking(true);
-                                      } else {
-                                        if (isSpeaking) { playTokenRef.current += 1; synthRef.current?.cancel(); }
-                                        window.setTimeout(() => playDialogue(i), 60);
-                                      }
-                                    }}
-                                    className="w-5 h-5 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                                    style={{ background: `${accent}20`, color: accent }}>
-                                    <FaRepeat size={7} />
-                                  </button>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm leading-relaxed"
-                                    style={{ color: 'var(--text-primary)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                                    {seg.text.split('').map((char, ci) => (
-                                      /[\u3000-\u9FFF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(char) ? (
-                                        <span
-                                          key={ci}
-                                          className="cursor-pointer rounded px-px transition-colors hover:bg-yellow-100"
-                                          onClick={(e) => {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            setLookupWord(char);
-                                            setLookupPos({ x: rect.left + rect.width / 2, y: rect.top });
-                                          }}>
-                                          {char}
-                                        </span>
-                                      ) : <span key={ci}>{char}</span>
-                                    ))}
-                                  </p>
-                                  {showPinyin && seg.pinyin && (
-                                    <p className="text-xs mt-0.5 italic" style={{ color: 'var(--text-muted)' }}>{seg.pinyin}</p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                    <h2 className="text-base font-bold leading-snug"
+                      style={{ color: 'var(--text-primary)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
+                      {selectedPractice.title}
+                      {selectedPractice.titleVi && (
+                        <span className="text-xs font-semibold ml-2" style={{ color: accent }}>{selectedPractice.titleVi}</span>
                       )}
-
-                      {/* Tab: Quiz */}
-                      {activeTab === 'quiz' && (
-                        <div className="px-4 py-3">
-                          {examFinished && appMode === 'exam' && (
-                            <div className="mb-3 p-3 rounded-2xl text-center"
-                              style={{ background: '#7C3AED15', color: '#7C3AED' }}>
-                              <p className="font-bold text-sm">⏰ Hết giờ thi!</p>
-                              {quizChecked && (
-                                <p className="text-xs mt-1">
-                                  {selectedAnswer === selectedPractice.answer ? '🎉 Bạn đã trả lời đúng!' : '😔 Chưa đúng — xem giải thích bên dưới'}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                          <p className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-                            ❓ {selectedPractice.question}
-                          </p>
-                          <div className="space-y-2 mb-3">
-                            {selectedPractice.options.map((opt, i) => {
-                              const isSelected = selectedAnswer === opt;
-                              const isCorrect  = quizChecked && opt === selectedPractice.answer;
-                              const isWrong    = quizChecked && isSelected && opt !== selectedPractice.answer;
-                              return (
-                                <button
-                                  key={i}
-                                  disabled={quizChecked}
-                                  onClick={() => !quizChecked && setSelectedAnswer(opt)}
-                                  className="w-full px-4 py-3 rounded-2xl text-sm flex items-center gap-2.5 transition-all text-left"
-                                  style={{
-                                    background: isCorrect ? '#DCFCE7' : isWrong ? '#FEE2E2' : isSelected ? `color-mix(in srgb, ${accent} 12%, var(--bg-base))` : 'var(--bg-base)',
-                                    color:      isCorrect ? '#15803D' : isWrong ? '#DC2626' : 'var(--text-secondary)',
-                                    border:     `1.5px solid ${isCorrect ? '#86EFAC' : isWrong ? '#FCA5A5' : isSelected ? accent : 'var(--border)'}`,
-                                    fontWeight: isCorrect || isSelected ? 600 : 400,
-                                    cursor:     quizChecked ? 'default' : 'pointer',
-                                  }}>
-                                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                                    style={{
-                                      background: isCorrect ? '#86EFAC' : isWrong ? '#FCA5A5' : isSelected ? accent : 'var(--border)',
-                                      color: isCorrect ? '#15803D' : isWrong ? '#DC2626' : isSelected ? '#fff' : 'var(--text-muted)',
-                                    }}>
-                                    {isCorrect ? '✓' : isWrong ? '✗' : String.fromCharCode(65 + i)}
-                                  </span>
-                                  {opt}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* CTA button: changes per quiz step */}
-                          {!quizChecked ? (
-                            <button
-                              disabled={!selectedAnswer}
-                              onClick={() => { if (selectedAnswer) setQuizChecked(true); }}
-                              className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
-                              style={{ background: selectedAnswer ? (appMode === 'exam' ? '#7C3AED' : accent) : 'var(--bg-muted)', color: selectedAnswer ? '#fff' : 'var(--text-muted)' }}>
-                              Kiểm tra
-                            </button>
-                          ) : (
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold`}
-                                style={selectedAnswer === selectedPractice.answer
-                                  ? { background: '#DCFCE7', color: '#15803D' }
-                                  : { background: '#FEE2E2', color: '#DC2626' }}>
-                                {selectedAnswer === selectedPractice.answer ? '✔ Đúng rồi!' : '✖ Chưa đúng'}
-                              </div>
-                              <button
-                                onClick={() => { setSelectedAnswer(null); setQuizChecked(false); }}
-                                className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold"
-                                style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                                <FaArrowRotateLeft size={10} /> Thử lại
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Explanation — only show after check */}
-                          {quizChecked && (
-                            <div className="mt-3 px-4 py-3 rounded-2xl text-xs leading-relaxed"
-                              style={{ background: appMode === 'exam' ? '#7C3AED12' : 'var(--primary-light)', color: appMode === 'exam' ? '#7C3AED' : 'var(--primary)' }}>
-                              💡 {selectedPractice.explanation}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Tab: Dictation */}
-                      {activeTab === 'dictation' && (
-                        <div className="px-4 py-3">
-                          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                            Nghe bài hội thoại rồi chép lại đúng những gì bạn nghe được:
-                          </p>
-                          {!dictationResult ? (
-                            <>
-                              <textarea
-                                value={dictationText}
-                                onChange={e => setDictationText(e.target.value)}
-                                rows={4}
-                                placeholder={cfg.hasPinyin ? '写出你听到的内容（汉字或拼音）…' : '聴こえた内容を書いてください…'}
-                                className="w-full text-sm rounded-2xl border px-4 py-3 resize-y outline-none"
-                                style={{
-                                  background: 'var(--bg-base)', borderColor: 'var(--border)',
-                                  color: 'var(--text-primary)', lineHeight: 2,
-                                  fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif',
-                                }}
-                              />
-                              <div className="flex items-center gap-2 mt-2.5">
-                                <button
-                                  disabled={!dictationText.trim()}
-                                  onClick={() => {
-                                    const ref = selectedPractice.segments.map(s => s.text).join('');
-                                    setDictationResult(scoreDictation(dictationText, ref));
-                                  }}
-                                  className="px-5 py-2.5 rounded-2xl text-sm font-semibold disabled:opacity-40 transition-all"
-                                  style={{ background: accent, color: '#fff' }}>
-                                  Chấm điểm
-                                </button>
-                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{dictationText.length} ký tự</span>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {/* Score ring */}
-                              <div className="flex items-center gap-4 mb-4 p-4 rounded-2xl"
-                                style={{ background: dictationResult.score >= 80 ? '#DCFCE7' : dictationResult.score >= 50 ? '#FEF9C3' : '#FFE4E6' }}>
-                                <div className="relative w-16 h-16 shrink-0">
-                                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                                    <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="6"
-                                      style={{ color: dictationResult.score >= 80 ? '#86EFAC' : dictationResult.score >= 50 ? '#FDE68A' : '#FCA5A5' }} />
-                                    <circle cx="32" cy="32" r="26" fill="none" strokeWidth="6"
-                                      strokeDasharray={`${2 * Math.PI * 26}`}
-                                      strokeDashoffset={`${2 * Math.PI * 26 * (1 - dictationResult.score / 100)}`}
-                                      strokeLinecap="round"
-                                      style={{ color: dictationResult.score >= 80 ? '#15803D' : dictationResult.score >= 50 ? '#92400E' : '#BE123C', stroke: 'currentColor' }} />
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center text-sm font-bold"
-                                    style={{ color: dictationResult.score >= 80 ? '#15803D' : dictationResult.score >= 50 ? '#92400E' : '#BE123C' }}>
-                                    {dictationResult.score}%
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="font-bold text-base mb-0.5"
-                                    style={{ color: dictationResult.score >= 80 ? '#15803D' : dictationResult.score >= 50 ? '#92400E' : '#BE123C' }}>
-                                    {dictationResult.score >= 90 ? <><FaTrophy size={14} color="#F59E0B"/> Xuất sắc!</> : dictationResult.score >= 70 ? <><FaThumbsUp size={14} color="#10B981"/> Khá tốt!</> : dictationResult.score >= 50 ? <><FaDumbbell size={14} color="#D97706"/> Cố gắng thêm</> : <><FaBook size={14} color="#6B7280"/> Cần luyện thêm</>}
-                                  </div>
-                                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    {dictationResult.tokens.filter(t => t.correct).length}/{dictationResult.tokens.length} ký tự đúng
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Char diff */}
-                              <div className="p-4 rounded-2xl mb-3 leading-loose text-sm"
-                                style={{ background: 'var(--bg-base)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                                  Nội dung chuẩn
-                                </div>
-                                {dictationResult.tokens.map((tok, i) => (
-                                  <span key={i} style={{
-                                    color: tok.correct ? '#15803D' : '#DC2626',
-                                    background: tok.correct ? '#DCFCE7' : '#FEE2E2',
-                                    borderRadius: 3, padding: '0 1px',
-                                  }}>{tok.char}</span>
-                                ))}
-                              </div>
-                              <div className="flex gap-2">
-                                <button onClick={() => { setDictationResult(null); setDictationText(''); }}
-                                  className="px-4 py-2 rounded-xl text-xs font-semibold"
-                                  style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                                  Thử lại
-                                </button>
-                                <button onClick={() => setActiveTab('transcript')}
-                                  className="px-4 py-2 rounded-xl text-xs font-semibold"
-                                  style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                                  Xem hội thoại
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Tab: Grammar */}
-                      {activeTab === 'grammar' && appMode === 'practice' && (
-                        <div className="px-4 py-3 space-y-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FaGraduationCap size={12} style={{ color: accent }} />
-                            <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
-                              Ngữ pháp trong bài — {selectedPractice.level}
-                            </span>
-                            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: `${accent}18`, color: accent }}>
-                              {grammarPoints.filter(g => g.foundInText).length} tìm thấy
-                            </span>
-                            <span className="ml-auto text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                              ⭐ {favoriteGrammarKeys.size} đã lưu
-                            </span>
-                          </div>
-
-                          {grammarPoints.map((gp, i) => {
-                            const isFav = favoriteGrammarKeys.has(gp.pattern);
-                            const expanded = expandedGrammarIdxs.has(i);
-                            const levelMeta = cfg.levelMeta[gp.levelCode];
-                            // Show divider before first "not found in text" entry (if there are some found ones)
-                            const hasSomFound = grammarPoints.some(g => g.foundInText);
-                            const showDivider = hasSomFound && !gp.foundInText && (i === 0 || grammarPoints[i - 1].foundInText);
-                            return (
-                              <div key={i}>
-                                {showDivider && (
-                                  <div className="flex items-center gap-2 my-2">
-                                    <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                                    <span className="text-[10px] font-semibold px-2" style={{ color: 'var(--text-muted)' }}>Cũng hữu ích ở level này</span>
-                                    <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                                  </div>
-                                )}
-                              <div className="rounded-2xl border overflow-hidden transition-all"
-                                style={{ borderColor: gp.foundInText ? `${accent}55` : isFav ? '#FDE68A' : 'var(--border)', background: gp.foundInText ? `color-mix(in srgb, ${accent} 4%, var(--bg-base))` : 'var(--bg-base)' }}>
-                                {/* Header row */}
-                                <div
-                                  className="flex items-center gap-2 px-3 py-2.5 cursor-pointer"
-                                  onClick={() => setExpandedGrammarIdxs(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(i)) next.delete(i); else next.add(i);
-                                    return next;
-                                  })}>
-                                  {/* Found badge */}
-                                  {gp.foundInText && (
-                                    <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                                      style={{ background: `${accent}20`, color: accent }}>✦ BÀI</span>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <span className="font-bold text-sm"
-                                      style={{ color: gp.foundInText ? accent : 'var(--text-primary)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                                      {gp.pattern}
-                                    </span>
-                                    {gp.reading && !cfg.hasPinyin && (
-                                      <span className="ml-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>{gp.reading}</span>
-                                    )}
-                                    <span className="ml-2 text-xs" style={{ color: 'var(--text-secondary)' }}>— {gp.meaning}</span>
-                                  </div>
-                                  {/* Level badge when it differs from lesson level */}
-                                  {gp.levelCode !== selectedPractice.level && levelMeta && (
-                                    <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                                      style={{ background: levelMeta.badgeBg, color: levelMeta.badgeText }}>{gp.levelCode}</span>
-                                  )}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); toggleFavoriteGrammar(gp.pattern); }}
-                                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                                    style={isFav
-                                      ? { background: '#FEF9C3', color: '#D97706' }
-                                      : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                                    {isFav ? <FaStar size={11} /> : <FaRegStar size={11} />}
-                                  </button>
-                                  <span className="text-[10px] tabular-nums shrink-0" style={{ color: 'var(--text-muted)' }}>
-                                    {expanded ? '▲' : '▼'}
-                                  </span>
-                                </div>
-                                {/* Expanded: example */}
-                                {expanded && (
-                                  <div className="px-4 pb-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                                    <div className="mt-2 space-y-1">
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5"
-                                          style={{ background: `${accent}18`, color: accent }}>例</span>
-                                        <p className="text-sm leading-relaxed"
-                                          style={{ color: 'var(--text-primary)', fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif' }}>
-                                          {gp.example}
-                                        </p>
-                                      </div>
-                                      {gp.exampleReading && (
-                                        <p className="text-xs italic pl-8" style={{ color: 'var(--text-muted)' }}>{gp.exampleReading}</p>
-                                      )}
-                                      <p className="text-xs pl-8" style={{ color: 'var(--text-secondary)' }}>→ {gp.exampleVi}</p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            );
-                          })}
-
-                          {grammarPoints.length === 0 && (
-                            <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>
-                              Chưa có dữ liệu ngữ pháp cho bài này.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
+                    </h2>
+                    <p className="text-[11px] mt-0.5 line-clamp-1" style={{ color: 'var(--text-muted)' }}>{selectedPractice.situation}</p>
+                  </div>
+                  {/* Right: save */}
+                  {session && (
+                    <button onClick={() => saveLesson(selectedPractice.id)}
+                      disabled={savingId === selectedPractice.id}
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all mt-0.5"
+                      style={isActiveSaved
+                        ? { background: '#DCFCE7', color: '#15803D' }
+                        : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                      <FaBookmark size={9} />
+                      {isActiveSaved ? 'Đã lưu' : 'Lưu'}
+                    </button>
+                  )}
+                </div>
+                {/* Player bar */}
+                <ListeningPlayer
+                  isSpeaking={isSpeaking}
+                  speechSupported={speechSupported}
+                  selectedPractice={selectedPractice}
+                  appMode={appMode}
+                  examReplayCount={examReplayCount}
+                  MAX_EXAM_REPLAYS={MAX_EXAM_REPLAYS}
+                  examTimerActive={examTimerActive}
+                  accent={accent}
+                  audioDuration={audioDuration}
+                  audioCurrent={audioCurrent}
+                  playbackRate={playbackRate}
+                  setPlaybackRate={setPlaybackRate}
+                  stopPlayback={stopPlayback}
+                  playDialogue={playDialogue}
+                  setExamReplayCount={setExamReplayCount}
+                  setExamTimerActive={setExamTimerActive}
+                  speakingSegIdx={speakingSegIdx}
+                  setSpeakingSegIdx={setSpeakingSegIdx}
+                  playTokenRef={playTokenRef}
+                  synthRef={synthRef}
+                  audioRef={audioRef}
+                  getSegmentStartSec={getSegmentStartSec}
+                  estimatedAudioSegIdx={estimatedAudioSegIdx}
+                  showPinyin={showPinyin}
+                  setShowPinyin={setShowPinyin}
+                  cfg={cfg}
+                />
+                {/* Tabs */}
+                <ListeningTabs
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  appMode={appMode}
+                  selectedPractice={selectedPractice}
+                  accent={accent}
+                  cfg={cfg}
+                  showPinyin={showPinyin}
+                  setShowPinyin={setShowPinyin}
+                  estimatedAudioSegIdx={estimatedAudioSegIdx}
+                  speakingSegIdx={speakingSegIdx}
+                  isSpeaking={isSpeaking}
+                  getSegmentStartSec={getSegmentStartSec}
+                  audioRef={audioRef}
+                  playDialogue={playDialogue}
+                  synthRef={synthRef}
+                  playTokenRef={playTokenRef}
+                  dictationText={dictationText}
+                  setDictationText={setDictationText}
+                  dictationResult={dictationResult}
+                  setDictationResult={setDictationResult}
+                  scoreDictation={scoreDictation}
+                  quizChecked={quizChecked}
+                  setQuizChecked={setQuizChecked}
+                  selectedAnswer={selectedAnswer}
+                  setSelectedAnswer={setSelectedAnswer}
+                  examFinished={examFinished}
+                  examTimeLeft={examTimeLeft}
+                  formatExamTime={formatExamTime}
+                  grammarPoints={grammarPoints}
+                  favoriteGrammarKeys={favoriteGrammarKeys}
+                  toggleFavoriteGrammar={toggleFavoriteGrammar}
+                  expandedGrammarIdxs={expandedGrammarIdxs}
+                  setExpandedGrammarIdxs={setExpandedGrammarIdxs}
+                />
               </div>
             </div>
           )}
@@ -1191,7 +742,7 @@ function ListeningPageContent() {
                 {cfg.hasPinyin ? 'MDBG' : 'Jisho'} →
               </a>
               <button
-                onClick={() => { navigator.clipboard.writeText(lookupWord!).catch(() => {}); }}
+                onClick={() => { navigator.clipboard.writeText(lookupWord!).catch(() => { }); }}
                 className="text-[10px] font-semibold px-2 py-1 rounded-lg"
                 style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
                 Copy

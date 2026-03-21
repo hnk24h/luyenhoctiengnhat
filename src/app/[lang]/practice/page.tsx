@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 export const dynamic = 'force-dynamic';
+import { FlashcardsTab } from '@/components/FlashcardsTab';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
@@ -456,123 +457,18 @@ function FlashcardsContent() {
               </button>
             ))}
           </div>
-
-          {quickLoading ? (
-            <div className="rounded-3xl border h-64 animate-pulse"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }} />
-          ) : quickCards.length === 0 ? (
-            <div className="text-center py-20">
-              <p style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu từ vựng.</p>
-            </div>
-          ) : quickFinished ? (
-            /* Finished screen */
-            <div className="card rounded-3xl p-8 text-center">
-              <div className="text-4xl mb-4">🎉</div>
-              <h2 className="text-2xl font-extrabold mb-2" style={{ color: 'var(--text-base)' }}>Hoàn thành!</h2>
-              <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-                Bạn đã ôn tập {quickTotal} từ vựng {quickLevel}
-              </p>
-              <div className="flex gap-6 justify-center mb-6">
-                <div className="text-center">
-                  <div className="text-3xl font-extrabold" style={{ color: '#48BB78' }}>{quickKnown.size}</div>
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Đã thuộc</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-extrabold" style={{ color: '#F56565' }}>{quickUnknown.size}</div>
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Cần ôn thêm</div>
-                </div>
-              </div>
-              <button onClick={restartQuick}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white"
-                style={{ background: quickColor }}>
-                <FaRotate size={13} /> Làm lại
-              </button>
-            </div>
-          ) : (
-            <div>
-              {/* Progress bar */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
-                  <div className="h-2 rounded-full transition-all"
-                    style={{ width: `${(quickIndex / quickTotal) * 100}%`, background: quickColor }} />
-                </div>
-                <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  {quickIndex + 1} / {quickTotal}
-                </span>
-              </div>
-
-              {/* Stats badges */}
-              <div className="flex gap-4 mb-4">
-                <span className="text-xs px-2 py-1 rounded-xl font-bold"
-                  style={{ background: '#48BB7820', color: '#48BB78' }}>{quickKnown.size} đã thuộc</span>
-                <span className="text-xs px-2 py-1 rounded-xl font-bold"
-                  style={{ background: '#F5656520', color: '#F56565' }}>{quickUnknown.size} cần ôn</span>
-              </div>
-
-              {/* Flip card */}
-              <button onClick={() => setQuickFlipped(f => !f)}
-                className="w-full rounded-3xl border p-10 text-center transition-all hover:shadow-lg cursor-pointer"
-                style={{
-                  background: quickFlipped ? `${quickColor}12` : 'var(--bg-surface)',
-                  borderColor: quickFlipped ? quickColor : 'var(--border)',
-                  minHeight: '220px',
-                }}>
-                {!quickFlipped ? (
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <span className="text-5xl font-bold"
-                      style={{ color: 'var(--text-primary)', fontFamily: langCfg.font }}>
-                      {currentCard.front}
-                    </span>
-                    {currentCard.pronunciation && (
-                      <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                        {currentCard.pronunciation}
-                      </span>
-                    )}
-                    <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <span className="text-2xl font-bold" style={{ color: quickColor }}>{currentCard.back}</span>
-                    <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)', fontFamily: langCfg.font }}>
-                      {currentCard.front}
-                    </span>
-                    {currentCard.pronunciation && (
-                      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{currentCard.pronunciation}</span>
-                    )}
-                  </div>
-                )}
-              </button>
-
-              {/* Action buttons */}
-              {quickFlipped ? (
-                <div className="flex gap-3 mt-4">
-                  <button onClick={markUnknown}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
-                    style={{ borderColor: '#F56565', color: '#F56565' }}>
-                    <FaXmark size={13} /> Chưa thuộc
-                  </button>
-                  <button onClick={markKnown}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
-                    style={{ background: '#48BB78' }}>
-                    <FaCheck size={13} /> Đã thuộc
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-3 mt-4">
-                  <button onClick={quickPrev} disabled={quickIndex === 0}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border transition-all"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', opacity: quickIndex === 0 ? 0.4 : 1 }}>
-                    <FaChevronLeft size={12} /> Trước
-                  </button>
-                  <button onClick={quickNext}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
-                    style={{ background: quickColor }}>
-                    Tiếp <FaChevronRight size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Use shared FlashcardsTab component for quick-study */}
+          <FlashcardsTab
+            items={quickCards.map(card => ({
+              id: card.id,
+              term: card.front,
+              pronunciation: card.pronunciation,
+              meanings: [{ id: card.id, language: lang, meaning: card.back }],
+              examples: [],
+            }))}
+            color={quickColor}
+            font={langCfg.font}
+          />
         </div>
       )}
     </main>

@@ -3,7 +3,31 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle, FaFont } from 'react-icons/fa6';
+import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle, FaFont, FaStar, FaBolt, FaRegLightbulb } from 'react-icons/fa6';
+// ── Reusable MenuItem component ─────────────────────────────────────────────
+type MenuItemProps = {
+  href: string;
+  label: string;
+  icon?: IconType;
+  active?: boolean;
+  onClick?: () => void;
+  className?: string;
+};
+const MenuItem = ({ href, label, icon: Icon, active, onClick, className }: MenuItemProps) => (
+  <Link href={href}
+    className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)] ${active ? 'bg-[var(--bg-muted)] font-semibold text-[var(--primary)]' : 'text-[var(--text-secondary)]'} ${className || ''}`}
+    style={active ? { color: 'var(--primary)', fontWeight: 600 } : {}}
+    onClick={onClick}
+    tabIndex={0}
+    aria-current={active ? 'page' : undefined}
+  >
+    <span className="flex items-center gap-2.5">
+      {Icon && <Icon size={13} />}
+      <span>{label}</span>
+    </span>
+    <FaArrowRight size={10} style={{ opacity: 0.4 }}/>
+  </Link>
+);
 import type { IconType } from 'react-icons';
 import { useTheme, type AppearanceMode } from '@/context/ThemeContext';
 import { LogoMark } from '@/components/Logo';
@@ -13,14 +37,14 @@ type NavLink = { href: string; label: string; icon: IconType; authRequired?: boo
 // ── ISO-coded nav links ─────────────────────────────────────────────────────
 
 const JLPT_NAV_LINKS: NavLink[] = [
-  { href: '/ja/vocab',     label: 'Từ vựng',      icon: FaBookmark },
   { href: '/ja/learn',     label: 'Cấp độ',       icon: FaBookOpen },
-  { href: '/ja/levels',    label: 'Luyện thi',    icon: FaPencil },
+  { href: '/ja/vocab',     label: 'Từ vựng',      icon: FaBookmark },
   { href: '/ja/listening', label: 'Luyện nghe',   icon: FaHeadphones },
   { href: '/ja/grammar',   label: 'Ngữ pháp',     icon: FaCompass },
   { href: '/ja/practice',  label: 'Flashcard',  icon: FaLayerGroup },
   { href: '/ja/reading',   label: 'Đọc hiểu',   icon: FaNewspaper },
   { href: '/dashboard',    label: 'Tiến trình', icon: FaChartBar },
+  { href: '/ja/levels',    label: 'Luyện thi',    icon: FaPencil },
 ];
 
 const CHINESE_NAV_LINKS: NavLink[] = [
@@ -233,10 +257,12 @@ export function Navbar() {
                 if (isVocabLink) {
                   const vocabBase = `/${currentLang}/vocab`;
                   const vocabActive = pathname.startsWith(vocabBase);
+                  // Enhanced submenu items
                   const VOCAB_SUBMENU = [
-                    { href: `${vocabBase}?tab=reference`, label: 'Theo cấp độ', icon: FaBookOpen },
-                    { href: `${vocabBase}?tab=topics`,    label: 'Theo chủ đề',  icon: FaLayerGroup },
-                    { href: `${vocabBase}?tab=mine`,      label: 'Của tôi',       icon: FaBookmark },
+                    { href: `${vocabBase}?tab=flashcards`, label: 'Flashcards', icon: FaLayerGroup },
+                    { href: `${vocabBase}?tab=practice`,   label: 'Practice',   icon: FaBolt },
+                    { href: `${vocabBase}?tab=favorites`,  label: 'Favorites',  icon: FaStar },
+                    { href: `${vocabBase}?tab=review`,     label: 'Review mistakes', icon: FaRegLightbulb },
                   ];
                   return (
                     <div key={link.href} className="relative">
@@ -245,27 +271,32 @@ export function Navbar() {
                         aria-expanded={vocabOpen}
                         aria-haspopup="true"
                         className="flex items-center gap-2 px-6 py-2 rounded-xl text-base transition-all hover:bg-[var(--bg-muted)]"
-                        style={vocabOpen || vocabActive ? activeStyle : inactiveStyle}>
+                        style={vocabOpen || vocabActive ? activeStyle : inactiveStyle}
+                        tabIndex={0}
+                        aria-label="Từ vựng menu"
+                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') toggleMenu('vocab'); }}
+                      >
                         <link.icon size={13} />
                         <span>Từ vựng</span>
                         <FaChevronDown size={9} style={{ transform: vocabOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
                       </button>
-                      {vocabOpen && (
-                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
-                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                          {VOCAB_SUBMENU.map(item => (
-                            <Link key={item.href} href={item.href}
-                              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                              style={{ color: 'var(--text-secondary)' }}>
-                              <span className="flex items-center gap-2.5">
-                                <item.icon size={13} />
-                                <span>{item.label}</span>
-                              </span>
-                              <FaArrowRight size={10} style={{ opacity: 0.4 }} />
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+                      <div
+                        className={`absolute top-full mt-2 left-0 w-60 rounded-2xl border p-2 shadow-xl z-50 transition-all duration-200 ${vocabOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}
+                        role="menu"
+                        aria-label="Vocabulary submenu"
+                      >
+                        {VOCAB_SUBMENU.map(item => (
+                          <MenuItem
+                            key={item.href}
+                            href={item.href}
+                            label={item.label}
+                            icon={item.icon}
+                            active={pathname === item.href}
+                            className="justify-between"
+                          />
+                        ))}
+                      </div>
                     </div>
                   );
                 }
@@ -292,7 +323,17 @@ export function Navbar() {
                       {listeningOpen && (
                         <div className="absolute top-full mt-2 left-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
                           style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                          {LISTENING_SUBMENU.map(item => {
+                            {LISTENING_SUBMENU.map(item => (
+                              <MenuItem
+                                key={item.href}
+                                href={item.href}
+                                label={item.label}
+                                icon={item.icon}
+                                active={pathname === item.href}
+                                className="justify-between"
+                              />
+                            ))}
+                          {/* {LISTENING_SUBMENU.map(item => {
                             const itemActive = item.mode === '' ? pathname === listeningBase : false;
                             return (
                               <Link key={item.href} href={item.href}
@@ -307,7 +348,7 @@ export function Navbar() {
                                 <FaArrowRight size={10} style={{ opacity: 0.4 }} />
                               </Link>
                             );
-                          })}
+                          })} */}
                         </div>
                       )}
                     </div>
@@ -541,30 +582,12 @@ export function Navbar() {
               {/* Theme toggle */}
               <div className="hidden md:block relative">
                 <button
-                  onClick={() => toggleMenu('appearance')}
-                  aria-expanded={appearanceOpen}
-                  aria-haspopup="true"
+                  onClick={() => setAppearance(resolvedAppearance === 'dark' ? 'light' : 'dark')}
                   className="flex items-center justify-center w-9 h-9 rounded-xl transition-all hover:bg-[var(--bg-muted)]"
-                  style={{ color: appearanceOpen ? 'var(--primary)' : 'var(--text-muted)' }}
+                  style={{ color: 'var(--primary)' }}
                   aria-label="Đổi giao diện">
-                  {currentAppearanceIcon({ size: 15 })}
+                  {resolvedAppearance === 'dark' ? <FaSun size={15} /> : <FaMoon size={15} />}
                 </button>
-                {appearanceOpen && (
-                  <div className="absolute top-full mt-2 right-0 w-44 rounded-2xl border p-2 shadow-xl z-50"
-                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                    {appearanceOptions.map(option => (
-                      <button key={option.id} onClick={() => setAppearance(option.id)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                        style={appearance === option.id
-                          ? { color: 'var(--primary)', fontWeight: 600 }
-                          : { color: 'var(--text-secondary)' }}>
-                        <option.icon size={14} />
-                        <span>{option.label}</span>
-                        {appearance === option.id && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: 'var(--primary)' }} />}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {session ? (

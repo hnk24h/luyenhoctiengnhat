@@ -1,0 +1,59 @@
+:root {
+  --admin-text-primary: #22223B;
+  --admin-text-secondary: #3D3A8C;
+  --admin-text-muted: #6B6B8C;
+  --admin-accent: #C84B31;
+  --admin-bg-base: #F7F6F2;
+  --admin-bg-surface: #FFFFFF;
+}
+
+html[data-appearance="dark"] {
+  --admin-text-primary: #F7F6F2;
+  --admin-text-secondary: #C8C5BB;
+  --admin-text-muted: #A3A3C2;
+  --admin-accent: #FFB347;
+  --admin-bg-base: #181A23;
+  --admin-bg-surface: #23253A;
+}
+
+.text-admin-secondary {
+  color: var(--admin-text-secondary);
+}
+.text-admin-muted {
+  color: var(--admin-text-muted);
+}
+.text-admin-accent {
+  color: var(--admin-accent);
+}
+.btn-admin-primary {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150;
+  background: var(--admin-accent);
+  color: var(--admin-text-primary);
+  box-shadow: 0 2px 8px rgba(200,75,49,.25);
+}
+.btn-admin-primary:hover {
+  background: var(--admin-text-secondary);
+  color: var(--admin-bg-base);
+  box-shadow: 0 4px 12px rgba(61,58,140,.35);
+  transform: translateY(-1px);
+}
+.card-admin {
+  background: var(--admin-bg-surface);
+  border: 1px solid var(--admin-text-muted);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(61,58,140,.06);
+}
+.card-admin-hover {
+  background: var(--admin-bg-surface);
+  border: 1.5px solid var(--admin-accent);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(61,58,140,.07);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.card-admin-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(61,58,140,.12);
+  border-color: var(--admin-accent);
+}
