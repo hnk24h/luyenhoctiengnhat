@@ -1,5 +1,22 @@
 import React from 'react';
-import { Word } from '../page';
+
+// Copied from ../page.tsx to avoid import issues in Next.js app directory
+interface SavedWordContent {
+  id: string;
+  term: string;
+  pronunciation: string | null;
+  meanings: { language: string; meaning: string }[];
+  examples: { exampleText: string; translation: string | null }[];
+}
+
+interface Word {
+  id: string;
+  contentId: string;
+  content: SavedWordContent;
+  context: string | null;
+  createdAt: string;
+  collections: { id: string; name: string; color: string }[];
+}
 
 interface ReviewMistakesTabProps {
   words: Word[];
