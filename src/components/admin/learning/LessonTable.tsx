@@ -1,37 +1,63 @@
 import React, { useState, useRef } from 'react';
-import { FaListUl, FaPlus, FaMagnifyingGlass, FaTrash, FaLock, FaChevronLeft, FaChevronRight, FaRegEye, FaTimes } from 'react-icons/fa6';
+import { FaListUl, FaPlus, FaMagnifyingGlass, FaTrash, FaLock, FaChevronLeft, FaChevronRight, FaRegEye, FaXmark } from 'react-icons/fa6';
 import { FaCog, FaArrowsAlt } from 'react-icons/fa';
 import LessonDetailModal from '@/components/admin/learning/Modals/LessonDetailModal';
 
+// Copied from page.tsx to avoid import issues
+interface Lesson {
+    id: string; categoryId: string; title: string; description: string | null;
+    content: string | null; type: string; order: number;
+    requiredTier?: string;
+    _count: { items: number };
+    category: { name: string; skill: string; level: { code: string } };
+}
+interface Category {
+    id: string; levelId: string; skill: string; name: string;
+    description: string | null; icon: string | null; order: number;
+    level: { code: string; name: string };
+    _count: { lessons: number };
+}
+interface LessonTableProps {
+    lessons: Lesson[];
+    activeCatId: string | null;
+    categories: Category[];
+    lesSearch: string;
+    setLesSearch: (s: string) => void;
+    openLesCreate: () => void;
+    setActiveLesId: (id: string) => void;
+    loadItems: (lessonId: string) => void;
+    deleteLes: (id: string) => void;
+}
+
 export default function LessonTable({
-    lessons,
-    activeCatId,
-    categories,
-    lesSearch,
-    setLesSearch,
-    openLesCreate,
-    setActiveLesId,
-    loadItems,
-    deleteLes,
-}) {
+        lessons,
+        activeCatId,
+        categories,
+        lesSearch,
+        setLesSearch,
+        openLesCreate,
+        setActiveLesId,
+        loadItems,
+        deleteLes,
+}: LessonTableProps) {
     // Pagination state
     // Context menu state
-    const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, lesson: null });
-    const [lessonDetail, setLessonDetail] = useState(null); // lesson object or null
+    const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; lesson: Lesson | null }>({ visible: false, x: 0, y: 0, lesson: null });
+    const [lessonDetail, setLessonDetail] = useState<Lesson | null>(null); // lesson object or null
     const [lessonItems, setLessonItems] = useState([]); // items of lesson
-    const menuRef = useRef(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     // Hide context menu on click outside
     React.useEffect(() => {
         if (!contextMenu.visible) return;
-        function handleClick(e) {
-            if (menuRef.current && !menuRef.current.contains(e.target)) setContextMenu({ ...contextMenu, visible: false });
+        function handleClick(e: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setContextMenu({ ...contextMenu, visible: false });
         }
         window.addEventListener('mousedown', handleClick);
         return () => window.removeEventListener('mousedown', handleClick);
     }, [contextMenu]);
 
-    function handleContextMenu(e, lesson) {
+    function handleContextMenu(e: React.MouseEvent, lesson: Lesson) {
         e.preventDefault();
         setContextMenu({ visible: true, x: e.clientX, y: e.clientY, lesson });
     }
@@ -86,8 +112,8 @@ export default function LessonTable({
                     onEdit={() => alert('Sửa bài học')}
                     onDelete={() => alert('Xóa bài học')}
                     onAddItem={() => alert('Thêm mục mới')}
-                    onEditItem={item => alert('Sửa mục: ' + item.term)}
-                    onDeleteItem={item => alert('Xóa mục: ' + item.term)}
+                    onEditItem={(item: any) => alert('Sửa mục: ' + item.term)}
+                    onDeleteItem={(item: any) => alert('Xóa mục: ' + item.term)}
                 />
             )}
             {!activeCatId ? (

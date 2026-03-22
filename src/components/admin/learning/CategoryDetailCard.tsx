@@ -1,22 +1,37 @@
 import React from 'react';
 import { FaPencil, FaTrash } from 'react-icons/fa6';
 
-function SkillBadge({ skill }) {
+function SkillBadge({ skill }: { skill: string }) {
   const colors = {
     doc: '#0EA5E9', nghe: '#10B981', ngu_phap: '#F59E0B', tu_vung: '#8B5CF6',
-  };
+  } as const;
   const labels = {
     doc: 'Đọc', nghe: 'Nghe', ngu_phap: 'Ngữ pháp', tu_vung: 'Từ vựng',
-  };
-  const c = colors[skill] ?? '#6B7280';
+  } as const;
+  const c = colors[skill as keyof typeof colors] ?? '#6B7280';
+  const label = labels[skill as keyof typeof labels] ?? skill;
   return (
     <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: `${c}22`, color: c }}>
-      {labels[skill] ?? skill}
+      {label}
     </span>
   );
 }
 
-export default function CategoryDetailCard({ cat, onEdit, onDelete }) {
+// Copied from page.tsx to avoid import issues
+interface Category {
+  id: string; levelId: string; skill: string; name: string;
+  description: string | null; icon: string | null; order: number;
+  level: { code: string; name: string };
+  _count: { lessons: number };
+}
+
+interface CategoryDetailCardProps {
+  cat: Category | null | undefined;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+export default function CategoryDetailCard({ cat, onEdit, onDelete }: CategoryDetailCardProps) {
   if (!cat) {
     return <div className="card text-center text-sm text-muted py-8">Chọn một chủ đề để xem chi tiết và quản lý bài học.</div>;
   }

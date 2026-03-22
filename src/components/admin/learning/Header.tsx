@@ -1,4 +1,4 @@
-export default function Header({ subject }) {
+export default function Header({ subject }: { subject: string }) {
   return (
     <header className="w-full">
       <div className="relative w-full rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-800 shadow-lg px-6 py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-6">

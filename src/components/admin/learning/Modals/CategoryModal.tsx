@@ -1,7 +1,23 @@
 import React from 'react';
 import { FaXmark, FaCheck, FaPlus, FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
-export function CategoryModal({ modal, setModal, modalErr, catForm, setCatForm, levels, SKILLS, saving, saveCat }) {
+interface Level { code: string; name?: string }
+interface Skill { value: string; label: string }
+interface CatForm { levelCode: string; skill: string; name: string; description: string; icon: string; order: number }
+type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
+interface CategoryModalProps {
+  modal: Modal;
+  setModal: React.Dispatch<React.SetStateAction<Modal>>;
+  modalErr: string | null;
+  catForm: CatForm;
+  setCatForm: React.Dispatch<React.SetStateAction<CatForm>>;
+  levels: Level[];
+  SKILLS: Skill[];
+  saving: boolean;
+  saveCat: () => void;
+}
+
+export function CategoryModal({ modal, setModal, modalErr, catForm, setCatForm, levels, SKILLS, saving, saveCat }: CategoryModalProps) {
   if (modal !== 'cat-create' && modal !== 'cat-edit') return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setModal(null)}>

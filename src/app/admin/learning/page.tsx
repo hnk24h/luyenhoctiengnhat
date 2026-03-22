@@ -248,7 +248,7 @@ function AdminLearningPage() {
               const cat = categories.find(c => c.id === activeCatId);
               if (cat) openCatEdit(cat);
             }}
-            onDelete={() => deleteCat(activeCatId)}
+            onDelete={() => { if (activeCatId) deleteCat(activeCatId); }}
           />
           <LessonTable
             lessons={lessons}

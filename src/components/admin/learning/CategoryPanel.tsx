@@ -2,19 +2,45 @@ import React from 'react';
 import { FaLayerGroup, FaPlus, FaChevronRight, FaPencil } from 'react-icons/fa6';
 import CategoryDetailCard from './CategoryDetailCard';
 
-function SkillBadge({ skill }) {
+function SkillBadge({ skill }: { skill: string }) {
   const colors = {
     doc: '#0EA5E9', nghe: '#10B981', ngu_phap: '#F59E0B', tu_vung: '#8B5CF6',
-  };
+  } as const;
   const labels = {
     doc: 'Đọc', nghe: 'Nghe', ngu_phap: 'Ngữ pháp', tu_vung: 'Từ vựng',
-  };
-  const c = colors[skill] ?? '#6B7280';
+  } as const;
+  const c = colors[skill as keyof typeof colors] ?? '#6B7280';
+  const label = labels[skill as keyof typeof labels] ?? skill;
   return (
     <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: `${c}22`, color: c }}>
-      {labels[skill] ?? skill}
+      {label}
     </span>
   );
+}
+
+// Copied from page.tsx to avoid import issues
+interface Level { id: string; code: string; name: string; }
+interface Category {
+  id: string; levelId: string; skill: string; name: string;
+  description: string | null; icon: string | null; order: number;
+  level: { code: string; name: string };
+  _count: { lessons: number };
+}
+interface CategoryPanelProps {
+  levels: Level[];
+  categories: Category[];
+  activeLevel: string;
+  setActiveLevel: (level: string) => void;
+  activeSkill: string;
+  setActiveSkill: (skill: string) => void;
+  catSearch: string;
+  setCatSearch: (s: string) => void;
+  activeCatId: string | null;
+  setActiveCatId: (id: string) => void;
+  loadLessons: (catId: string) => void;
+  openCatCreate: () => void;
+  openCatEdit: (cat: Category) => void;
+  deleteCat: (id: string) => void;
 }
 
 export default function CategoryPanel({
@@ -32,7 +58,7 @@ export default function CategoryPanel({
   openCatCreate,
   openCatEdit,
   deleteCat,
-}) {
+}: CategoryPanelProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Category selection/search */}

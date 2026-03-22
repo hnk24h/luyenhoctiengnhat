@@ -1,6 +1,31 @@
 import React from 'react';
 import { FaCirclePlus, FaFileArrowUp, FaPlus, FaPencil, FaTrash } from 'react-icons/fa6';
 
+// Copied from page.tsx to avoid import issues
+interface ContentMeaning { id: string; language: string; meaning: string }
+interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
+interface LearningItem {
+  id: string; lessonId: string; type: string; language: string; term: string;
+  pronunciation: string | null; meanings: ContentMeaning[]; examples: ContentExample[];
+  audioUrl: string | null; imageUrl: string | null; order: number;
+}
+interface Lesson {
+  id: string; categoryId: string; title: string; description: string | null;
+  content: string | null; type: string; order: number;
+  requiredTier?: string;
+  _count: { items: number };
+  category: { name: string; skill: string; level: { code: string } };
+}
+interface ItemPanelProps {
+  items: LearningItem[];
+  activeLesId: string | null;
+  lessons: Lesson[];
+  openItemCreate: () => void;
+  openItemEdit: (item: LearningItem) => void;
+  deleteItem: (id: string) => void;
+  openImport: () => void;
+}
+
 export default function ItemPanel({
   items,
   activeLesId,
@@ -9,7 +34,7 @@ export default function ItemPanel({
   openItemEdit,
   deleteItem,
   openImport,
-}) {
+}: ItemPanelProps) {
   return (
     <div className="card flex flex-col gap-3" style={{ minHeight: 500 }}>
       <div className="flex items-center justify-between">
