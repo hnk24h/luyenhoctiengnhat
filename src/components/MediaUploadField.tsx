@@ -11,18 +11,25 @@ interface Props {
   label?: React.ReactNode;
   placeholder?: string;
   required?: boolean;
+  onUploading?: (uploading: boolean) => void;
 }
 
-export function MediaUploadField({ type, value, onChange, label, placeholder, required }: Props) {
+export function MediaUploadField({ type, value, onChange, label, placeholder, required, onUploading }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+
+  // Notify parent when uploading state changes
+  function setUploadingWithNotify(val: boolean) {
+    setUploading(val);
+    if (typeof onUploading === 'function') onUploading(val);
+  }
 
   const accept = type === 'audio' ? 'audio/*' : 'image/*';
 
   async function handleFile(file: File) {
     setError('');
-    setUploading(true);
+    setUploadingWithNotify(true);
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -33,7 +40,7 @@ export function MediaUploadField({ type, value, onChange, label, placeholder, re
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
-      setUploading(false);
+      setUploadingWithNotify(false);
     }
   }
 
@@ -128,8 +135,9 @@ export function MediaUploadField({ type, value, onChange, label, placeholder, re
 
       {/* Preview */}
       {value && type === 'audio' && (
-        <div className="mt-1">
-          <AudioPlayer src={value} />
+        <div className="mt-1 flex items-center gap-2">
+          <audio src={value} controls style={{ maxWidth: 320, width: '100%' }} preload="auto" />
+          <a href={value} target="_blank" rel="noopener noreferrer" className="text-xs underline text-blue-700">Mở file</a>
         </div>
       )}
       {value && type === 'image' && (

@@ -115,6 +115,8 @@ export default function AdminListeningClient() {
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Track uploading state from MediaUploadField
+  const [audioUploading, setAudioUploading] = useState(false);
 
   async function loadItems() {
     setLoading(true);
@@ -471,7 +473,7 @@ export default function AdminListeningClient() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <button onClick={saveItem} disabled={saving} className="btn-primary">
+                <button onClick={saveItem} disabled={saving || audioUploading} className="btn-primary">
                   <FaUpload size={12} /> {saving ? 'Đang lưu...' : form.id ? 'Cập nhật' : 'Tạo mới'}
                 </button>
                 <button onClick={closeDialog} className="btn-secondary">
@@ -524,6 +526,7 @@ export default function AdminListeningClient() {
                 value={form.audioUrl}
                 onChange={url => updateField('audioUrl', url)}
                 label="🎧 Audio"
+                onUploading={setAudioUploading}
               />
 
               <div>

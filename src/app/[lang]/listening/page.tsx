@@ -1,16 +1,15 @@
 ﻿'use client';
+import { FaBars, FaTimes } from 'react-icons/fa';
+
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
-  FaHeadphones, FaCirclePlay, FaStop, FaVolumeHigh,
-  FaClock, FaCheck, FaWaveSquare, FaRegFileLines, FaChevronRight,
-  FaBookmark, FaKeyboard, FaPlay, FaPause, FaMusic,
-  FaTrophy, FaThumbsUp, FaDumbbell, FaBook,
-  FaRotate, FaRepeat, FaMagnifyingGlass, FaXmark,
-  FaGraduationCap, FaFlaskVial, FaStopwatch, FaArrowRotateLeft,
-  FaStar, FaRegStar,
+  FaHeadphones,
+  FaClock,
+  FaBookmark,
+  FaGraduationCap, FaFlaskVial, FaStopwatch,
 } from 'react-icons/fa6';
 import { AppSidebar } from '@/components/AppSidebar';
 import { LevelFilterBar } from '@/components/listening/LevelFilterBar';
@@ -18,6 +17,7 @@ import { SearchInput } from '@/components/listening/SearchInput';
 import { ListeningList } from '@/components/listening/ListeningList';
 import { ListeningPlayer } from '@/components/listening/ListeningPlayer';
 import ListeningTabs from '@/components/listening/ListeningTabs';
+import { WordLookupPopup } from '@/components/WordLookupPopup';
 
 // ─── Unified practice type (matches /api/listening?lang= response) ────────────
 interface Segment { speaker: string; text: string; pinyin?: string }
@@ -149,6 +149,9 @@ function ListeningPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
+
+  // Sidebar mobile toggle
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [practices, setPractices] = useState<ListeningPractice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -457,27 +460,43 @@ function ListeningPageContent() {
 
   return (
     <>
-      <div className="flex flex-col md:flex-row h-full min-h-screen bg-[var(--bg-base)]">
-        {/* Sidebar: responsive, collapsible */}
+      <div className="flex flex-col-reverse md:flex-row h-full min-h-screen bg-[var(--bg-base)]">
+        {/* Sidebar: bottom on mobile, left on desktop */}
+        {/* Sidebar: toggle mobile, sticky desktop */}
+        {/* Backdrop mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-20 bg-black/30 md:hidden animate-fade-in" onClick={() => setSidebarOpen(false)} />
+        )}
+        {/* Sidebar mobile: fixed bottom, only on mobile */}
         <aside
-          className="w-full md:w-80 shrink-0 border-b md:border-b-0 md:border-r bg-gradient-to-b from-[var(--bg-surface)] to-[var(--bg-base)] z-20"
-          style={{ borderColor: 'var(--border)', minHeight: 'auto', boxShadow: '2px 0 16px 0 rgba(80,80,120,0.04)' }}
+          className={`w-full fixed bottom-0 left-0 z-40 md:hidden border-t bg-gradient-to-b from-[var(--bg-surface)] to-[var(--bg-base)] transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} rounded-t-2xl border shadow-xl h-full`}
+          style={{ borderColor: 'var(--border)', minHeight: 'auto', boxShadow: '0 -2px 16px 0 rgba(80,80,120,0.04), 2px 0 16px 0 rgba(80,80,120,0.04)' }}
+          tabIndex={-1}
         >
-          {/* Sticky header for desktop, normal for mobile */}
-          <div className="sticky md:static top-0 z-10 bg-[var(--bg-surface)]/80 backdrop-blur-md shadow-sm px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 rounded-b-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-[#a18fff] to-[#6C5CE7] shadow-md">
-                <FaHeadphones size={18} className="md:!hidden" color="#fff" />
-                <FaHeadphones size={20} className="hidden md:!block" color="#fff" />
+          {/* Nút đóng sidebar mobile */}
+          {sidebarOpen && (
+            <button
+              className="fixed top-12 right-4 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white/90 shadow-xl border border-white/80 z-50"
+              style={{ color: accent }}
+              aria-label="Đóng menu bài nghe"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <FaTimes size={22} />
+            </button>
+          )}
+          <div className="z-10 bg-[var(--bg-surface)]/80 backdrop-blur-md shadow-sm px-4 pt-3 pb-2 rounded-t-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-[#a18fff] to-[#6C5CE7] shadow-md">
+                <FaHeadphones size={18} color="#fff" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] md:text-[15px] font-extrabold leading-snug truncate tracking-tight" style={{ color: '#6C5CE7', letterSpacing: '-0.5px' }}>{cfg.hasPinyin ? 'Nghe tiếng Trung' : 'Nghe tiếng Nhật'}</div>
-                <div className="text-[10px] md:text-[11px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-[14px] font-extrabold leading-snug truncate tracking-tight" style={{ color: '#6C5CE7', letterSpacing: '-0.5px' }}>{cfg.hasPinyin ? 'Nghe tiếng Trung' : 'Nghe tiếng Nhật'}</div>
+                <div className="text-[10px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
                   {loading ? 'Đang tải…' : `${filteredPractices.length} bài${selectedLevel !== 'ALL' ? ` · ${selectedLevel}` : ''}${selectedCategory !== 'ALL' ? ` · ${selectedCategory}` : ''}`}
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-2 md:gap-3">
+            <div className="flex flex-col gap-2">
               <SearchInput
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -504,12 +523,27 @@ function ListeningPageContent() {
             </div>
           </div>
           {/* List section */}
-          <div className="flex-1 overflow-y-auto px-1 md:px-2 pb-3 md:pb-4 pt-1 md:pt-2 mt-1 md:mt-2">
-            <div className="rounded-2xl bg-[var(--bg-surface)] shadow-sm p-1 md:p-2">
+          <div className="overflow-y-auto px-1 pb-2 pt-1 mt-1 max-h-[40vh]">
+            <div className="p-1">
               <ListeningList
                 items={filteredPractices}
                 selectedId={selectedId}
-                onSelect={setSelectedId}
+                onSelect={id => {
+                  setSelectedId(id);
+                  setSidebarOpen(false);
+                }}
+                onPlay={(id: string) => {
+                  if (selectedId === id && isSpeaking) {
+                    stopPlayback();
+                  } else if (selectedId === id) {
+                    playDialogue(0);
+                  } else {
+                    autoPlayRef.current = true;
+                    setSelectedId(id);
+                  }
+                  setSidebarOpen(false);
+                }}
+                isPlayingId={isSpeaking ? selectedId : undefined}
                 levelMeta={cfg.levelMeta}
                 heroBg={cfg.heroBg}
                 accent={accent}
@@ -518,8 +552,76 @@ function ListeningPageContent() {
           </div>
         </aside>
 
+        {/* Sidebar desktop: sticky left, only on desktop */}
+        <aside
+          className={`hidden md:block md:w-80 shrink-0 md:sticky md:top-[80px] border-r md:max-h-[calc(100vh-10rem)] z-20 rounded-2xl border shadow-xl`}
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', minHeight: 'auto', boxShadow: '2px 0 16px 0 rgba(80,80,120,0.04)' }}
+          tabIndex={-1}
+        >
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-[#a18fff] to-[#6C5CE7] shadow-md">
+                <FaHeadphones size={20} color="#fff" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-extrabold leading-snug truncate tracking-tight" style={{ color: '#6C5CE7', letterSpacing: '-0.5px' }}>{cfg.hasPinyin ? 'Nghe tiếng Trung' : 'Nghe tiếng Nhật'}</div>
+                <div className="text-[11px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {loading ? 'Đang tải…' : `${filteredPractices.length} bài${selectedLevel !== 'ALL' ? ` · ${selectedLevel}` : ''}${selectedCategory !== 'ALL' ? ` · ${selectedCategory}` : ''}`}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <SearchInput
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={cfg.hasPinyin ? '找找标题…' : 'Tìm kiếm tiêu đề…'}
+              />
+              <LevelFilterBar
+                levels={cfg.levelCodes}
+                selected={selectedLevel}
+                onSelect={lvl => { setSelectedLevel(lvl); setSelectedCategory('ALL'); }}
+                allLabel="Tất cả"
+                colorMap={Object.fromEntries(cfg.levelCodes.map(lvl => [lvl, { bg: cfg.levelMeta[lvl].badgeBg, color: cfg.levelMeta[lvl].badgeText, activeColor: cfg.levelMeta[lvl].accent }]))}
+                accent={accent}
+              />
+              {availableCategories.length > 1 && (
+                <LevelFilterBar
+                  levels={availableCategories}
+                  selected={selectedCategory}
+                  onSelect={setSelectedCategory}
+                  allLabel="Tất cả"
+                  colorMap={Object.fromEntries(availableCategories.map(cat => [cat, { bg: cfg.heroBg, color: accent }]))}
+                  accent={accent}
+                />
+              )}
+            </div>
+          </div>
+          {/* List section */}
+          <div className="overflow-y-auto px-2 pb-4 pt-2 mt-2 max-h-none">
+            <ListeningList
+              items={filteredPractices}
+              selectedId={selectedId}
+              onSelect={id => setSelectedId(id)}
+              onPlay={(id: string) => {
+                if (selectedId === id && isSpeaking) {
+                  stopPlayback();
+                } else if (selectedId === id) {
+                  playDialogue(0);
+                } else {
+                  autoPlayRef.current = true;
+                  setSelectedId(id);
+                }
+              }}
+              isPlayingId={isSpeaking ? selectedId : undefined}
+              levelMeta={cfg.levelMeta}
+              heroBg={cfg.heroBg}
+              accent={accent}
+            />
+          </div>
+        </aside>
+
         {/* Main content panel: responsive */}
-        <div ref={mainRef} className="flex-1 overflow-y-auto px-0 md:px-2">
+        <div ref={mainRef} className="flex-1 overflow-y-auto px-0 md:px-2 pb-[180px] md:pb-0">
           {loading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-10 h-10 rounded-full border-4 animate-spin"
@@ -540,6 +642,15 @@ function ListeningPageContent() {
             <div className="p-2 sm:p-4 lg:p-5 max-w-full md:max-w-[900px] mx-auto">
               {/* ── Mode toggle ── */}
               <div className="flex items-center gap-2 mb-3">
+                {/* Nút mở sidebar mobile trong header main content */}
+                <button
+                  className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/90 shadow border border-white/80 mr-1"
+                  style={{ color: accent }}
+                  aria-label="Mở menu bài nghe"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <FaBars size={20} />
+                </button>
                 <button
                   onClick={() => { setAppMode('practice'); setExamTimerActive(false); setExamFinished(false); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
@@ -710,50 +821,17 @@ function ListeningPageContent() {
 
       {/* ── Word Lookup Popup ── */}
       {lookupWord && lookupPos && (
-        <div
-          className="fixed z-50 pointer-events-auto"
-          style={{ top: lookupPos.y - 8, left: lookupPos.x, transform: 'translate(-50%, -100%)' }}>
-          <div className="rounded-2xl shadow-xl border px-4 py-3 min-w-[160px] max-w-[220px]"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.18)' }}>
-            {/* Arrow */}
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-4 h-2 overflow-hidden">
-              <div className="w-4 h-4 rotate-45 border"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', marginTop: -8, marginLeft: 0 }} />
-            </div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xl font-bold" style={{ fontFamily: cfg.hasPinyin ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif', color: accent }}>
-                {lookupWord}
-              </span>
-              <button onClick={() => { setLookupWord(null); setLookupPos(null); }}
-                className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-red-50"
-                style={{ color: 'var(--text-muted)' }}>
-                <FaXmark size={10} />
-              </button>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <a
-                href={cfg.hasPinyin
-                  ? `https://www.mdbg.net/chinese/dictionary?page=worddict&wdrst=0&wdqb=${encodeURIComponent(lookupWord)}`
-                  : `https://jisho.org/search/${encodeURIComponent(lookupWord)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg"
-                style={{ background: `${accent}18`, color: accent }}>
-                {cfg.hasPinyin ? 'MDBG' : 'Jisho'} →
-              </a>
-              <button
-                onClick={() => { navigator.clipboard.writeText(lookupWord!).catch(() => { }); }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg"
-                style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                Copy
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Dismiss lookup on backdrop click */}
-      {lookupWord && (
-        <div className="fixed inset-0 z-40" onClick={() => { setLookupWord(null); setLookupPos(null); }} />
+        <>
+          <WordLookupPopup
+            word={lookupWord}
+            pos={lookupPos}
+            accent={accent}
+            hasPinyin={cfg.hasPinyin}
+            onClose={() => { setLookupWord(null); setLookupPos(null); }}
+          />
+          {/* Dismiss lookup on backdrop click */}
+          <div className="fixed inset-0 z-40" onClick={() => { setLookupWord(null); setLookupPos(null); }} />
+        </>
       )}
     </>
   );

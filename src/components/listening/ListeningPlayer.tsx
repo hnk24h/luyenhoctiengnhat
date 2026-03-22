@@ -1,4 +1,5 @@
 import React from 'react';
+import './ListeningPlayer.css';
 import { FaPause, FaPlay, FaMusic, FaRepeat } from 'react-icons/fa6';
 
 interface ListeningPlayerProps {
@@ -58,21 +59,47 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
   setShowPinyin,
   cfg,
 }) => {
+  React.useEffect(() => {
+    if (audioRef.current && selectedPractice?.audioUrl) {
+      audioRef.current.src = selectedPractice.audioUrl;
+      audioRef.current.load();
+    }
+  }, [selectedPractice?.audioUrl, audioRef]);
+
+  React.useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate, audioRef]);
+
   return (
     <div className="mx-4 mb-3 rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-base)' }}>
+      {/* Hidden audio element for playback */}
+      {selectedPractice?.audioUrl && (
+        <audio
+          ref={audioRef}
+          src={selectedPractice.audioUrl}
+          preload="auto"
+          style={{ display: 'none' }}
+        />
+      )}
       {/* Row 1: play + time + speed */}
       <div className="flex items-center gap-2 mb-2">
         {/* Sound bars (animated) */}
         <div className="flex items-end gap-[2px] h-5 shrink-0">
           {[4, 7, 10, 6, 9, 12, 5, 8].map((h, i) => (
-            <div key={i} className="w-[3px] rounded-full"
+            <div
+              key={i}
+              className={`w-[3px] rounded-full${isSpeaking ? ' sound-bar-anim' : ''}`}
               style={{
-                height: isSpeaking ? undefined : `${h * 2}px`,
+                height: isSpeaking ? `${8 + (i % 3) * 6}px` : `${h * 2}px`,
                 minHeight: 3,
                 background: accent,
                 opacity: isSpeaking ? 1 : 0.25,
-                animation: isSpeaking ? `soundBar ${0.5 + (i % 4) * 0.15}s ease-in-out ${i * 0.07}s infinite alternate` : 'none',
-              }} />
+                animationDuration: isSpeaking ? `${0.7 + (i % 4) * 0.18}s` : undefined,
+                animationDelay: isSpeaking ? `${i * 0.07}s` : undefined,
+              }}
+            />
           ))}
         </div>
         {/* Play / Stop */}
@@ -133,18 +160,17 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
             const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
             const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
             const t = pct * (audioDuration || selectedPractice.durationSec);
-            // setAudioCurrent(t); // parent must handle
             if (audioRef.current) audioRef.current.currentTime = t;
           }}>
-          {/* Track */}
-          <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: `${accent}25` }}>
-            <div className="h-full rounded-full"
-              style={{
-                width: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
-                background: accent,
-                transition: 'width 0.1s linear',
-              }} />
-          </div>
+          {/* Track background (full bar) */}
+          <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: '#e5e7eb' }} />
+          {/* Progress bar (played) */}
+          <div className="absolute h-1.5 rounded-full" style={{
+            left: 0,
+            width: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
+            background: accent,
+            transition: 'width 0.1s linear',
+          }} />
           {/* Thumb */}
           <div
             className="absolute w-3.5 h-3.5 rounded-full shadow-md transition-transform group-hover:scale-125"
@@ -158,31 +184,35 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
             }} />
         </div>
       ) : selectedPractice ? (
-        <div className="flex items-center gap-1 py-2">
-          {selectedPractice.segments.map((seg: any, i: number) => {
-            const isPlayed = i < speakingSegIdx;
-            const isCurrent = i === speakingSegIdx && isSpeaking;
-            return (
-              <button
-                key={i}
-                title={`${seg.speaker}: ${seg.text.slice(0, 24)}…`}
-                onClick={() => {
-                  if (isSpeaking) {
-                    playTokenRef.current += 1;
-                    synthRef.current?.cancel();
-                    setSpeakingSegIdx(i);
-                    window.setTimeout(() => playDialogue(i), 60);
-                  } else {
-                    playDialogue(i);
-                  }
-                }}
-                className="flex-1 h-1.5 rounded-full transition-all hover:h-2.5"
-                style={{
-                  background: isCurrent ? accent : isPlayed ? `${accent}80` : `${accent}25`,
-                  animation: isCurrent ? `soundBar ${0.4 + (i % 3) * 0.12}s ease-in-out ${i * 0.04}s infinite alternate` : 'none',
-                }} />
-            );
-          })}
+        <div
+          className="relative h-8 flex items-center cursor-pointer group select-none"
+          onClick={(e) => {
+            const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+            const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const t = pct * (audioDuration || selectedPractice.durationSec);
+            if (audioRef.current) audioRef.current.currentTime = t;
+          }}
+        >
+          {/* Track background (full bar) */}
+          <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: '#e5e7eb' }} />
+          {/* Progress bar (played) */}
+          <div className="absolute h-1.5 rounded-full" style={{
+            left: 0,
+            width: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
+            background: accent,
+            transition: 'width 0.1s linear',
+          }} />
+          {/* Thumb */}
+          <div
+            className="absolute w-3.5 h-3.5 rounded-full shadow-md transition-transform group-hover:scale-125"
+            style={{
+              left: `${audioDuration > 0 ? (audioCurrent / audioDuration) * 100 : 0}%`,
+              transform: 'translateX(-50%)',
+              background: accent,
+              top: '50%',
+              marginTop: '-7px',
+              boxShadow: `0 0 0 3px ${accent}30`,
+            }} />
         </div>
       ) : null}
     </div>

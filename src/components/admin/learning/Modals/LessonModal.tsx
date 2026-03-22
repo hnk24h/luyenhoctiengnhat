@@ -43,6 +43,36 @@ export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LE
             <input className="input w-full" placeholder="Mô tả ngắn về bài học..." value={lesForm.description} onChange={e => setLesForm(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>File audio (mp3, wav, ogg) hoặc URL</label>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept="audio/*"
+                className="input w-full"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLesForm(f => ({ ...f, audioFile: file, audioUrl: '' }));
+                  }
+                }}
+              />
+            </div>
+            <div className="mt-2">
+              <input
+                className="input w-full"
+                placeholder="Hoặc dán URL file audio (https://...)"
+                value={lesForm.audioUrl || ''}
+                onChange={e => setLesForm(f => ({ ...f, audioUrl: e.target.value, audioFile: undefined }))}
+              />
+            </div>
+            {lesForm.audioUrl && (
+              <audio src={lesForm.audioUrl} controls className="mt-2 w-full" />
+            )}
+            {lesForm.audioFile && (
+              <audio src={URL.createObjectURL(lesForm.audioFile)} controls className="mt-2 w-full" />
+            )}
+          </div>
+          <div>
             <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Thứ tự</label>
             <input type="number" className="input w-24" min={0} value={lesForm.order} onChange={e => setLesForm(f => ({ ...f, order: Number(e.target.value) }))} />
           </div>
