@@ -1,7 +1,29 @@
 import React from 'react';
 import { FaXmark, FaCheck } from 'react-icons/fa6';
 
-export function ItemModal({ modal, setModal, modalErr, itemForm, setItemForm, ITEM_TYPES, saving, saveItem }) {
+type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
+interface ItemForm {
+  type: string;
+  term: string;
+  pronunciation: string;
+  language: string;
+  meaning: string;
+  example: string;
+  exampleMeaning: string;
+  order: number;
+}
+interface ItemModalProps {
+  modal: Modal;
+  setModal: React.Dispatch<React.SetStateAction<Modal>>;
+  modalErr: string;
+  itemForm: ItemForm;
+  setItemForm: React.Dispatch<React.SetStateAction<ItemForm>>;
+  ITEM_TYPES: string[];
+  saving: boolean;
+  saveItem: () => void;
+}
+
+export function ItemModal({ modal, setModal, modalErr, itemForm, setItemForm, ITEM_TYPES, saving, saveItem }: ItemModalProps) {
   if (modal !== 'item-create' && modal !== 'item-edit') return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setModal(null)}>

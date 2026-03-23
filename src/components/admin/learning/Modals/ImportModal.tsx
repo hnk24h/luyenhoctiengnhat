@@ -1,7 +1,27 @@
 import React from 'react';
 import { FaXmark, FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
 
-export function ImportModal({ importOpen, setImportOpen, importFmt, setImportFmt, importText, setImportText, importResult, importErr, importing, runImport, lessons, activeLesId }) {
+interface Lesson {
+  id: string;
+  title: string;
+}
+
+interface ImportModalProps {
+  importOpen: boolean;
+  setImportOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  importFmt: 'csv' | 'json';
+  setImportFmt: React.Dispatch<React.SetStateAction<'csv' | 'json'>>;
+  importText: string;
+  setImportText: React.Dispatch<React.SetStateAction<string>>;
+  importResult: { imported: number; skipped: number; errors: string[] } | null;
+  importErr: string;
+  importing: boolean;
+  runImport: () => void;
+  lessons: Lesson[];
+  activeLesId: string | null;
+}
+
+export function ImportModal({ importOpen, setImportOpen, importFmt, setImportFmt, importText, setImportText, importResult, importErr, importing, runImport, lessons, activeLesId }: ImportModalProps) {
   if (!importOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setImportOpen(false)}>

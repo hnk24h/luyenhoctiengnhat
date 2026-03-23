@@ -4,12 +4,53 @@ import { FaTimes, FaEdit, FaTrash, FaPlus, FaSearch, FaClone } from 'react-icons
 // Schema: Lesson gồm các trường: id, title, description, type, requiredTier, _count.items
 // CRUD: Sửa, Xóa, Thêm mục con (item), Search, Pagination
 
-export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, items = [], onAddItem, onEditItem, onDeleteItem }) {
+
+// Local copy of Lesson and LearningItem interfaces to avoid cross-app-directory import issues
+interface Lesson {
+  id: string;
+  categoryId: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  type: string;
+  order: number;
+  requiredTier?: string;
+  _count: { items: number };
+  category: { name: string; skill: string; level: { code: string } };
+}
+interface ContentMeaning { id: string; language: string; meaning: string }
+interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
+interface LearningItem {
+  id: string;
+  lessonId: string;
+  type: string;
+  language: string;
+  term: string;
+  pronunciation: string | null;
+  meanings: ContentMeaning[];
+  examples: ContentExample[];
+  audioUrl: string | null;
+  imageUrl: string | null;
+  order: number;
+}
+
+interface LessonDetailModalProps {
+  lesson: Lesson;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  items?: LearningItem[];
+  onAddItem: (item: any) => void;
+  onEditItem: (item: any) => void;
+  onDeleteItem: (id: string) => void;
+}
+
+export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, items = [], onAddItem, onEditItem, onDeleteItem }: LessonDetailModalProps) {
   const [addingRow, setAddingRow] = useState(false);
   const [addData, setAddData] = useState({ term: '', pronunciation: '', meanings: '', type: '' });
 
   // Clone row logic
-  const handleCloneRow = (item) => {
+  const handleCloneRow = (item: LearningItem) => {
     setAddingRow(true);
     setAddData({
       term: item.term || '',
