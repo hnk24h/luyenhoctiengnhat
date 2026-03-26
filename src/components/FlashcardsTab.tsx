@@ -15,6 +15,9 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
   const [unknown, setUnknown] = useState<Set<string>>(new Set());
   const [finished, setFinished] = useState(false);
   const [displayMode, setDisplayMode] = useState<'flashcard' | 'grid'>('flashcard');
+  const [page, setPage] = useState(1);
+  const pageSize = 5; // Giảm còn 5 từ mỗi trang
+  const totalPages = Math.ceil(items.length / pageSize);
 
   const total = items.length;
   const current = items[index];
@@ -28,6 +31,13 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
     if (itemRefs.current[index] && gridContainerRef.current) {
       itemRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+  }, [index]);
+
+  // Khi chuyển index, tự động cập nhật page nếu cần
+  React.useEffect(() => {
+    const newPage = Math.floor(index / pageSize) + 1;
+    if (newPage !== page) setPage(newPage);
+    // eslint-disable-next-line
   }, [index]);
 
   function next() {
@@ -48,6 +58,8 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
   function restart() {
     setIndex(0); setFlipped(false); setKnown(new Set()); setUnknown(new Set()); setFinished(false);
   }
+
+  const pagedItems = items.slice((page - 1) * pageSize, page * pageSize);
 
   if (total === 0) return <div className="text-center py-20" style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu từ vựng.</div>;
   if (finished) return (
@@ -146,49 +158,73 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
           </div>
         )}
       </div>
-      {/* Grid list of vocab with scroll and clear separation */}
-      <div className="flex-[1] max-h-[600px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 bg-gray-50 border border-gray-300 rounded-2xl p-4 shadow-md"
-          ref={gridContainerRef}>
-          {items.map((item, idx) => (
-          <div
+      {/* Grid list of vocab without scroll, only display 5 items per page */}
+      <div className="flex-[1]">
+        {/* Pagination controls trên đầu */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mb-3">
+            <button
+              className="px-3 py-1 rounded-lg border text-sm"
+              style={{ color: page === 1 ? '#ccc' : 'var(--primary)', borderColor: 'var(--border)' }}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Trước
+            </button>
+            <span className="text-xs font-semibold">Trang {page} / {totalPages}</span>
+            <button
+              className="px-3 py-1 rounded-lg border text-sm"
+              style={{ color: page === totalPages ? '#ccc' : 'var(--primary)', borderColor: 'var(--border)' }}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Tiếp
+            </button>
+          </div>
+        )}
+        {/* Danh sách vocab không scroll, chỉ hiển thị 5 từ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 bg-gray-50 border border-gray-300 rounded-2xl p-4 shadow-md">
+          {pagedItems.map((item, idx) => (
+            <div
               key={item.id}
-              ref={el => itemRefs.current[idx] = el}
-              className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
-              style={{ borderColor: idx === index ? '#3B82F6' : 'var(--border)' }}
-          >
+              ref={el => itemRefs.current[(page - 1) * pageSize + idx] = el}
+              className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${(page - 1) * pageSize + idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
+              style={{ borderColor: (page - 1) * pageSize + idx === index ? '#3B82F6' : 'var(--border)' }}
+            >
               <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-base truncate" style={{ color: 'var(--primary)', fontFamily: font }}>{idx + 1}. {item.term}</span>
-              <button
+                <span className="font-bold text-base truncate" style={{ color: 'var(--primary)', fontFamily: font }}>{(page - 1) * pageSize + idx + 1}. {item.term}</span>
+                <button
                   className="p-1 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   aria-label="Phát âm"
                   onClick={() => {
-                  const utter = new window.SpeechSynthesisUtterance(item.term);
-                  utter.lang = 'ja-JP';
-                  window.speechSynthesis.speak(utter);
+                    const utter = new window.SpeechSynthesisUtterance(item.term);
+                    utter.lang = 'ja-JP';
+                    window.speechSynthesis.speak(utter);
                   }}>
                   <FaVolumeHigh size={16} style={{ color: 'var(--primary)' }} />
-              </button>
-              {item.pronunciation && <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>}
-              <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
+                </button>
+                {item.pronunciation && <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>}
+                <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
               </div>
               {item.examples && item.examples[0] && (
-              <div className="text-xs mt-1 italic truncate" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-xs mt-1 italic truncate" style={{ color: 'var(--text-secondary)' }}>
                   {(() => {
-                  const parts = item.examples[0].exampleText.split(item.term);
-                  if (parts.length > 1) {
+                    const parts = item.examples[0].exampleText.split(item.term);
+                    if (parts.length > 1) {
                       return <>{parts[0]}<span style={{ color: 'var(--primary)', fontWeight: 600 }}>{item.term}</span>{parts[1]}</>;
-                  }
-                  return item.examples[0].exampleText;
+                    }
+                    return item.examples[0].exampleText;
                   })()}
                   {item.examples[0].translation && (
-                  <span className="ml-1 font-semibold text-blue-700" style={{ color: 'var(--primary)' }}>
+                    <span className="ml-1 font-semibold text-blue-700" style={{ color: 'var(--primary)' }}>
                       {item.examples[0].translation}
-                  </span>
+                    </span>
                   )}
-              </div>
+                </div>
               )}
-          </div>
+            </div>
           ))}
+        </div>
       </div>
     </div>
   );

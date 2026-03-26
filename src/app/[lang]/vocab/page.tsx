@@ -278,11 +278,7 @@ function CollectionSidebar({
     </aside>
   );
 }
-
 // ─── Main page ────────────────────────────────────────────────────────────────
-
-
-
 function GamificationBar() {
   const [streak, setStreak] = useState(0);
   const [xp, setXp] = useState(0);
