@@ -27,10 +27,9 @@ const JA_LEVELS_OBJ = [
   { code: 'N1', label: 'N1', desc: 'Cao cấp' },
 ];
 const JA_SKILLS = [
-  { key: 'vocab', label: 'Từ vựng', icon: <FaBookOpen /> },
-  { key: 'grammar', label: 'Ngữ pháp', icon: <FaBookOpen /> },
-  { key: 'listening', label: 'Luyện nghe', icon: <FaBookOpen /> },
-  { key: 'reading', label: 'Luyện đọc', icon: <FaBookOpen /> },
+  { key: 'grammar', label: 'Ngữ pháp cơ bản cần nắm', icon: <FaBookOpen /> },
+  { key: 'advanced', label: 'Ngữ pháp nâng cao', icon: <FaBookOpen /> },
+  { key: 'group', label: 'Ngữ pháp theo nhóm', icon: <FaBookOpen /> },
 ];
 
 export const GrammarPageContent: React.FC = () => {

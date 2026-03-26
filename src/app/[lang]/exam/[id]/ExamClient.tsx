@@ -338,7 +338,7 @@ export default function ExamClient({ examSetId, title, skill, level, timeLimit, 
             </p>
 
             {/* ── Multiple choice options (trắc nghiệm) ── */}
-            {(q.type === 'tracnghiem' || q.type === 'nghe') && q.options && (
+            {(q.type === 'tracnghiem' || q.type === 'nghe') && Array.isArray(q.options) && (
               <div className="flex flex-col gap-2.5">
                 {q.options.map((opt, i) => {
                   const letter   = LETTERS[i] ?? String(i + 1);

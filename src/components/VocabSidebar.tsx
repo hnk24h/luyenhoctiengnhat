@@ -1,46 +1,33 @@
-'use client';
-
 import React, { useState } from 'react';
-import { FaLayerGroup, FaBookOpen, FaHeadphones, FaPenNib, FaBook, FaRetweet } from 'react-icons/fa6';
+import { FaLayerGroup, FaBolt, FaFolder, FaBookmark } from 'react-icons/fa6';
 
+const VOCAB_LEVELS = [
+  { code: 'N5', label: 'N5', desc: 'Sơ cấp' },
+  { code: 'N4', label: 'N4', desc: 'Sơ trung cấp' },
+  { code: 'N3', label: 'N3', desc: 'Trung cấp' },
+  { code: 'N2', label: 'N2', desc: 'Trung cao cấp' },
+  { code: 'N1', label: 'N1', desc: 'Cao cấp' },
+];
 
-export interface SidebarLevel {
-  code: string;
-  label: string;
-  desc?: string; // mô tả độ khó
-  percent?: number;
-  status?: 'not-started' | 'in-progress' | 'completed';
-  learned?: number;
-  total?: number;
-  tooltip?: string;
-}
-export interface SidebarSkill {
-  key: string;
-  label: string;
-  icon: React.ReactNode;
-}
+const VOCAB_FUNCTIONS = [
+  { key: 'flashcard', label: 'Học Flashcard', icon: <FaLayerGroup /> },
+  { key: 'srs', label: 'Học SRS', icon: <FaBolt /> },
+  { key: 'topics', label: 'Theo chủ đề', icon: <FaFolder /> },
+  { key: 'mine', label: 'Từ vựng của tôi', icon: <FaBookmark /> },
+];
 
-interface LearnSidebarProps {
-  mode: 'level' | 'skill';
-  setMode: (mode: 'level' | 'skill') => void;
+export interface VocabSidebarProps {
   selectedLevel: string;
   setSelectedLevel: (level: string) => void;
-  selectedSkill: string;
-  setSelectedSkill: (skill: string) => void;
-  levels: SidebarLevel[];
-  skills: SidebarSkill[];
-  title?: string;
-  showLevelProgress?: boolean;
+  selectedFunc: string;
+  setSelectedFunc: (func: string) => void;
 }
 
-
-
-
-export const LearnSidebar: React.FC<LearnSidebarProps> = ({
-  selectedLevel, setSelectedLevel, selectedSkill, setSelectedSkill, levels, skills, title,
+export const VocabSidebar: React.FC<VocabSidebarProps> = ({
+  selectedLevel, setSelectedLevel, selectedFunc, setSelectedFunc,
 }) => {
   // Dummy progress for demo
-  const progress = 0.42;
+  const progress = 0.33;
   return (
     <aside
       className="w-72 max-w-full rounded-xl flex flex-col transition-all duration-300 animate-fade-up sticky top-8 self-start shadow-sm"
@@ -62,7 +49,7 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
       >
         <FaLayerGroup size={22} className="text-white drop-shadow" />
         <span className="font-bold text-lg text-white tracking-wide select-none">
-          {title || 'Học'}
+          Học từ vựng
         </span>
       </div>
       {/* Progress bar */}
@@ -75,17 +62,16 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
           <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
         </div>
       </div>
-      {/* Nested navigation: Level → Skill */}
+      {/* Nested navigation: Level → Function */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 p-4 md:p-5">
         <div>
           <div className="font-bold mb-2 text-sm text-ink-primary tracking-wide">Chọn cấp độ</div>
           <ul className="flex flex-col gap-2">
-            {levels.map(lv => (
+            {VOCAB_LEVELS.map(lv => (
               <li key={lv.code}>
                 <button
                   className={`w-full text-left px-3 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all border border-transparent ${selectedLevel === lv.code ? 'bg-primary text-white' : 'hover:bg-muted text-ink-primary'}`}
                   onClick={() => setSelectedLevel(lv.code)}
-                  title={lv.tooltip || lv.desc}
                 >
                   <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary-light text-primary font-bold text-xs mr-2 min-w-fit">
                     {lv.label}
@@ -96,44 +82,26 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                       <span className="text-[11px] text-ink-muted font-normal mt-0.5 leading-tight">{lv.desc}</span>
                     )}
                   </span>
-                  {/* Progress bar nhỏ và trạng thái */}
-                  {lv.percent !== undefined && (
-                    <span className="flex flex-col items-end ml-2 min-w-[48px]">
-                      <span className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1">
-                        <span className={`h-1.5 rounded-full block transition-all ${lv.percent === 100 ? 'bg-green-500' : lv.percent > 0 ? 'bg-blue-500' : 'bg-gray-300'}`}
-                          style={{ width: `${lv.percent}%` }} />
-                      </span>
-                      <span className="text-[10px] font-semibold" style={{ color: lv.percent === 100 ? '#22c55e' : lv.percent > 0 ? '#2563eb' : '#a3a3a3' }}>
-                        {lv.percent}%
-                      </span>
-                      <span className="text-[10px] font-normal mt-0.5">
-                        {lv.status === 'not-started' && 'Chưa học'}
-                        {lv.status === 'in-progress' && 'Đang học'}
-                        {lv.status === 'completed' && 'Hoàn thành'}
-                      </span>
-                    </span>
-                  )}
                 </button>
               </li>
             ))}
           </ul>
         </div>
-        {/* Only show skills after selecting a level */}
+        {/* Only show functions after selecting a level */}
         {selectedLevel && (
           <div className="mt-5">
-            <div className="font-bold mb-2 text-sm text-ink-primary tracking-wide">Chọn kỹ năng</div>
+            <div className="font-bold mb-2 text-sm text-ink-primary tracking-wide">Chọn chức năng</div>
             <ul className="flex flex-col gap-2">
-              {skills.map(skill => (
-                <li key={skill.key}>
+              {VOCAB_FUNCTIONS.map(func => (
+                <li key={func.key}>
                   <button
-                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-3 font-semibold transition-all border border-transparent ${selectedSkill === skill.key ? 'bg-accent text-white' : 'hover:bg-muted text-ink-primary'}`}
-                    onClick={() => setSelectedSkill(skill.key)}
-                    title={typeof skill.label === 'string' ? skill.label : ''}
+                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-3 font-semibold transition-all border border-transparent ${selectedFunc === func.key ? 'bg-accent text-white' : 'hover:bg-muted text-ink-primary'}`}
+                    onClick={() => setSelectedFunc(func.key)}
                   >
                     <span className="w-7 h-7 flex items-center justify-center rounded-full bg-accent-light text-accent font-bold text-base">
-                      {skill.icon}
+                      {func.icon}
                     </span>
-                    <span className="flex-1 text-[14px] font-semibold">{skill.label}</span>
+                    <span className="flex-1 text-[14px] font-semibold">{func.label}</span>
                   </button>
                 </li>
               ))}
@@ -144,7 +112,7 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
       {/* CTA */}
       <div className="px-5 pb-4 pt-2">
         <button className="w-full py-2 rounded-lg bg-gradient-to-r from-primary to-accent text-white font-bold text-sm shadow transition-all hover:brightness-110">
-          Bắt đầu học ngay
+          Bắt đầu học từ vựng
         </button>
       </div>
     </aside>

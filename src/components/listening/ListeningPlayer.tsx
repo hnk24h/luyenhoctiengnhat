@@ -85,23 +85,6 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
       )}
       {/* Row 1: play + time + speed */}
       <div className="flex items-center gap-2 mb-2">
-        {/* Sound bars (animated) */}
-        <div className="flex items-end gap-[2px] h-5 shrink-0">
-          {[4, 7, 10, 6, 9, 12, 5, 8].map((h, i) => (
-            <div
-              key={i}
-              className={`w-[3px] rounded-full${isSpeaking ? ' sound-bar-anim' : ''}`}
-              style={{
-                height: isSpeaking ? `${8 + (i % 3) * 6}px` : `${h * 2}px`,
-                minHeight: 3,
-                background: accent,
-                opacity: isSpeaking ? 1 : 0.25,
-                animationDuration: isSpeaking ? `${0.7 + (i % 4) * 0.18}s` : undefined,
-                animationDelay: isSpeaking ? `${i * 0.07}s` : undefined,
-              }}
-            />
-          ))}
-        </div>
         {/* Play / Stop */}
         {(speechSupported || selectedPractice.audioUrl) ? (
           <button
@@ -111,6 +94,7 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
                 stopPlayback();
               } else {
                 if (appMode === 'exam') {
+                  
                   setExamReplayCount(p => p + 1);
                   if (!examTimerActive) setExamTimerActive(true);
                 }
@@ -129,6 +113,23 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
             <FaMusic size={12} />
           </div>
         )}
+        {/* Sound bars (animated) */}
+        <div className="flex items-end gap-[2px] h-5 shrink-0">
+          {[4, 7, 10, 6, 9, 12, 5, 8].map((h, i) => (
+            <div
+              key={i}
+              className={`w-[3px] rounded-full${isSpeaking ? ' sound-bar-anim' : ''}`}
+              style={{
+                height: isSpeaking ? `${8 + (i % 3) * 6}px` : `${h * 2}px`,
+                minHeight: 3,
+                background: accent,
+                opacity: isSpeaking ? 1 : 0.25,
+                animationDuration: isSpeaking ? `${0.7 + (i % 4) * 0.18}s` : undefined,
+                animationDelay: isSpeaking ? `${i * 0.07}s` : undefined,
+              }}
+            />
+          ))}
+        </div>        
         {/* Time */}
         <span className="text-[11px] font-bold tabular-nums shrink-0" style={{ color: accent }}>
           {audioDuration > 0
@@ -140,6 +141,7 @@ export const ListeningPlayer: React.FC<ListeningPlayerProps> = ({
             {examReplayCount}/{MAX_EXAM_REPLAYS} lần nghe
           </span>
         )}
+        <span className="text-[11px] font-bold shrink-0" style={{ color: accent }}>{ selectedPractice?.title }</span>
         <div className="flex-1" />
         {/* Speed select */}
         <select

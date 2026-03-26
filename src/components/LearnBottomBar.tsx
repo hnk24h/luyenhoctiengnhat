@@ -13,10 +13,12 @@ interface LearnBottomBarProps {
 export const LearnBottomBar: React.FC<LearnBottomBarProps> = ({
   levels, selectedLevel, setSelectedLevel, skills, selectedSkill, setSelectedSkill,
 }) => {
+  const safeLevels = Array.isArray(levels) ? levels : [];
+  const safeSkills = Array.isArray(skills) ? skills : [];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border shadow-lg flex flex-col md:hidden animate-fade-up">
       <div className="flex overflow-x-auto gap-2 px-2 py-2 scrollbar-hide">
-        {levels.map(lv => (
+        {safeLevels.map(lv => (
           <button
             key={lv.code}
             className={`flex flex-col items-center px-3 py-1 rounded-full font-semibold text-xs transition-all whitespace-nowrap ${selectedLevel === lv.code ? 'bg-primary text-white shadow-primary' : 'bg-muted text-ink-primary'}`}
@@ -29,7 +31,7 @@ export const LearnBottomBar: React.FC<LearnBottomBarProps> = ({
         ))}
       </div>
       <div className="flex justify-around items-center px-2 py-1 border-t border-border bg-surface">
-        {skills.map(skill => (
+        {safeSkills.map(skill => (
           <button
             key={skill.key}
             className={`flex flex-col items-center justify-center flex-1 py-2 transition-all ${selectedSkill === skill.key ? 'text-accent' : 'text-ink-muted'}`}

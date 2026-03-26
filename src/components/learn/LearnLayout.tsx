@@ -1,6 +1,9 @@
+"use client";
+
 import React from 'react';
 import { LearnSidebar } from '../LearnSidebar';
 import { LearnBottomBar } from '../LearnBottomBar';
+
 
 interface LearnLayoutProps {
   sidebarProps: any;
@@ -17,25 +20,14 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({ sidebarProps, bottomBa
       {/* Sidebar desktop */}
       <div
         className="hidden md:block"
-        style={{ marginTop: 40, marginLeft: 0, marginRight: 12 }}
+        style={{ marginLeft: 0, marginRight: 12 }}
       >
-        <LearnSidebar {...sidebarProps} />
+        {sidebarProps?.customSidebar ? sidebarProps.customSidebar : <LearnSidebar {...sidebarProps} />}
       </div>
       {/* Bottom bar mobile/tablet */}
       <LearnBottomBar {...bottomBarProps} />
       <main
-        className="flex-1 px-2 sm:px-4 md:px-8 py-6 md:py-8 pb-24"
-        style={{
-          background: 'var(--bg-surface)',
-          borderRadius: '20px',
-          border: '1.5px solid var(--border)',
-          boxShadow: '0 4px 24px 0 rgba(61,58,140,0.07), 0 1.5px 6px 0 rgba(0,0,0,0.04)',
-          marginTop: 40,
-          marginBottom: 32,
-          marginLeft: 0,
-          marginRight: 0,
-          maxWidth: '100%',
-        }}
+        className="flex-1 px-2 sm:px-4 md:px-8 py-6 md:py-8 pb-24 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-[0_4px_24px_0_rgba(61,58,140,0.07),0_1.5px_6px_0_rgba(0,0,0,0.04)] mb-8 max-w-full"
       >
         {children}
       </main>

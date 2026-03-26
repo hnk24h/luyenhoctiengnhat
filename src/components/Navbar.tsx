@@ -257,16 +257,9 @@ export function Navbar() {
                 if (isVocabLink) {
                   const vocabBase = `/${currentLang}/vocab`;
                   const vocabActive = pathname.startsWith(vocabBase);
-                  // Enhanced submenu items
-                  const VOCAB_SUBMENU = [
-                    { href: `${vocabBase}?tab=flashcards`, label: 'Flashcards', icon: FaLayerGroup },
-                    { href: `${vocabBase}?tab=practice`,   label: 'Practice',   icon: FaBolt },
-                    { href: `${vocabBase}?tab=favorites`,  label: 'Favorites',  icon: FaStar },
-                    { href: `${vocabBase}?tab=review`,     label: 'Review mistakes', icon: FaRegLightbulb },
-                  ];
                   return (
                     <div key={link.href} className="relative">
-                      <button
+                      <Link href={vocabBase}
                         onClick={() => toggleMenu('vocab')}
                         aria-expanded={vocabOpen}
                         aria-haspopup="true"
@@ -278,39 +271,16 @@ export function Navbar() {
                       >
                         <link.icon size={13} />
                         <span>Từ vựng</span>
-                        <FaChevronDown size={9} style={{ transform: vocabOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                      </button>
-                      <div
-                        className={`absolute top-full mt-2 left-0 w-60 rounded-2xl border p-2 shadow-xl z-50 transition-all duration-200 ${vocabOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
-                        style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}
-                        role="menu"
-                        aria-label="Vocabulary submenu"
-                      >
-                        {VOCAB_SUBMENU.map(item => (
-                          <MenuItem
-                            key={item.href}
-                            href={item.href}
-                            label={item.label}
-                            icon={item.icon}
-                            active={pathname === item.href}
-                            className="justify-between"
-                          />
-                        ))}
-                      </div>
+                      </Link>
                     </div>
                   );
                 }
                 if (isListeningLink) {
                   const listeningBase = `/${currentLang}/listening`;
                   const listeningActive = pathname.startsWith(listeningBase);
-                  const LISTENING_SUBMENU = [
-                    { href: listeningBase,                    label: 'Nghe theo giáo trình', icon: FaGraduationCap, mode: '' },
-                    { href: `${listeningBase}?mode=dialogue`, label: 'Nghe hội thoại',       icon: FaComments,      mode: 'dialogue' },
-                    { href: `${listeningBase}?mode=random`,   label: 'Nghe ngẫu nhiên',      icon: FaShuffle,       mode: 'random' },
-                  ];
                   return (
                     <div key={link.href} className="relative">
-                      <button
+                      <Link href={listeningBase}
                         onClick={() => toggleMenu('listening')}
                         aria-expanded={listeningOpen}
                         aria-haspopup="true"
@@ -318,46 +288,14 @@ export function Navbar() {
                         style={listeningOpen || listeningActive ? activeStyle : inactiveStyle}>
                         <FaHeadphones size={13} />
                         <span>Luyện nghe</span>
-                        <FaChevronDown size={9} style={{ transform: listeningOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                      </button>
-                      {listeningOpen && (
-                        <div className="absolute top-full mt-2 left-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
-                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                            {LISTENING_SUBMENU.map(item => (
-                              <MenuItem
-                                key={item.href}
-                                href={item.href}
-                                label={item.label}
-                                icon={item.icon}
-                                active={pathname === item.href}
-                                className="justify-between"
-                              />
-                            ))}
-                          {/* {LISTENING_SUBMENU.map(item => {
-                            const itemActive = item.mode === '' ? pathname === listeningBase : false;
-                            return (
-                              <Link key={item.href} href={item.href}
-                                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                                style={itemActive
-                                  ? { color: 'var(--primary)', fontWeight: 600 }
-                                  : { color: 'var(--text-secondary)' }}>
-                                <span className="flex items-center gap-2.5">
-                                  <item.icon size={13} />
-                                  <span>{item.label}</span>
-                                </span>
-                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
-                              </Link>
-                            );
-                          })} */}
-                        </div>
-                      )}
+                      </Link>
                     </div>
                   );
                 }
                 if (isExamLink && levels) {
                   return (
                     <div key={link.href} className="relative">
-                      <button
+                      <Link href={`/${currentLang}/levels`}
                         onClick={() => toggleMenu('exam')}
                         aria-expanded={examOpen}
                         aria-haspopup="true"
@@ -365,43 +303,14 @@ export function Navbar() {
                         style={examOpen || pathname.startsWith(`/${currentLang}/levels`) ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Luyện thi</span>
-                        <FaChevronDown size={9} style={{ transform: examOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                      </button>
-                      {examOpen && (
-                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
-                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn cấp độ</div>
-                          {levels.map(level => {
-                            const levelHref = `/${currentLang}/levels/${level.code}`;
-                            const levelActive = isActive(levelHref);
-                            return (
-                              <Link key={level.code} href={levelHref}
-                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                                style={levelActive
-                                  ? { color: 'var(--primary)', fontWeight: 600 }
-                                  : { color: 'var(--text-secondary)' }}>
-                                <span className="flex items-center gap-2">
-                                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg text-white min-w-[36px] text-center" style={{ background: level.color }}>{level.label}</span>
-                                  <span>{level.desc}</span>
-                                </span>
-                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
-                              </Link>
-                            );
-                          })}
-                          <Link href={`/${currentLang}/levels`}
-                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
-                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                            Xem tổng quan
-                          </Link>
-                        </div>
-                      )}
+                      </Link>
                     </div>
                   );
                 }
                 if (isGrammarLink && levels) {
                   return (
                     <div key={link.href} className="relative">
-                      <button
+                      <Link href={`/${currentLang}/grammar`}
                         onClick={() => toggleMenu('grammar')}
                         aria-expanded={grammarOpen}
                         aria-haspopup="true"
@@ -409,33 +318,7 @@ export function Navbar() {
                         style={grammarOpen || pathname.startsWith(`/${currentLang}/grammar`) ? activeStyle : inactiveStyle}>
                         <link.icon size={13} />
                         <span>Ngữ pháp</span>
-                        <FaChevronDown size={9} style={{ transform: grammarOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
-                      </button>
-                      {grammarOpen && (
-                        <div className="absolute top-full mt-2 left-0 w-52 rounded-2xl border p-2 shadow-xl z-50"
-                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>Chọn cấp độ</div>
-                          {levels.map(level => {
-                            const levelHref = `/${currentLang}/grammar?level=${level.code}`;
-                            return (
-                              <Link key={level.code} href={levelHref}
-                                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                                style={{ color: 'var(--text-secondary)' }}>
-                                <span className="flex items-center gap-2">
-                                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg text-white min-w-[36px] text-center" style={{ background: level.color }}>{level.label}</span>
-                                  <span>{level.desc}</span>
-                                </span>
-                                <FaArrowRight size={10} style={{ opacity: 0.4 }} />
-                              </Link>
-                            );
-                          })}
-                          <Link href={`/${currentLang}/grammar`}
-                            className="flex items-center justify-center gap-2 mt-1.5 pt-1.5 border-t px-3 py-1.5 text-xs font-medium transition-all hover:bg-[var(--bg-muted)] rounded-xl"
-                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                            Xem tất cả
-                          </Link>
-                        </div>
-                      )}
+                      </Link>
                     </div>
                   );
                 }

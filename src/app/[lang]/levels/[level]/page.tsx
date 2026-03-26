@@ -1,3 +1,5 @@
+
+import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -5,8 +7,13 @@ import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { FaArrowLeft, FaPlay, FaChevronRight } from 'react-icons/fa6';
+import { FaArrowLeft, FaPlay, FaChevronRight, FaRegFile } from 'react-icons/fa6';
 import LevelPostsSection, { type LevelPostData } from '@/components/LevelPostsSection';
+import { LearnLayout } from '@/components/learn/LearnLayout';
+import { LearnHeader } from '@/components/learn/LearnHeader';
+import { ExamSidebarClient } from '@/components/learn/ExamSidebarClient';
+
+import ClientPage from './ClientPage';
 
 interface Props { params: { lang: string; level: string } }
 
@@ -25,8 +32,8 @@ interface ExamSet {
   } | null;
 }
 
-// ─── Level visual meta ────────────────────────────────────────────────────────
 
+// ─── Level visual meta ────────────────────────────────────────────────────────
 const LEVEL_META: Record<string, { heroGrad: string; accent: string; desc: string }> = {
   N5:   { heroGrad: 'linear-gradient(135deg, #065F46 0%, #059669 100%)', accent: '#059669', desc: 'Sơ cấp' },
   N4:   { heroGrad: 'linear-gradient(135deg, #1E40AF 0%, #2563EB 100%)', accent: '#2563EB', desc: 'Sơ trung cấp' },
@@ -39,6 +46,24 @@ const LEVEL_META: Record<string, { heroGrad: string; accent: string; desc: strin
   HSK4: { heroGrad: 'linear-gradient(135deg, #92400E 0%, #C2410C 100%)', accent: '#C2410C', desc: '高级初阶' },
   HSK5: { heroGrad: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', accent: '#B91C1C', desc: '高级' },
   HSK6: { heroGrad: 'linear-gradient(135deg, #111827 0%, #7F1D1D 100%)', accent: '#991B1B', desc: '精通级' },
+};
+
+const LEVELS_BY_LANG: Record<string, { code: string; label: string; desc: string }[]> = {
+  ja: [
+    { code: 'N5', label: 'N5', desc: 'Sơ cấp' },
+    { code: 'N4', label: 'N4', desc: 'Sơ trung cấp' },
+    { code: 'N3', label: 'N3', desc: 'Trung cấp' },
+    { code: 'N2', label: 'N2', desc: 'Trung cao cấp' },
+    { code: 'N1', label: 'N1', desc: 'Cao cấp' },
+  ],
+  zh: [
+    { code: 'HSK1', label: 'HSK1', desc: '入门级' },
+    { code: 'HSK2', label: 'HSK2', desc: '初级' },
+    { code: 'HSK3', label: 'HSK3', desc: '中级' },
+    { code: 'HSK4', label: 'HSK4', desc: '高级初阶' },
+    { code: 'HSK5', label: 'HSK5', desc: '高级' },
+    { code: 'HSK6', label: 'HSK6', desc: '精通级' },
+  ],
 };
 
 const SKILL_INFO: Record<string, { label: string; icon: string; color: string; bg: string }> = {
@@ -78,6 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const dynamic = 'force-dynamic';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
 
 export default async function LevelTopPage({ params }: Props) {
   const session = await getServerSession(authOptions);
@@ -121,173 +147,30 @@ export default async function LevelTopPage({ params }: Props) {
     createdAt: p.createdAt.toISOString(),
   }));
 
-  const meta = LEVEL_META[level.code] ?? {
-    heroGrad: 'linear-gradient(135deg,#1E40AF,#2563EB)',
-    accent: '#2563EB',
-    desc: '',
-  };
-  const R    = 34;
-  const circ = 2 * Math.PI * R;
-  const dash = circ * (1 - totalPct / 100);
+  // Sidebar config
+  const LEVELS_OBJ = LEVELS_BY_LANG[params.lang] || [];
+  // 4 kỹ năng chuẩn
+  const SKILLS = [
+    { key: 'nghe', label: 'Nghe', icon: '🎧' },
+    { key: 'doc', label: 'Đọc', icon: '📖' },
+    { key: 'viet', label: 'Viết', icon: '✏️' },
+    { key: 'noi', label: 'Nói', icon: '🎤' },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-
-      {/* ══════════════ HERO ══════════════ */}
-      <div className="relative overflow-hidden" style={{ background: meta.heroGrad }}>
-        {/* Decorative level code watermark */}
-        <span
-          className="absolute right-6 top-4 select-none pointer-events-none font-black"
-          style={{ fontSize: 128, color: 'rgba(255,255,255,0.055)', lineHeight: 1 }}
-        >
-          {level.code}
-        </span>
-
-        <div className="relative z-10 px-4 sm:px-8 py-10 max-w-5xl">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 mb-5 text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            <Link
-              href={`/${params.lang}/levels`}
-              className="flex items-center gap-1 hover:text-white transition-colors font-medium"
-            >
-              <FaArrowLeft size={9} /> Luyện thi
-            </Link>
-            <FaChevronRight size={7} />
-            <span className="text-white font-bold">{level.code}</span>
-          </div>
-
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            {/* Left: info + CTAs */}
-            <div className="flex-1 min-w-0 flex flex-col gap-5">
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}
-                >
-                  {level.code}
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">{level.name}</h1>
-                  <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                    {meta.desc}{level.description ? ` · ${level.description}` : ''}
-                  </p>
-                </div>
-              </div>
-
-              {/* Stat pills */}
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs px-3 py-1.5 rounded-full font-semibold text-white"
-                  style={{ background: 'rgba(255,255,255,0.16)' }}>
-                  {totalSets} đề thi
-                </span>
-                <span className="text-xs px-3 py-1.5 rounded-full font-semibold text-white"
-                  style={{ background: 'rgba(255,255,255,0.16)' }}>
-                  {Object.keys(bySkill).length} kỹ năng
-                </span>
-                {userId && totalDone > 0 && (
-                  <span className="text-xs px-3 py-1.5 rounded-full font-bold"
-                    style={{ background: 'rgba(255,255,255,0.95)', color: meta.accent }}>
-                    {totalDone}/{totalSets} hoàn thành
-                  </span>
-                )}
-              </div>
-
-              {/* CTA */}
-              <div>
-                <Link
-                  href={`/${params.lang}/levels/${level.code}/exams`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:scale-105"
-                  style={{ background: 'white', color: meta.accent, boxShadow: '0 4px 14px rgba(0,0,0,0.2)' }}
-                >
-                  <FaPlay size={11} /> Bắt đầu luyện thi
-                </Link>
-              </div>
-            </div>
-
-            {/* Right: Progress ring (logged-in only) */}
-            {userId && (
-              <div className="shrink-0 flex flex-col items-center gap-2 self-start pt-2">
-                <svg width="88" height="88" viewBox="0 0 88 88">
-                  <circle cx="44" cy="44" r={R} fill="none" strokeWidth="6"
-                    stroke="rgba(255,255,255,0.25)" />
-                  <circle cx="44" cy="44" r={R} fill="none" strokeWidth="6"
-                    stroke="white" strokeDasharray={circ} strokeDashoffset={dash}
-                    strokeLinecap="round" transform="rotate(-90 44 44)"
-                    style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
-                  <text x="44" y="44" textAnchor="middle" dominantBaseline="central"
-                    fill="white" fontSize="14" fontWeight="800">{totalPct}%</text>
-                </svg>
-                <span className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  tiến độ
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Progress bar */}
-          {userId && totalSets > 0 && (
-            <div className="mt-6 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <div className="h-1.5 rounded-full transition-all duration-700"
-                style={{ width: `${totalPct}%`, background: 'white' }} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8">
-
-        {/* ══════════════ SKILL GRID ══════════════ */}
-        {Object.entries(bySkill).length > 0 && (
-          <div className="mb-10">
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-4"
-              style={{ color: 'var(--text-muted)' }}>Kỹ năng luyện thi</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {Object.entries(bySkill).map(([skill, { count, done }]) => {
-                const info = SKILL_INFO[skill];
-                const pct  = count > 0 ? Math.round((done / count) * 100) : 0;
-                return (
-                  <Link
-                    key={skill}
-                    href={`/${params.lang}/levels/${level.code}/exams`}
-                    className="flex flex-col gap-2.5 p-4 rounded-2xl transition-all hover:scale-[1.02]"
-                    style={{
-                      background: info?.bg ?? 'var(--bg-muted)',
-                      border: `1.5px solid ${info?.color ?? 'var(--border)'}22`,
-                      boxShadow: `0 2px 8px ${info?.color ?? '#000'}0D`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xl">{info?.icon ?? '📋'}</span>
-                      <span className="text-[10px] font-bold tabular-nums"
-                        style={{ color: info?.color ?? 'var(--text-muted)' }}>
-                        {done}/{count}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold" style={{ color: info?.color ?? 'var(--text-primary)' }}>
-                        {info?.label ?? skill}
-                      </p>
-                      <div className="mt-1.5 h-1 rounded-full overflow-hidden"
-                        style={{ background: 'rgba(0,0,0,0.08)' }}>
-                        <div className="h-1 rounded-full transition-all duration-700"
-                          style={{ width: `${pct}%`, background: info?.color ?? 'var(--primary)' }} />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════ COMMUNITY POSTS ══════════════ */}
-        <LevelPostsSection
-          levelCode={level.code}
-          initialPosts={posts}
-          userId={userId}
-          userName={(session?.user as { name?: string } | undefined)?.name ?? undefined}
-        />
-      </div>
-    </div>
+    <ClientPage
+      params={params}
+      level={level}
+      LEVELS_OBJ={LEVELS_OBJ}
+      SKILLS={SKILLS}
+      userId={userId}
+      session={session}
+      progressMap={progressMap}
+      totalSets={totalSets}
+      totalDone={totalDone}
+      totalPct={totalPct}
+      bySkill={bySkill}
+      posts={posts}
+    />
   );
 }

@@ -76,125 +76,120 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
   );
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Progress bar */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
-          <div className="h-2 rounded-full transition-all"
-            style={{ width: `${(index / total) * 100}%`, background: color }} />
+    <div className="max-w-6xl flex gap-4">
+      <div className="flex-[3] p-4 md:p-6">
+        {/* Progress bar */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+            <div className="h-2 rounded-full transition-all"
+              style={{ width: `${(index / total) * 100}%`, background: color }} />
+          </div>
+          <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-muted)' }}>
+            {index + 1} / {total}
+          </span>
         </div>
-        <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-muted)' }}>
-          {index + 1} / {total}
-        </span>
-      </div>
-      {/* Stats badges */}
-      <div className="flex gap-4 mb-2">
-        <span className="text-xs px-2 py-1 rounded-xl font-bold"
-          style={{ background: '#48BB7820', color: '#48BB78' }}>{known.size} đã thuộc</span>
-        <span className="text-xs px-2 py-1 rounded-xl font-bold"
-          style={{ background: '#F5656520', color: '#F56565' }}>{unknown.size} cần ôn</span>
-      </div>
-      {/* Flip card */}
-      <button onClick={() => setFlipped(f => !f)}
-        className="w-full rounded-3xl border p-10 text-center transition-all hover:shadow-lg cursor-pointer"
-        style={{ background: flipped ? `${color}12` : 'var(--bg-surface)', borderColor: flipped ? color : 'var(--border)', minHeight: '220px' }}>
-        {!flipped ? (
-          <div className="flex flex-col items-center justify-center gap-2">
-            <span className="text-5xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: font }}>{current.term}</span>
-            {current.pronunciation && (
-              <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
-            )}
-            <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
+        {/* Stats badges */}
+        <div className="flex gap-4 mb-2">
+          <span className="text-xs px-2 py-1 rounded-xl font-bold"
+            style={{ background: '#48BB7820', color: '#48BB78' }}>{known.size} đã thuộc</span>
+          <span className="text-xs px-2 py-1 rounded-xl font-bold"
+            style={{ background: '#F5656520', color: '#F56565' }}>{unknown.size} cần ôn</span>
+        </div>
+        {/* Flip card */}
+        <button onClick={() => setFlipped(f => !f)}
+          className="w-full rounded-3xl border p-10 text-center transition-all hover:shadow-lg cursor-pointer"
+          style={{ background: flipped ? `${color}12` : 'var(--bg-surface)', borderColor: flipped ? color : 'var(--border)', minHeight: '220px' }}>
+          {!flipped ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <span className="text-5xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: font }}>{current.term}</span>
+              {current.pronunciation && (
+                <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+              )}
+              <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <span className="text-2xl font-bold" style={{ color }}>{current.meanings?.[0]?.meaning ?? ''}</span>
+              <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)', fontFamily: font }}>{current.term}</span>
+              {current.pronunciation && (
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+              )}
+            </div>
+          )}
+        </button>
+        {/* Action buttons */}
+        {flipped ? (
+          <div className="flex gap-3 mt-4">
+            <button onClick={markUnknown}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
+              style={{ borderColor: '#F56565', color: '#F56565' }}>
+              Chưa thuộc
+            </button>
+            <button onClick={markKnown}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+              style={{ background: '#48BB78' }}>
+              Đã thuộc
+            </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2">
-            <span className="text-2xl font-bold" style={{ color }}>{current.meanings?.[0]?.meaning ?? ''}</span>
-            <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)', fontFamily: font }}>{current.term}</span>
-            {current.pronunciation && (
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
-            )}
+          <div className="flex gap-3 mt-2">
+            <button onClick={prev} disabled={index === 0}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border transition-all"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', opacity: index === 0 ? 0.4 : 1 }}>
+              Trước
+            </button>
+            <button onClick={next}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+              style={{ background: color }}>
+              Tiếp
+            </button>
           </div>
         )}
-      </button>
-      {/* Action buttons */}
-      {flipped ? (
-        <div className="flex gap-3 mt-4">
-          <button onClick={markUnknown}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
-            style={{ borderColor: '#F56565', color: '#F56565' }}>
-            Chưa thuộc
-          </button>
-          <button onClick={markKnown}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
-            style={{ background: '#48BB78' }}>
-            Đã thuộc
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-3 mt-2">
-          <button onClick={prev} disabled={index === 0}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border transition-all"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', opacity: index === 0 ? 0.4 : 1 }}>
-            Trước
-          </button>
-          <button onClick={next}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
-            style={{ background: color }}>
-            Tiếp
-          </button>
-        </div>
-      )}
-
-      {/* Divider between flashcard and grid */}
-      <div className="my-8 border-t border-dashed border-gray-300" />
-
+      </div>
       {/* Grid list of vocab with scroll and clear separation */}
-      <h3 className="font-bold text-lg mb-3 text-blue-700 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200 inline-block shadow-sm">Danh sách từ vựng</h3>
-    <div
-        className="max-h-80 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 bg-gray-50 border border-gray-300 rounded-2xl p-4 shadow-md"
-        ref={gridContainerRef}
-    >
-        {items.map((item, idx) => (
-        <div
-            key={item.id}
-            ref={el => itemRefs.current[idx] = el}
-            className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
-            style={{ borderColor: idx === index ? '#3B82F6' : 'var(--border)' }}
-        >
-            <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-base truncate" style={{ color: 'var(--primary)', fontFamily: font }}>{idx + 1}. {item.term}</span>
-            <button
-                className="p-1 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                aria-label="Phát âm"
-                onClick={() => {
-                const utter = new window.SpeechSynthesisUtterance(item.term);
-                utter.lang = 'ja-JP';
-                window.speechSynthesis.speak(utter);
-                }}>
-                <FaVolumeHigh size={16} style={{ color: 'var(--primary)' }} />
-            </button>
-            {item.pronunciation && <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>}
-            <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
-            </div>
-            {item.examples && item.examples[0] && (
-            <div className="text-xs mt-1 italic truncate" style={{ color: 'var(--text-secondary)' }}>
-                {(() => {
-                const parts = item.examples[0].exampleText.split(item.term);
-                if (parts.length > 1) {
-                    return <>{parts[0]}<span style={{ color: 'var(--primary)', fontWeight: 600 }}>{item.term}</span>{parts[1]}</>;
-                }
-                return item.examples[0].exampleText;
-                })()}
-                {item.examples[0].translation && (
-                <span className="ml-1 font-semibold text-blue-700" style={{ color: 'var(--primary)' }}>
-                    {item.examples[0].translation}
-                </span>
-                )}
-            </div>
-            )}
-        </div>
-        ))}
-    </div>
+      <div className="flex-[1] max-h-[600px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 bg-gray-50 border border-gray-300 rounded-2xl p-4 shadow-md"
+          ref={gridContainerRef}>
+          {items.map((item, idx) => (
+          <div
+              key={item.id}
+              ref={el => itemRefs.current[idx] = el}
+              className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
+              style={{ borderColor: idx === index ? '#3B82F6' : 'var(--border)' }}
+          >
+              <div className="flex items-center gap-2 mb-1">
+              <span className="font-bold text-base truncate" style={{ color: 'var(--primary)', fontFamily: font }}>{idx + 1}. {item.term}</span>
+              <button
+                  className="p-1 rounded-full hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  aria-label="Phát âm"
+                  onClick={() => {
+                  const utter = new window.SpeechSynthesisUtterance(item.term);
+                  utter.lang = 'ja-JP';
+                  window.speechSynthesis.speak(utter);
+                  }}>
+                  <FaVolumeHigh size={16} style={{ color: 'var(--primary)' }} />
+              </button>
+              {item.pronunciation && <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{item.pronunciation}</span>}
+              <span className="text-xs mb-0.5 truncate" style={{ color: 'var(--text-base)' }}>{item.meanings?.[0]?.meaning ?? ''}</span>
+              </div>
+              {item.examples && item.examples[0] && (
+              <div className="text-xs mt-1 italic truncate" style={{ color: 'var(--text-secondary)' }}>
+                  {(() => {
+                  const parts = item.examples[0].exampleText.split(item.term);
+                  if (parts.length > 1) {
+                      return <>{parts[0]}<span style={{ color: 'var(--primary)', fontWeight: 600 }}>{item.term}</span>{parts[1]}</>;
+                  }
+                  return item.examples[0].exampleText;
+                  })()}
+                  {item.examples[0].translation && (
+                  <span className="ml-1 font-semibold text-blue-700" style={{ color: 'var(--primary)' }}>
+                      {item.examples[0].translation}
+                  </span>
+                  )}
+              </div>
+              )}
+          </div>
+          ))}
+      </div>
     </div>
   );
 };

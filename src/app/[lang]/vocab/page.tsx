@@ -7,13 +7,15 @@ import { FavoritesTab } from './components/FavoritesTab';
 import { ReviewMistakesTab } from './components/ReviewMistakesTab';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { LearnLayout } from '@/components/learn/LearnLayout';
+import { LearnHeader } from '@/components/learn/LearnHeader';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  FaBookmark, FaTrash, FaPlus, FaArrowLeft, FaLayerGroup,
+  FaBookmark, FaTrash, FaPlus, FaArrowLeft,
   FaMagnifyingGlass, FaXmark, FaCheck, FaFolder, FaCircleXmark,
-  FaEllipsisVertical, FaPen, FaSliders, FaBookOpen,
+  FaEllipsisVertical, FaPen, FaSliders, FaBookOpen, FaLayerGroup,
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -279,6 +281,80 @@ function CollectionSidebar({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+
+
+function GamificationBar() {
+  const [streak, setStreak] = useState(0);
+  const [xp, setXp] = useState(0);
+  const [goal, setGoal] = useState(20);
+  const [today, setToday] = useState(0);
+  const [lastDate, setLastDate] = useState("");
+
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem("vocab_gamify") || "{}") || {};
+    setStreak(data.streak || 0);
+    setXp(data.xp || 0);
+    setGoal(data.goal || 20);
+    setToday(data.today || 0);
+    setLastDate(data.lastDate || "");
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "vocab_gamify",
+      JSON.stringify({ streak, xp, goal, today, lastDate })
+    );
+  }, [streak, xp, goal, today, lastDate]);
+
+  // Demo: simulate progress for today
+  function addXp(amount = 2) {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    if (lastDate !== todayStr) {
+      setStreak(s => (lastDate ? s + 1 : 1));
+      setToday(amount);
+      setLastDate(todayStr);
+    } else {
+      setToday(t => t + amount);
+    }
+    setXp(x => x + amount);
+  }
+
+  // Progress bar width
+  const percent = Math.min(100, Math.round((today / goal) * 100));
+
+  return (
+    <div className="w-full flex flex-col items-center gap-2 py-3 px-4 mb-4 rounded-2xl border bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100 shadow-sm">
+      <div className="flex w-full justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🔥</span>
+          <span className="font-bold text-lg">{streak}</span>
+          <span className="text-xs text-gray-500 ml-1">ngày streak</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-yellow-400 text-2xl">★</span>
+          <span className="font-bold text-lg">{xp}</span>
+          <span className="text-xs text-gray-500 ml-1">XP</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-green-500 text-2xl">🎯</span>
+          <span className="font-bold text-lg">{today}/{goal}</span>
+          <span className="text-xs text-gray-500 ml-1">mục tiêu hôm nay</span>
+        </div>
+      </div>
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-yellow-400 to-purple-500" style={{ width: percent + "%" }} />
+      </div>
+      <button
+        className="mt-1 px-3 py-1 rounded-lg bg-indigo-500 text-white text-xs font-semibold hover:bg-indigo-600 transition"
+        onClick={() => addXp(2)}
+      >
+        +2 XP (Demo)
+      </button>
+    </div>
+  );
+}
+
 function VocabContent() {
   const { status } = useSession();
   const router = useRouter();
@@ -287,17 +363,18 @@ function VocabContent() {
   const langCfg = VOCAB_LANG_CONFIG[lang] ?? VOCAB_LANG_CONFIG.ja;
   const searchParams = useSearchParams();
 
-  // ── Tab ───────────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'flashcards' | 'anki' | 'practice' | 'favorites' | 'review' | 'mine' | 'reference' | 'topics'>(() => {
-    const t = searchParams.get('tab');
-    if (t === 'flashcards') return 'flashcards';
-    if (t === 'anki') return 'anki';
-    if (t === 'practice') return 'practice';
-    if (t === 'favorites') return 'favorites';
-    if (t === 'review') return 'review';
-    if (t === 'topics') return 'topics';
-    return 'mine';
-  });
+  // Sidebar state: Level & Function
+  const [selectedLevel, setSelectedLevel] = useState(langCfg.defaultLevel);
+  const [selectedFunc, setSelectedFunc] = useState('flashcard');
+
+  // Sidebar/BottomBar config for LearnLayout
+  const LEVELS_OBJ = langCfg.levels.map(lv => ({ code: lv, label: lv, desc: langCfg.levelLabels[lv] }));
+  const SKILLS = [
+    { key: 'flashcard', label: 'Học Flashcard', icon: <FaLayerGroup /> },
+    { key: 'srs', label: 'Học SRS', icon: <FaLayerGroup /> },
+    { key: 'topics', label: 'Theo chủ đề', icon: <FaLayerGroup /> },
+    { key: 'mine', label: 'Từ của tôi', icon: <FaLayerGroup /> },
+  ];
   // Simulate tier state (replace with real logic)
   const [tier, setTier] = useState<'free' | 'basic' | 'premium'>('free');
 
@@ -313,7 +390,6 @@ function VocabContent() {
   const [sheetOpen,    setSheetOpen]    = useState(false);
 
   // ── Reference vocab state ─────────────────────────────────────────────────────
-  const [refLevel,   setRefLevel]   = useState(langCfg.defaultLevel);
   const [refSearch,  setRefSearch]  = useState('');
   const [refItems,   setRefItems]   = useState<VocabRefItem[]>([]);
   const [refLoading, setRefLoading] = useState(false);
@@ -432,10 +508,10 @@ function VocabContent() {
   }, [langCfg]);
 
   useEffect(() => {
-    fetchRefVocab(refLevel);
+    fetchRefVocab(selectedLevel);
     setRefFlipped(new Set());
     setRefSearch('');
-  }, [refLevel, fetchRefVocab]);
+  }, [selectedLevel, fetchRefVocab]);
 
   // ── Filtering ─────────────────────────────────────────────────────────────────
 
@@ -463,7 +539,7 @@ function VocabContent() {
     );
   }, [refItems, refSearch]);
 
-  const refColor = langCfg.levelColors[refLevel] ?? '#6C5CE7';
+  const refColor = langCfg.levelColors[selectedLevel] ?? '#6C5CE7';
   const allRefFlipped = refFiltered.length > 0 && refFlipped.size === refFiltered.length;
 
   function toggleRefFlip(id: string) {
@@ -484,190 +560,66 @@ function VocabContent() {
   const activeCol = collections.find(c => c.id === activeColId) ?? null;
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-      {/* Mobile tab bar fixed at bottom, full-width, no scroll */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full flex justify-between bg-white border-t z-50" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <button onClick={() => setActiveTab('flashcards')}
-          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'flashcards' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
-          style={activeTab === 'flashcards' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
-          <FaLayerGroup size={18} />
-          <span className="text-xs mt-1">Flashcards</span>
-        </button>
-        <button onClick={() => setActiveTab('topics')}
-          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'topics' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
-          style={activeTab === 'topics' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
-          <FaLayerGroup size={18} />
-          <span className="text-xs mt-1">Chủ đề</span>
-        </button>
-        <button onClick={() => setActiveTab('practice')}
-          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'practice' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
-          style={activeTab === 'practice' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
-          <FaBookOpen size={18} />
-          <span className="text-xs mt-1">Practice</span>
-        </button>
-        <button onClick={() => setActiveTab('mine')}
-          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'mine' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
-          style={activeTab === 'mine' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
-          <FaBookmark size={18} />
-          <span className="text-xs mt-1">Của tôi</span>
-        </button>
-        <button onClick={() => setActiveTab('review')}
-          className={`flex flex-col items-center flex-1 py-2 ${activeTab === 'review' ? 'text-primary font-bold' : 'text-muted'} transition-all`}
-          style={activeTab === 'review' ? { color: 'var(--primary)' } : { color: 'var(--text-muted)' }}>
-          <FaBookOpen size={18} />
-          <span className="text-xs mt-1">Mistakes</span>
-        </button>
-      </div>
-
-      {/* Responsive layout: flex-col on mobile/tablet, flex-row on desktop */}
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        {/* Sidebar tabs (desktop only) */}
-        <aside className="hidden md:flex w-40 xl:w-56 shrink-0 flex-col gap-2 p-2 rounded-2xl border sticky top-20"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-          {/* Flashcards menu with arrow */}
-          <button
-            onClick={() => setActiveTab(activeTab === 'flashcards' ? 'mine' : 'flashcards')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all group"
-            style={activeTab === 'flashcards' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
-            <FaLayerGroup size={13} /> Flashcards
-            <span className="ml-auto">
-              <svg className={`w-4 h-4 transition-transform ${activeTab === 'flashcards' ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
-          </button>
-          {/* Flashcard levels submenu, collapsible */}
-          <div className={`overflow-hidden transition-all ${activeTab === 'flashcards' ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}
-            style={{ background: activeTab === 'flashcards' ? '#F3F4F6' : 'transparent', borderRadius: '0.75rem' }}>
-            {activeTab === 'flashcards' && (
-              <div className="flex flex-col gap-1 px-2 py-2">
-                {langCfg.levels.map(level => (
-                  <button
-                    key={level}
-                    onClick={() => setRefLevel(level)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold text-left transition-all ${refLevel === level ? 'bg-primary text-white' : 'bg-transparent text-muted'}`}
-                    style={refLevel === level ? { background: 'var(--primary)', color: '#fff' } : { color: langCfg.levelColors[level] || 'var(--text-muted)' }}>
-                    {level} <span className="ml-1">{langCfg.levelLabels[level]}</span>
-                    {refLevel === level && (
-                      <span className="ml-2 text-xs font-bold opacity-80">({refItems.length})</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Anki Study menu */}
-          <button
-            onClick={() => setActiveTab('anki')}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all group border-2 border-yellow-400 bg-yellow-50 text-yellow-800 shadow ${activeTab === 'anki' ? 'ring-2 ring-yellow-500' : ''}`}
-            style={activeTab === 'anki' ? { background: '#FDE68A', color: '#B45309' } : { color: '#B45309', borderColor: '#F59E0B' }}>
-            <FaLayerGroup size={13} /> Học Anki
-            <span className="ml-2 text-xs font-semibold bg-yellow-400 text-white px-2 py-0.5 rounded">SRS</span>
-            <span className="ml-auto">
-              <svg className={`w-4 h-4 transition-transform ${activeTab === 'anki' ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
-          </button>
-          {/* Anki Study levels submenu, collapsible */}
-          <div className={`overflow-hidden transition-all ${activeTab === 'anki' ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'}`}
-            style={{ background: activeTab === 'anki' ? '#F3F4F6' : 'transparent', borderRadius: '0.75rem' }}>
-            {activeTab === 'anki' && (
-              <div className="flex flex-col gap-1 px-2 py-2">
-                {langCfg.levels.map(level => (
-                  <button
-                    key={level}
-                    onClick={() => setRefLevel(level)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold text-left transition-all ${refLevel === level ? 'bg-primary text-white' : 'bg-transparent text-muted'}`}
-                    style={refLevel === level ? { background: 'var(--primary)', color: '#fff' } : { color: langCfg.levelColors[level] || 'var(--text-muted)' }}>
-                    {level} <span className="ml-1">{langCfg.levelLabels[level]}</span>
-                    {refLevel === level && (
-                      <span className="ml-2 text-xs font-bold opacity-80">({refItems.length})</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button onClick={() => setActiveTab('topics')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={activeTab === 'topics' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
-            <FaLayerGroup size={13} /> Theo chủ đề
-          </button>
-          <button onClick={() => setActiveTab('practice')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={activeTab === 'practice' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
-            <FaBookOpen size={13} /> Practice
-          </button>
-          <button onClick={() => setActiveTab('mine')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={activeTab === 'mine' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
-            <FaBookmark size={13} /> Của tôi
-          </button>
-          <button onClick={() => setActiveTab('review')}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
-            style={activeTab === 'review' ? { background: 'var(--primary)', color: '#fff' } : { color: 'var(--text-muted)' }}>
-            <FaBookOpen size={13} /> Review mistakes
-          </button>
-        </aside>
-
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
-          {/* ...existing code... */}
-          {/* Make main content more spacious */}
-          <div>
-            {/* ...existing code for tab content... */}
-            {activeTab === 'flashcards' ? (
-              <FlashcardsTab
-                items={refFiltered}
-                color={refColor}
-                font={langCfg.font}
-              />
-            ) : activeTab === 'anki' ? (
-              <AnkiStudyTab
-                items={refFiltered.map(item => ({
-                  id: item.id,
-                  front: item.term,
-                  back: item.meanings?.[0]?.meaning ?? '',
-                  reading: item.pronunciation ?? '',
-                  example: item.examples?.[0]?.exampleText ?? '',
-                }))}
-                tier={
-                  lang === 'ja' && refLevel === 'N1' ? 'premium' :
-                  lang === 'zh' && refLevel === 'HSK1' ? 'premium' :
-                  tier
-                }
-                font={langCfg.font}
-              />
-            ) : activeTab === 'practice' ? (
-              <PracticeTab />
-            ) : activeTab === 'favorites' ? (
-              <FavoritesTab
-                words={words.filter(w => w.collections.some(c => c.name === 'Favorites'))}
-                onRemove={id => {/* TODO: remove from favorites logic */}}
-              />
-            ) : activeTab === 'review' ? (
-              <ReviewMistakesTab
-                words={words.filter(w => w.collections.some(c => c.name === 'Mistakes'))}
-                onRetry={id => {/* TODO: retry logic */}}
-              />
-            ) : activeTab === 'topics' ? (
-              <>
-                {/* ...existing code for topics tab... */}
-              </>
-            ) : activeTab === 'mine' ? (
-              <>
-                {/* ...existing code for mine tab... */}
-              </>
-            ) : (
-              <div>
-                {/* ...existing code for reference tab... */}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </main>
+    <LearnLayout
+      sidebarProps={{
+        mode: 'level',
+        setMode: () => {}, // Not used for vocab, but required by LearnSidebar
+        selectedLevel,
+        setSelectedLevel,
+        selectedSkill: selectedFunc,
+        setSelectedSkill: setSelectedFunc,
+        levels: LEVELS_OBJ,
+        skills: SKILLS,
+        title: 'Học từ vựng',
+      }}
+      bottomBarProps={{
+        levels: LEVELS_OBJ,
+        selectedLevel,
+        setSelectedLevel,
+        skills: SKILLS,
+        selectedSkill: selectedFunc,
+        setSelectedSkill: setSelectedFunc,
+      }}
+    >
+      {/* Gamification bar at the top */}
+      <GamificationBar />
+      <LearnHeader icon={<FaLayerGroup />} title="Từ vựng tiếng Nhật" subtitle="Từ vựng JLPT theo cấp độ" />
+      {/* Main content switches by selectedFunc */}
+      {selectedFunc === 'flashcard' && (
+        <FlashcardsTab
+          items={refFiltered}
+          color={refColor}
+          font={langCfg.font}
+        />
+      )}
+      {selectedFunc === 'srs' && (
+        <AnkiStudyTab
+          items={refFiltered.map(item => ({
+            id: item.id,
+            front: item.term,
+            back: item.meanings?.[0]?.meaning ?? '',
+            reading: item.pronunciation ?? '',
+            example: item.examples?.[0]?.exampleText ?? '',
+          }))}
+          tier={
+            lang === 'ja' && selectedLevel === 'N1' ? 'premium' :
+            lang === 'zh' && selectedLevel === 'HSK1' ? 'premium' :
+            tier
+          }
+          font={langCfg.font}
+        />
+      )}
+      {selectedFunc === 'topics' && (
+        <>
+          {/* ...existing code for topics tab... */}
+        </>
+      )}
+      {selectedFunc === 'mine' && (
+        <>
+          {/* ...existing code for mine tab... */}
+        </>
+      )}
+    </LearnLayout>
   );
 }
 

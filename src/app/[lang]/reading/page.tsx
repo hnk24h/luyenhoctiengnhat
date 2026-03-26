@@ -11,7 +11,7 @@ import {
   FaFilter, FaBolt,
 } from 'react-icons/fa6';
 import { JapaneseText } from '@/components/JapaneseText';
-import { AppSidebar } from '@/components/AppSidebar';
+import { LearnSidebar } from '@/components/LearnSidebar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -446,6 +446,24 @@ function ReadingPageContent() {
     ? ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6']
     : ['N5', 'N4', 'N3', 'N2', 'N1'];
 
+  // Chuẩn hóa levels/skills cho LearnSidebar
+  const sidebarLevels = levelOptions.map(lv => ({
+    code: lv,
+    label: lv,
+    desc: isChinese ? undefined :
+      lv === 'N5' ? 'Sơ cấp' : lv === 'N4' ? 'Sơ trung cấp' : lv === 'N3' ? 'Trung cấp' : lv === 'N2' ? 'Trung cao cấp' : 'Cao cấp',
+  }));
+  const sidebarSkills = [
+    { key: 'all', label: 'Tất cả kỹ năng', icon: <FaBook /> },
+    { key: 'short', label: 'Đoạn ngắn', icon: <FaAlignLeft /> },
+    { key: 'long', label: 'Bài dài', icon: <FaAlignJustify /> },
+    { key: 'news', label: 'Tin tức', icon: <FaNewspaper /> },
+  ];
+  const selectedLevel = level;
+  const setSelectedLevel = (lv: string) => { setLevel(lv); setSelectedId(null); };
+  const selectedSkill = type || 'all';
+  const setSelectedSkill = (sk: string) => { setType(sk === 'all' ? '' : sk); setSelectedId(null); };
+
   // ── 10. URL persistence ────────────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -459,93 +477,63 @@ function ReadingPageContent() {
   const accentColor = isChinese ? '#DC2626' : '#3D3A8C';
 
   return (
-    <div className="flex" style={{ height: 'calc(100vh - 64px)', background: 'var(--bg-base)' }}>
-
-      {/* ── Left sidebar: passage list ── */}
-      <AppSidebar
-        headerIcon={<FaBook size={16} color="#fff" />}
-        title={isChinese ? 'Đọc tiếng Trung' : 'Đọc hiểu tiếng Nhật'}
-        subtitle={listLoading ? '…' : `${passages.length} bài đọc`}
-        accentColor={accentColor}
-        loading={listLoading}
-        emptyText="Không có bài đọc nào"
-        filters={[
-          {
-            label: 'Cấp độ',
-            value: level,
-            onChange: (v) => { setLevel(v); setSelectedId(null); },
-            chips: [
-              { value: '', label: 'Tất cả' },
-              ...levelOptions.map(lv => {
-                const lm = LEVEL_META[lv];
-                return { value: lv, label: lv, bg: lm.bg, color: lm.color, activeColor: lm.color };
-              }),
-            ],
-          },
-          ...(!isChinese ? [{
-            label: 'Loại bài',
-            value: type,
-            onChange: (v: string) => { setType(v as '' | 'short' | 'long' | 'news'); setSelectedId(null); },
-            chips: [
-              { value: '', label: 'Tất cả' },
-              { value: 'short', label: TYPE_META.short.label },
-              { value: 'long',  label: TYPE_META.long.label },
-              { value: 'news',  label: TYPE_META.news.label },
-            ],
-          }] : []),
-        ]}
-        items={passages.map(p => {
-          const lm = LEVEL_META[p.level] ?? LEVEL_META.N5;
-          return {
-            id: p.id,
-            title: p.title,
-            levelLabel: p.level,
-            levelBg: lm.bg,
-            levelColor: lm.color,
-            tag: !isChinese && TYPE_META[p.type] ? TYPE_META[p.type].label : undefined,
-            meta: readTime(p.charCount),
-            metaIcon: <FaClock size={7} />,
-            fontFamily: isChinese ? '"Noto Sans SC", sans-serif' : '"Noto Sans JP", serif',
-          };
-        })}
-        selectedId={selectedId}
-        onSelect={(id) => setSelectedId(id)}
-        searchable
-        searchPlaceholder={isChinese ? '找找标题…' : 'タイトル検索…'}
-      />
-
-      {/* ── Main content panel ── */}
-      <div ref={detailRef} className="flex-1 overflow-y-auto">
-        {detailLoading ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="w-10 h-10 rounded-full border-4 animate-spin"
-              style={{ borderColor: accentColor, borderTopColor: 'transparent' }} />
-          </div>
-        ) : !loadedPassage ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
-              style={{ background: `color-mix(in srgb, ${accentColor} 10%, var(--bg-base))` }}>
-              <FaNewspaper size={36} style={{ color: accentColor, opacity: 0.7 }} />
+    <div className="min-h-screen bg-gray-50 flex flex-row">
+      {/* Sidebar trái giống grammar/vocab */}
+      <div className="hidden md:block pl-6 pr-2">
+        <LearnSidebar
+          mode="level"
+          setMode={() => {}}
+          selectedLevel={selectedLevel}
+          setSelectedLevel={setSelectedLevel}
+          selectedSkill={selectedSkill}
+          setSelectedSkill={setSelectedSkill}
+          levels={sidebarLevels}
+          skills={sidebarSkills}
+          title={isChinese ? 'Đọc tiếng Trung' : 'Đọc hiểu tiếng Nhật'}
+        />
+      </div>
+      {/* Main content */}
+      <div ref={detailRef} className="flex-1 overflow-y-auto flex justify-center items-start py-8 px-2 sm:px-6">
+        <div
+          className="w-full max-w-[900px] bg-white rounded-2xl border border-gray-200 shadow-lg px-4 sm:px-8 py-8 min-h-[60vh]"
+          style={{
+            background: 'var(--bg-surface)',
+            borderRadius: 20,
+            border: '1.5px solid var(--border)',
+            boxShadow: '0 4px 24px 0 rgba(61,58,140,0.07), 0 1.5px 6px 0 rgba(0,0,0,0.04)',
+          }}
+        >
+          {detailLoading ? (
+            <div className="flex items-center justify-center min-h-[40vh]">
+              <div className="w-10 h-10 rounded-full border-4 animate-spin"
+                style={{ borderColor: accentColor, borderTopColor: 'transparent' }} />
             </div>
-            <div className="text-center">
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--text-base)' }}>
-                {listLoading ? 'Đang tải danh sách...' : 'Chọn một bài đọc'}
-              </p>
-              <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                Lựa chọn cấp độ và loại bài phù hợp để bắt đầu đọc
-              </p>
+          ) : !loadedPassage ? (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 px-6">
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
+                style={{ background: `color-mix(in srgb, ${accentColor} 10%, var(--bg-base))` }}>
+                <FaNewspaper size={36} style={{ color: accentColor, opacity: 0.7 }} />
+              </div>
+              <div className="text-center">
+                <p className="text-[15px] font-semibold" style={{ color: 'var(--text-base)' }}>
+                  {listLoading ? 'Đang tải danh sách...' : 'Chọn một bài đọc'}
+                </p>
+                <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Lựa chọn cấp độ và loại bài phù hợp để bắt đầu đọc
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <ReadingDetail
-            key={loadedPassage.id}
-            passage={loadedPassage}
-            lang={lang}
-            savedWords={savedWords}
-            onWordSaved={handleWordSaved}
-            savedCount={savedCount}
-          />
-        )}
+          ) : (
+            <ReadingDetail
+              key={loadedPassage.id}
+              passage={loadedPassage}
+              lang={lang}
+              savedWords={savedWords}
+              onWordSaved={handleWordSaved}
+              savedCount={savedCount}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

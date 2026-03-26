@@ -67,7 +67,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
     setEditingId(null); // Không cho edit row khác khi đang add
   };
 
-  const handleAddChange = (field, value) => {
+  const handleAddChange = (field: string, value: any) => {
     setAddData(prev => ({ ...prev, [field]: value }));
   };
   // Lấy lại dữ liệu mới nhất từ API
@@ -105,7 +105,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
         body: JSON.stringify(newLesson),
       });
       if (!res.ok) throw new Error('Cập nhật thất bại');
-      onEdit(newLesson);
+      onEdit();
       setEditingHeader(false);
       setHeaderData({});
     } catch (err) {
