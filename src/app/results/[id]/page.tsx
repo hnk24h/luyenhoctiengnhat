@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
@@ -89,7 +90,7 @@ export default async function ResultsPage({ params }: Props) {
                 </div>
               )}
               {q.imageUrl && (
-                <img src={q.imageUrl} alt="" className="mb-2 rounded max-h-40 object-contain border" />
+                <Image src={q.imageUrl} alt="" width={320} height={160} className="mb-2 rounded max-h-40 object-contain border" />
               )}
 
               <p className="text-gray-900 font-medium mb-2 whitespace-pre-wrap">{q.content}</p>

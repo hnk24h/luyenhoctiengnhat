@@ -315,7 +315,7 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
       .then((words: { content: { term: string } }[]) =>
         setSavedWords(words.map(w => w.content.term))
       );
-  }, [session]);
+  }, [session, isChinese]);
 
   const handleWordSaved = useCallback((w: { term: string }) => {
     setSavedWords(prev => [...prev, w.term]);

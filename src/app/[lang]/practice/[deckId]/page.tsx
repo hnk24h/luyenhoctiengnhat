@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { LearnLayout } from '@/components/learn/LearnLayout';
+import { LearnSidebar } from '@/components/LearnSidebar';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -115,6 +117,11 @@ function CardItem({
 }
 
 export default function DeckPage({ params }: { params: { lang: string; deckId: string } }) {
+  // Sidebar đồng nhất: chỉ có skill SRS, level là "Tùy chỉnh" hoặc lấy từ deck
+  const levels = [{ code: 'custom', label: 'Tùy chỉnh', desc: 'Bộ thẻ cá nhân' }];
+  const skills = [{ key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={18} /> }];
+  const [selectedLevel, setSelectedLevel] = useState('custom');
+  const [selectedSkill, setSelectedSkill] = useState('srs');
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -341,11 +348,22 @@ export default function DeckPage({ params }: { params: { lang: string; deckId: s
     );
   }
   if (!deck) return <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Không tìm thấy bộ thẻ.</div>;
-
   const dueCards = deck.cards.filter(isDue);
-
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
+    <LearnLayout
+      sidebarProps={{
+        mode: 'skill',
+        setMode: () => {},
+        selectedLevel,
+        setSelectedLevel,
+        selectedSkill,
+        setSelectedSkill,
+        levels,
+        skills,
+        title: 'Bộ thẻ SRS',
+      }}
+      bottomBarProps={{}}
+    >
       {/* Back */}
       <Link href={`/${params.lang}/practice`} className="inline-flex items-center gap-1.5 text-sm mb-6 btn-ghost" style={{ color: 'var(--text-muted)' }}>
         <FaArrowLeft size={11} /> Danh sách bộ thẻ
@@ -653,6 +671,6 @@ export default function DeckPage({ params }: { params: { lang: string; deckId: s
           </Link>
         </div>
       )}
-    </main>
+    </LearnLayout>
   );
 }

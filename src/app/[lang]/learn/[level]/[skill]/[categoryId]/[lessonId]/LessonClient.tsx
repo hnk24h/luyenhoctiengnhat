@@ -1,4 +1,5 @@
-'use client';
+"use client";
+import Image from 'next/image';
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
@@ -195,7 +196,7 @@ export default function LessonClient({ lessonId, lessonType, content, items, isC
 
                       {/* Image */}
                       {isFlipped && item.imageUrl && (
-                        <img src={item.imageUrl} alt="" className="mt-2 rounded max-h-32 object-contain" />
+                        <Image src={item.imageUrl} alt="" width={128} height={128} className="mt-2 rounded max-h-32 object-contain" />
                       )}
                     </div>
                   </div>

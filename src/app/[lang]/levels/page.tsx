@@ -1,3 +1,4 @@
+import Image from 'next/image';
 export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -258,7 +259,7 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
           {topRank.map((u, idx) => (
             <div key={u.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center hover:shadow-md transition">
               <div className="relative mb-3">
-                <img src={u.avatar} alt={u.name} className="w-16 h-16 rounded-full border-2 border-blue-200 shadow" />
+                <Image src={u.avatar} alt={u.name} width={64} height={64} className="w-16 h-16 rounded-full border-2 border-blue-200 shadow" />
                 <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full px-2 py-0.5 shadow">#{idx+1}</span>
               </div>
               <div className="font-semibold text-gray-900 text-lg mb-1">{u.name}</div>
@@ -278,7 +279,7 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {reviews.map(r => (
             <div key={r.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center hover:shadow-md transition">
-              <img src={r.avatar} alt={r.name} className="w-14 h-14 rounded-full border-2 border-gray-200 mb-3" />
+              <Image src={r.avatar} alt={r.name} width={56} height={56} className="w-14 h-14 rounded-full border-2 border-gray-200 mb-3" />
               <div className="font-semibold text-gray-900 mb-1 text-center">{r.name}</div>
               <div className="text-sm text-gray-600 italic text-center">“{r.text}”</div>
             </div>

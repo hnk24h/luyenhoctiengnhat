@@ -21,33 +21,21 @@ const RATING_CONFIG = [
   { rating: 3, label: 'Dễ', bg: '#EFF6FF', color: '#2563EB' },
 ];
 
+
 export const AnkiStudyTab: React.FC<AnkiStudyTabProps> = ({ items, tier, font }) => {
-  // Session setup state
+  // All hooks must be at top-level
   const PRESETS = [10, 20, 50, 0]; // 0 = all
   const [showSetup, setShowSetup] = useState(true);
   const [limitPreset, setLimitPreset] = useState(10);
   const [useCustom, setUseCustom] = useState(false);
   const [customCount, setCustomCount] = useState('');
-  // Access control UI
-  if (tier === 'free') {
-    return (
-      <div className="bg-gray-50 border border-gray-300 rounded-2xl p-8 text-center shadow-md mt-4">
-        <div className="text-4xl mb-2">🔒</div>
-        <div className="text-xl font-bold mb-2 text-gray-700">Chỉ dành cho tài khoản Basic hoặc Premium.</div>
-        <button className="mt-4 px-6 py-3 rounded-xl bg-blue-500 text-white font-bold text-sm shadow hover:bg-blue-600">Nâng cấp</button>
-      </div>
-    );
-  }
-
-  // SRS study logic
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [finished, setFinished] = useState(false);
   const [sessionDone, setSessionDone] = useState(0);
   const [sessionAgain, setSessionAgain] = useState(0);
-
-  // Build queue based on setup
   const [queue, setQueue] = useState<Card[]>([]);
+
   React.useEffect(() => {
     if (!showSetup) {
       let n = useCustom ? Math.max(1, parseInt(customCount) || items.length) : (limitPreset === 0 ? items.length : limitPreset);
@@ -76,59 +64,13 @@ export const AnkiStudyTab: React.FC<AnkiStudyTabProps> = ({ items, tier, font })
     if (idx + 1 >= queue.length) setFinished(true);
   }
 
-  if (showSetup) {
+  // Access control UI (must be after hooks)
+  if (tier === 'free') {
     return (
-      <div className="flex flex-col items-center justify-center px-4">
-        <div className="card w-full max-w-md">
-          <h1 className="font-bold text-lg mb-4">Cài đặt buổi ôn tập</h1>
-          <div className="mb-5">
-            <label className="block text-sm font-semibold mb-2">Số thẻ mỗi buổi</label>
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {PRESETS.map(p => (
-                <button key={p}
-                  onClick={() => { setLimitPreset(p); setUseCustom(false); }}
-                  className={`py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${!useCustom && limitPreset === p ? 'bg-yellow-400 text-white' : 'bg-yellow-100 text-yellow-700'}`}
-                >
-                  {p === 0 ? 'Tất cả' : p}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setUseCustom(true)}
-                className={`py-2 px-3 rounded-xl text-sm font-semibold transition-all flex-1 text-left ${useCustom ? 'bg-yellow-400 text-white' : 'bg-yellow-100 text-yellow-700'}`}
-              >
-                Tự nhập số...
-              </button>
-              {useCustom && (
-                <input
-                  type="number" min={1} max={items.length}
-                  className="input w-24 text-center border rounded-xl"
-                  placeholder={`1–${items.length}`}
-                  value={customCount}
-                  onChange={e => setCustomCount(e.target.value)}
-                  autoFocus
-                />
-              )}
-            </div>
-            {items.length > 0 && (
-              <p className="text-xs mt-2 text-gray-500">
-                Sẽ ôn <strong className="text-yellow-700">{useCustom ? (customCount || '?') : (limitPreset === 0 ? items.length : limitPreset)}</strong> / {items.length} thẻ
-              </p>
-            )}
-            {useCustom && customCount && Number(customCount) > items.length ? (
-              <p className="text-xs mt-1 text-yellow-700">
-                Số bạn nhập lớn hơn lượng thẻ hiện có, hệ thống sẽ tự lấy tối đa {items.length} thẻ.
-              </p>
-            ) : null}
-          </div>
-          <button
-            onClick={() => setShowSetup(false)}
-            disabled={useCustom && (!customCount || parseInt(customCount) < 1)}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-base font-bold disabled:opacity-50 bg-yellow-400 text-white mt-2"
-          >
-            Bắt đầu ôn tập
-          </button>
-        </div>
+      <div className="bg-gray-50 border border-gray-300 rounded-2xl p-8 text-center shadow-md mt-4">
+        <div className="text-4xl mb-2">🔒</div>
+        <div className="text-xl font-bold mb-2 text-gray-700">Chỉ dành cho tài khoản Basic hoặc Premium.</div>
+        <button className="mt-4 px-6 py-3 rounded-xl bg-blue-500 text-white font-bold text-sm shadow hover:bg-blue-600">Nâng cấp</button>
       </div>
     );
   }

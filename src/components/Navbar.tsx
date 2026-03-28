@@ -144,6 +144,7 @@ export function Navbar() {
       `/${currentLang}/vocab`,
       `/${currentLang}/learn`,
       `/${currentLang}/levels`,
+      `/${currentLang}/practice`,
       `/${currentLang}/listening`,
       `/${currentLang}/grammar`,
     ]);

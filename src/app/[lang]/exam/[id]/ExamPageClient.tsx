@@ -7,15 +7,57 @@ import { ExamSidebarClient } from "@/components/learn/ExamSidebarClient";
 import ExamClient from "./ExamClient";
 import Link from "next/link";
 
+interface Level {
+  code: string;
+  label: string;
+  desc?: string;
+  [key: string]: any;
+}
+interface Skill {
+  key: string;
+  label?: string;
+  [key: string]: any;
+}
+interface ExamSet {
+  id: string;
+  title: string;
+  skill: string;
+  level: { code: string };
+  lang: string;
+  timeLimit?: number;
+  [key: string]: any;
+}
+interface ExamPageClientProps {
+  levels: Level[];
+  skills: Skill[];
+  examSetsForSidebar: any[];
+  examSet: ExamSet;
+  questionsForClient: any[];
+}
+
 export default function ExamPageClient({
   levels,
   skills,
   examSetsForSidebar,
   examSet,
   questionsForClient,
-}) {
+}: ExamPageClientProps) {
   const [selectedLevel, setSelectedLevel] = useState(examSet.level.code);
   const [selectedSkill, setSelectedSkill] = useState(examSet.skill || (skills[0]?.key ?? "exam"));
+
+  // Ensure levels have label (string) for SidebarLevel compatibility
+  const sidebarLevels = levels.map(lv => ({
+    code: lv.code,
+    label: lv.label ?? String(lv.code),
+    desc: lv.desc ?? '',
+  }));
+
+  // Map skills to SidebarSkill[] (ensure icon is present)
+  const sidebarSkills = skills.map((sk: any) => ({
+    key: sk.key,
+    label: sk.label ?? String(sk.key),
+    icon: sk.icon ?? <FaRegFile size={18} />,
+  }));
 
   return (
     <LearnLayout
@@ -24,18 +66,18 @@ export default function ExamPageClient({
           <ExamSidebarClient
             lang={examSet.lang}
             selectedLevel={selectedLevel}
-            levels={levels}
+            levels={sidebarLevels}
             selectedSkill={selectedSkill}
-            skills={skills}
+            skills={sidebarSkills}
             examSets={examSetsForSidebar}
           />
         ),
       }}
       bottomBarProps={{
-        levels,
+        levels: sidebarLevels,
         selectedLevel,
         setSelectedLevel,
-        skills,
+        skills: sidebarSkills,
         selectedSkill,
         setSelectedSkill,
       }}
@@ -53,7 +95,7 @@ export default function ExamPageClient({
         title={examSet.title}
         skill={examSet.skill}
         level={examSet.level.code}
-        timeLimit={examSet.timeLimit}
+        timeLimit={typeof examSet.timeLimit === 'number' ? examSet.timeLimit : null}
         questions={questionsForClient}
       />
     </LearnLayout>

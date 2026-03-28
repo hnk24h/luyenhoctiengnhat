@@ -49,7 +49,7 @@ export const ExamSidebarClient: React.FC<ExamSidebarClientProps> = ({
   useEffect(() => {
     setSelectedSkill(skills[0]?.key ?? '');
     if (onSkillChange) onSkillChange(skills[0]?.key ?? '');
-  }, [selectedLevel, skills]);
+  }, [selectedLevel, skills, onSkillChange]);
 
   // Khi chọn skill mới, đồng bộ lên parent nếu có onSkillChange
   const handleSkillChange = (skill: string) => {

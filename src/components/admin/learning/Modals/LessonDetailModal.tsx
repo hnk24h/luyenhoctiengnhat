@@ -40,14 +40,21 @@ interface LessonDetailModalProps {
   onEdit: () => void;
   onDelete: () => void;
   items?: LearningItem[];
-  onAddItem: (item: any) => void;
-  onEditItem: (item: any) => void;
-  onDeleteItem: (id: string) => void;
+  onAddItem: (item: AddEditData) => void;
+  onEditItem: (item: LearningItem | null) => void;
+  onDeleteItem: (item: LearningItem) => void;
+}
+
+interface AddEditData {
+  term: string;
+  pronunciation: string;
+  meanings: string;
+  type: string;
 }
 
 export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, items = [], onAddItem, onEditItem, onDeleteItem }: LessonDetailModalProps) {
   const [addingRow, setAddingRow] = useState(false);
-  const [addData, setAddData] = useState({ term: '', pronunciation: '', meanings: '', type: '' });
+  const [addData, setAddData] = useState<AddEditData>({ term: '', pronunciation: '', meanings: '', type: '' });
 
   // Clone row logic
   const handleCloneRow = (item: LearningItem) => {
@@ -67,7 +74,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
     setEditingId(null); // Không cho edit row khác khi đang add
   };
 
-  const handleAddChange = (field: string, value: any) => {
+  const handleAddChange = (field: keyof AddEditData, value: string) => {
     setAddData(prev => ({ ...prev, [field]: value }));
   };
   // Lấy lại dữ liệu mới nhất từ API
@@ -84,10 +91,10 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       alert('Vui lòng nhập đầy đủ các trường bắt buộc: Tên, Loại, Nghĩa');
       return;
     }
-    const newItem = {
+    const newItem: AddEditData = {
       term: addData.term,
       pronunciation: addData.pronunciation,
-      meaning: addData.meanings,//.split(',').map(m => ({ meaning: m.trim() })).filter(m => m.meaning),
+      meanings: addData.meanings,
       type: addData.type,
     };
     onAddItem(newItem);
@@ -107,7 +114,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       if (!res.ok) throw new Error('Cập nhật thất bại');
       onEdit();
       setEditingHeader(false);
-      setHeaderData({});
+      setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
       alert('Lưu bài học thất bại!');
     }
@@ -118,7 +125,18 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
     setAddData({ term: '', pronunciation: '', meanings: '', type: '' });
   };
   const [editingHeader, setEditingHeader] = useState(false);
-  const [headerData, setHeaderData] = useState({});
+  interface HeaderData {
+    term: string;
+    type: string;
+    requiredTier: string;
+    meaning: string;
+  }
+  const [headerData, setHeaderData] = useState<HeaderData>({
+    term: '',
+    type: '',
+    requiredTier: '',
+    meaning: '',
+  });
 
   const handleHeaderEditClick = async () => {
     const latestLesson = await getLatestLesson();
@@ -131,7 +149,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
     });
   };
 
-  const handleHeaderChange = (field, value) => {
+  const handleHeaderChange = (field: keyof HeaderData, value: string) => {
     setHeaderData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -158,16 +176,16 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       if (!res.ok) throw new Error('Cập nhật thất bại');
       const latestLesson = await getLatestLesson();
       const data = await latestLesson.json();
-      items = data.items.map(item => ({ ...item })); // Cập nhật lại items nếu cần
-      onEdit(data);
+      items = data.items.map((item: any) => ({ ...item })); // Cập nhật lại items nếu cần
+      onEdit();
       setEditingHeader(false);
-      setHeaderData({});
+      setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
       alert('Lưu bài học thất bại!');
     }
   };
   // Xóa item khỏi DB và reload lại danh sách
-  const handleDeleteItem = async (item) => {
+  const handleDeleteItem = async (item: LearningItem) => {
     if (!window.confirm('Bạn có chắc muốn xóa mục này?')) return;
     try {
       const res = await fetch(`/api/learning/items/${item.id}`, { method: 'DELETE' });
@@ -194,49 +212,57 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
 
   const handleHeaderCancel = () => {
     setEditingHeader(false);
-    setHeaderData({});
+    setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
   };
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<AddEditData>({ term: '', pronunciation: '', meanings: '', type: '' });
 
-  const handleEditClick = (item) => {
+  const handleEditClick = (item: LearningItem) => {
     setEditingId(item.id);
     setEditData({
       term: item.term || '',
       pronunciation: item.pronunciation || '',
-      meanings: item.meanings?.map(m => m.meaning).join(', ') || '',
+      meanings: item.meanings?.map((m: ContentMeaning) => m.meaning).join(', ') || '',
       type: item.type || '',
     });
   };
 
-  const handleEditChange = (field, value) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
+  const handleEditChange = (field: keyof AddEditData, value: string) => {
+    setEditData((prev: AddEditData) => ({ ...prev, [field]: value }));
   };
 
-  const handleEditSave = (item) => {
-    const newItem = {
+  const handleEditSave = (item: LearningItem) => {
+    const newItem: LearningItem = {
       ...item,
       term: editData.term,
       pronunciation: editData.pronunciation,
-      meanings: editData.meanings.split(',').map(m => ({ meaning: m.trim() })).filter(m => m.meaning),
+      meanings: editData.meanings.split(',').map((m: string) => ({ meaning: m.trim(), id: '', language: '' })).filter((m: { meaning: string }) => m.meaning),
       type: editData.type,
+      // giữ lại các trường khác của item
+      examples: item.examples,
+      audioUrl: item.audioUrl,
+      imageUrl: item.imageUrl,
+      order: item.order,
+      lessonId: item.lessonId,
+      language: item.language,
+      id: item.id,
     };
     onEditItem(newItem);
     setEditingId(null);
-    setEditData({});
+    setEditData({ term: '', pronunciation: '', meanings: '', type: '' });
   };
 
   const handleEditCancel = () => {
     setEditingId(null);
-    setEditData({});
+    setEditData({ term: '', pronunciation: '', meanings: '', type: '' });
   };
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const filteredItems = useMemo(() =>
-    items.filter(item =>
+    items.filter((item: LearningItem) =>
       item.term?.toLowerCase().includes(search.toLowerCase()) ||
-      item.meanings?.some(m => m.meaning?.toLowerCase().includes(search.toLowerCase()))
+      item.meanings?.some((m: ContentMeaning) => m.meaning?.toLowerCase().includes(search.toLowerCase()))
     ), [items, search]);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const pagedItems = filteredItems.slice((page - 1) * pageSize, page * pageSize);

@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 import { FlashcardsTab } from '@/components/FlashcardsTab';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { LearnLayout } from '@/components/learn/LearnLayout';
+import { LearnSidebar } from '@/components/LearnSidebar';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -79,8 +81,20 @@ function FlashcardsContent() {
     [lang],
   );
 
-  // ── Tab ──────────────────────────────────────────────────────────────────────
-  const [tab, setTab] = useState<'srs' | 'quick'>('srs');
+  // Sidebar đồng nhất: levels, skills, selectedLevel, selectedSkill
+  const levels = langCfg.levels.map(lvl => ({
+    code: lvl,
+    label: lvl,
+    desc: '',
+    percent: undefined,
+    status: undefined,
+  }));
+  const skills = [
+    { key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={18} /> },
+    { key: 'quick', label: 'Luyện ghi nhớ thường', icon: <FaBookOpen size={18} /> },
+  ];
+  const [selectedLevel, setSelectedLevel] = useState(levels[0]?.code || '');
+  const [selectedSkill, setSelectedSkill] = useState<'srs' | 'quick'>('srs');
 
   // ── SRS state ────────────────────────────────────────────────────────────────
   const [decks,   setDecks]   = useState<Deck[]>([]);
@@ -133,9 +147,9 @@ function FlashcardsContent() {
   }, [langCfg]);
 
   useEffect(() => {
-    if (tab === 'quick') loadQuick(quickLevel);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, quickLevel]);
+    if (selectedSkill === 'quick') loadQuick(quickLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSkill, quickLevel]);
 
   // ── Quick helpers ─────────────────────────────────────────────────────────
   const quickTotal   = quickCards.length;
@@ -192,62 +206,50 @@ function FlashcardsContent() {
   const totalDue   = decks.reduce((s, d) => s + d.dueCount, 0);
 
   // ── Render ────────────────────────────────────────────────────────────────
-  return (
-    <main className="max-w-6xl mx-auto px-4 py-8">
-      {/* Back link */}
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm mb-5 btn-ghost"
-        style={{ color: 'var(--text-muted)' }}>
-        <FaArrowLeft size={11} /> Trang chủ
-      </Link>
+    // Gamification demo state (localStorage, simple)
+    const [streak, setStreak] = useState(3); // demo
+    const [xp, setXp] = useState(120); // demo
+    const [badge, setBadge] = useState('🔥'); // demo
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'var(--primary)', color: '#fff' }}>
-              <FaLayerGroup size={18} />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold" style={{ color: 'var(--text-base)' }}>Flashcard</h1>
+    return (
+      <LearnLayout
+        sidebarProps={{
+          mode: 'skill',
+          setMode: () => {},
+          selectedLevel,
+          setSelectedLevel,
+          selectedSkill,
+          setSelectedSkill,
+          levels,
+          skills,
+          title: 'Luyện Flashcard',
+        }}
+        bottomBarProps={{}}
+      >
+        {/* Header lớn, động lực */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-indigo-500 to-blue-400 shadow-lg">
+            <FaLayerGroup size={28} className="text-white" />
           </div>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Học từ vựng theo phương pháp lặp lại có khoảng cách (Spaced Repetition)
-          </p>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight mb-1">Luyện tập Flashcard</h1>
+            <p className="text-base text-gray-500">Học từ vựng hiệu quả với lặp lại ngắt quãng (SRS) & luyện ghi nhớ thường.</p>
+          </div>
+          <div className="flex-1" />
+          {selectedSkill === 'srs' && status === 'authenticated' && (
+            <button onClick={() => setShowNew(true)} className="btn-primary flex items-center gap-2 px-5 py-2 rounded-xl text-base font-semibold shadow-md">
+              <FaPlus size={16} /> Tạo bộ thẻ
+            </button>
+          )}
         </div>
-        {tab === 'srs' && status === 'authenticated' && (
-          <button onClick={() => setShowNew(true)} className="btn-primary flex items-center gap-2 shrink-0">
-            <FaPlus size={13} /> Tạo bộ thẻ
-          </button>
-        )}
-      </div>
-
-      {/* Tab bar */}
-      <div className="flex gap-1 p-1 rounded-xl mb-8 w-fit" style={{ background: 'var(--bg-muted)' }}>
-        {([
-          { key: 'srs',   label: 'Bộ thẻ SRS',  icon: <FaLayerGroup size={13} /> },
-          { key: 'quick', label: 'Luyện nhanh',  icon: <FaBookOpen   size={13} /> },
-        ] as const).map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-            style={tab === t.key
-              ? { background: 'var(--bg-surface)', color: 'var(--primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
-              : { color: 'var(--text-muted)' }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── SRS Tab ────────────────────────────────────────────────────────── */}
-      {tab === 'srs' && (
-        <>
-          {/* Auth loading */}
+        {/* Nội dung theo skill */}
+        {selectedSkill === 'srs' && (
+          <>
           {status === 'loading' || (status === 'authenticated' && loading) ? (
             <div className="flex items-center justify-center py-24">
               <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin"
                 style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
             </div>
-
-          /* Not logged in */
           ) : status === 'unauthenticated' ? (
             <div className="card text-center py-16 max-w-md mx-auto">
               <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
@@ -264,8 +266,6 @@ function FlashcardsContent() {
                 Đăng nhập ngay
               </Link>
             </div>
-
-          /* Authenticated: deck list */
           ) : (
             <>
               {decks.length > 0 && (
@@ -288,8 +288,6 @@ function FlashcardsContent() {
                   ))}
                 </div>
               )}
-
-              {/* New deck modal */}
               {showNew && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
                   style={{ background: 'rgba(0,0,0,0.5)' }}
@@ -351,68 +349,55 @@ function FlashcardsContent() {
                   </div>
                 </div>
               )}
-
-              {/* Deck list */}
               {decks.length === 0 ? (
-                <div className="card text-center py-16">
-                  <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                    style={{ background: 'var(--primary-light)' }}>
-                    <FaLayerGroup size={28} style={{ color: 'var(--primary)' }} />
+                <div className="text-center py-20 rounded-3xl border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-inner">
+                  <div className="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center bg-gradient-to-br from-indigo-400 to-blue-400 shadow-lg">
+                    <FaLayerGroup size={36} className="text-white" />
                   </div>
-                  <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-base)' }}>
-                    Chưa có bộ thẻ nào
-                  </h2>
-                  <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-                    Tạo bộ thẻ đầu tiên để bắt đầu học theo phương pháp Anki
-                  </p>
-                  <button onClick={() => setShowNew(true)} className="btn-primary inline-flex items-center gap-2">
-                    <FaPlus size={13} /> Tạo bộ thẻ
+                  <h2 className="text-2xl font-extrabold mb-2 text-gray-800">Chưa có bộ thẻ nào</h2>
+                  <p className="text-base mb-7 text-gray-500">Tạo bộ thẻ đầu tiên để bắt đầu học hiệu quả với SRS.</p>
+                  <button onClick={() => setShowNew(true)} className="btn-primary inline-flex items-center gap-2 px-6 py-2 rounded-xl text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-150">
+                    <FaPlus size={18} /> Tạo bộ thẻ
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {decks.map(deck => (
-                    <div key={deck.id} className="card group relative" style={{ borderTop: `3px solid ${deck.color}` }}>
-                      <button onClick={() => deleteDeck(deck.id)} disabled={deleting === deck.id}
-                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity btn-ghost p-1.5"
-                        style={{ color: '#EF4444' }}>
-                        <FaTrash size={12} />
+                    <div key={deck.id} className="group relative rounded-3xl border-2 border-blue-100 bg-white shadow-lg hover:scale-[1.025] hover:shadow-2xl transition-transform duration-200" style={{ borderTop: `4px solid ${deck.color}` }}>
+                      <button onClick={() => deleteDeck(deck.id)} disabled={deleting === deck.id} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity btn-ghost p-2 bg-white rounded-full shadow-md hover:scale-110" style={{ color: '#EF4444' }}>
+                        <FaTrash size={14} />
                       </button>
-                      <Link href={`/flashcards/${deck.id}`} className="block">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                            style={{ background: deck.color + '20', color: deck.color }}>
-                            <FaLayerGroup size={16} />
+                      <Link href={`/flashcards/${deck.id}`} className="block p-6">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '22', color: deck.color }}>
+                            <FaLayerGroup size={20} />
                           </div>
                           <div className="min-w-0 flex-1 pr-6">
-                            <h3 className="font-bold truncate" style={{ color: 'var(--text-base)' }}>{deck.title}</h3>
+                            <h3 className="font-bold text-lg truncate text-gray-900">{deck.title}</h3>
                             {deck.description && (
-                              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{deck.description}</p>
+                              <p className="text-sm mt-1 truncate text-gray-500">{deck.description}</p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex gap-3 text-xs">
-                            <span style={{ color: 'var(--text-muted)' }}>
-                              <span className="font-semibold" style={{ color: 'var(--text-base)' }}>{deck._count.cards}</span> thẻ
+                          <div className="flex gap-4 text-sm">
+                            <span className="text-gray-400">
+                              <span className="font-semibold text-gray-900">{deck._count.cards}</span> thẻ
                             </span>
                             {deck.dueCount > 0 && (
-                              <span className="flex items-center gap-1" style={{ color: '#D97706' }}>
-                                <FaBolt size={10} />
-                                <span className="font-semibold">{deck.dueCount}</span> cần ôn
+                              <span className="flex items-center gap-1 text-yellow-600 font-semibold">
+                                <FaBolt size={12} /> {deck.dueCount} cần ôn
                               </span>
                             )}
                             {deck.dueCount === 0 && deck._count.cards > 0 && (
-                              <span className="flex items-center gap-1" style={{ color: '#059669' }}>
-                                <FaCircleCheck size={10} /> Đã ôn xong
+                              <span className="flex items-center gap-1 text-green-600 font-semibold">
+                                <FaCircleCheck size={12} /> Đã ôn xong
                               </span>
                             )}
                           </div>
                           {deck._count.cards > 0 && (
-                            <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()}
-                              className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
-                              style={{ background: deck.color }}>
-                              <FaBolt size={10} /> Ôn tập
+                            <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()} className="btn-primary text-sm px-4 py-2 flex items-center gap-2 rounded-lg shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-150" style={{ background: deck.color }}>
+                              <FaBolt size={12} /> Ôn tập
                             </Link>
                           )}
                         </div>
@@ -421,8 +406,6 @@ function FlashcardsContent() {
                   ))}
                 </div>
               )}
-
-              {/* SRS tip */}
               <div className="card mt-8" style={{ background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
                 <div className="flex items-start gap-3">
                   <FaClockRotateLeft size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
@@ -439,40 +422,38 @@ function FlashcardsContent() {
               </div>
             </>
           )}
-        </>
-      )}
-
-      {/* ── Quick Study Tab ──────────────────────────────────────────────── */}
-      {tab === 'quick' && (
-        <div className="max-w-2xl mx-auto">
-          {/* Level picker */}
-          <div className="flex gap-1.5 flex-wrap mb-6">
-            {langCfg.levels.map(lvl => (
-              <button key={lvl} onClick={() => setQuickLevel(lvl)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-                style={quickLevel === lvl
-                  ? { background: langCfg.levelColors[lvl], color: '#fff' }
-                  : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                {lvl}
-              </button>
-            ))}
+          </>
+        )}
+        {selectedSkill === 'quick' && (
+          <div className="max-w-2xl mx-auto">
+            {/* Level picker */}
+            <div className="flex gap-1.5 flex-wrap mb-6">
+              {langCfg.levels.map(lvl => (
+                <button key={lvl} onClick={() => setQuickLevel(lvl)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                  style={quickLevel === lvl
+                    ? { background: langCfg.levelColors[lvl], color: '#fff' }
+                    : { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                  {lvl}
+                </button>
+              ))}
+            </div>
+            {/* Use shared FlashcardsTab component for quick-study */}
+            <FlashcardsTab
+              items={quickCards.map(card => ({
+                id: card.id,
+                term: card.front,
+                pronunciation: card.pronunciation,
+                meanings: [{ id: card.id, language: lang, meaning: card.back }],
+                examples: [],
+              }))}
+              color={quickColor}
+              font={langCfg.font}
+            />
           </div>
-          {/* Use shared FlashcardsTab component for quick-study */}
-          <FlashcardsTab
-            items={quickCards.map(card => ({
-              id: card.id,
-              term: card.front,
-              pronunciation: card.pronunciation,
-              meanings: [{ id: card.id, language: lang, meaning: card.back }],
-              examples: [],
-            }))}
-            color={quickColor}
-            font={langCfg.font}
-          />
-        </div>
-      )}
-    </main>
-  );
+        )}
+      </LearnLayout>
+    );
 }
 
 export default function FlashcardsPage() {

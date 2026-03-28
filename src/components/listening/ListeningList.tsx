@@ -37,6 +37,9 @@ export const ListeningList: React.FC<ListeningListProps> = ({
   totalCount,
   filterSortFn,
 }) => {
+  // Move useState to top-level
+  const [page, setPage] = useState(0);
+
   if (loading) {
     // Loading skeleton
     return (
@@ -64,7 +67,6 @@ export const ListeningList: React.FC<ListeningListProps> = ({
   // Tách filter/sort nếu có
   const displayItems = filterSortFn ? filterSortFn(items) : items;
   // Pagination state
-  const [page, setPage] = useState(0);
   const pageSize = 6;
   const totalPages = Math.ceil(displayItems.length / pageSize);
   const pagedItems = displayItems.slice(page * pageSize, (page + 1) * pageSize);

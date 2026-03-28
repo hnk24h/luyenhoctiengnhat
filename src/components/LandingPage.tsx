@@ -465,7 +465,7 @@ export function LandingPage({ lang }: { lang: string }) {
                 <div className="lp-testimonial-stars">
                   {Array.from({ length: t.rating }).map((_, i) => <FaStar key={i} size={12} color="#F59E0B"/>)}
                 </div>
-                <p className="lp-testimonial-text">"{t.text}"</p>
+                <p className="lp-testimonial-text">&quot;{t.text}&quot;</p>
                 <div className="lp-testimonial-author">
                   <div className="lp-testimonial-avatar" style={{ background: t.color }}>{t.avatar}</div>
                   <div>

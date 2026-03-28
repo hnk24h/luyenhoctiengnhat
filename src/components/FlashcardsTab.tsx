@@ -16,6 +16,8 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
   const [finished, setFinished] = useState(false);
   const [displayMode, setDisplayMode] = useState<'flashcard' | 'grid'>('flashcard');
   const [page, setPage] = useState(1);
+  // Hiệu ứng chọn đáp án
+  const [answerEffect, setAnswerEffect] = useState<'none' | 'correct' | 'wrong'>('none');
   const pageSize = 5; // Giảm còn 5 từ mỗi trang
   const totalPages = Math.ceil(items.length / pageSize);
 
@@ -42,24 +44,36 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
 
   function next() {
     if (index + 1 >= total) { setFinished(true); return; }
-    setIndex(i => i + 1); setFlipped(false);
+    setIndex(i => i + 1); setFlipped(false); setAnswerEffect('none');
   }
   function prev() {
-    if (index > 0) { setIndex(i => i - 1); setFlipped(false); }
+    if (index > 0) { setIndex(i => i - 1); setFlipped(false); setAnswerEffect('none'); }
   }
   function markKnown() {
     setKnown(s => new Set([...s, current.id]));
-    next();
+    setAnswerEffect('correct');
+    setTimeout(() => { setAnswerEffect('none'); next(); }, 400);
   }
   function markUnknown() {
     setUnknown(s => new Set([...s, current.id]));
-    next();
+    setAnswerEffect('wrong');
+    setTimeout(() => { setAnswerEffect('none'); next(); }, 400);
   }
   function restart() {
-    setIndex(0); setFlipped(false); setKnown(new Set()); setUnknown(new Set()); setFinished(false);
+    setIndex(0); setFlipped(false); setKnown(new Set()); setUnknown(new Set()); setFinished(false); setAnswerEffect('none');
   }
 
   const pagedItems = items.slice((page - 1) * pageSize, page * pageSize);
+
+  // Tính toán progress meaningful
+  const masteredCount = known.size;
+  const reviewCount = unknown.size;
+  const percentMastered = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+  const percentDone = total > 0 ? Math.round(((index + 1) / total) * 100) : 0;
+  const wordsLeft = total - (index + 1);
+  const avgSecPerWord = 6; // giả định trung bình 6s/từ
+  const estTimeSec = wordsLeft * avgSecPerWord;
+  const estTimeMin = Math.ceil(estTimeSec / 60);
 
   if (total === 0) return <div className="text-center py-20" style={{ color: 'var(--text-muted)' }}>Chưa có dữ liệu từ vựng.</div>;
   if (finished) return (
@@ -107,53 +121,54 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
           <span className="text-xs px-2 py-1 rounded-xl font-bold"
             style={{ background: '#F5656520', color: '#F56565' }}>{unknown.size} cần ôn</span>
         </div>
-        {/* Flip card */}
-        <button onClick={() => setFlipped(f => !f)}
-          className="w-full rounded-3xl border p-10 text-center transition-all hover:shadow-lg cursor-pointer"
-          style={{ background: flipped ? `${color}12` : 'var(--bg-surface)', borderColor: flipped ? color : 'var(--border)', minHeight: '220px' }}>
-          {!flipped ? (
-            <div className="flex flex-col items-center justify-center gap-2">
-              <span className="text-5xl font-bold" style={{ color: 'var(--text-primary)', fontFamily: font }}>{current.term}</span>
-              {current.pronunciation && (
-                <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
-              )}
-              <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2">
-              <span className="text-2xl font-bold" style={{ color }}>{current.meanings?.[0]?.meaning ?? ''}</span>
-              <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)', fontFamily: font }}>{current.term}</span>
-              {current.pronunciation && (
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
-              )}
-            </div>
-          )}
-        </button>
-        {/* Action buttons */}
-        {flipped ? (
+        {/* Flip card với hiệu ứng lật và hiệu ứng chọn đáp án */}
+        <div className={`relative w-full h-[240px] mb-2`}
+          style={{ perspective: '1200px', minHeight: '220px' }}>
+          <button
+            onClick={() => setFlipped(f => !f)}
+            className={`absolute inset-0 w-full h-full rounded-3xl border text-center transition-all duration-500 hover:shadow-lg cursor-pointer flex items-center justify-center ${flipped ? 'rotate-y-180' : ''}`}
+            style={{
+              background: flipped ? `${color}12` : 'var(--bg-surface)',
+              borderColor: flipped ? color : 'var(--border)',
+              fontFamily: font,
+              transformStyle: 'preserve-3d',
+              transition: 'transform 0.5s',
+              boxShadow: answerEffect === 'correct' ? '0 0 0 4px #48BB7855' : answerEffect === 'wrong' ? '0 0 0 4px #F5656555' : undefined,
+              zIndex: 2,
+              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            }}
+          >
+            {!flipped ? (
+              <div className="flex flex-col items-center justify-center gap-2" style={{ backfaceVisibility: 'hidden' }}>
+                <span className="text-5xl font-bold" style={{ color: 'var(--text-primary)' }}>{current.term}</span>
+                {current.pronunciation && (
+                  <span className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+                )}
+                <span className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Nhấn để xem nghĩa</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                <span className="text-2xl font-bold" style={{ color }}>{current.meanings?.[0]?.meaning ?? ''}</span>
+                <span className="text-lg mt-1" style={{ color: 'var(--text-secondary)' }}>{current.term}</span>
+                {current.pronunciation && (
+                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{current.pronunciation}</span>
+                )}
+              </div>
+            )}
+          </button>
+        </div>
+        {/* Action buttons: chỉ hiện khi đã lật card */}
+        {flipped && (
           <div className="flex gap-3 mt-4">
             <button onClick={markUnknown}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all"
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-2 transition-all duration-200 ${answerEffect === 'wrong' ? 'ring-2 ring-red-400 border-red-400 bg-red-50' : ''}`}
               style={{ borderColor: '#F56565', color: '#F56565' }}>
-              Chưa thuộc
+              Cần ôn lại
             </button>
             <button onClick={markKnown}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all duration-200 ${answerEffect === 'correct' ? 'ring-2 ring-green-400 bg-green-500' : ''}`}
               style={{ background: '#48BB78' }}>
               Đã thuộc
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-3 mt-2">
-            <button onClick={prev} disabled={index === 0}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border transition-all"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', opacity: index === 0 ? 0.4 : 1 }}>
-              Trước
-            </button>
-            <button onClick={next}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all"
-              style={{ background: color }}>
-              Tiếp
             </button>
           </div>
         )}

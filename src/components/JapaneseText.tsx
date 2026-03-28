@@ -476,7 +476,7 @@ export function JapaneseText({ content, passageId, savedWords = [], onWordSaved 
     setTimeout(() => setJustSaved(null), 2500);
     onWordSaved?.({ term, contentId: wordData.contentId });
     setSaving(false);
-  }, [tooltip, session, passageId, onWordSaved]);
+  }, [tooltip, session, onWordSaved]);
 
   // Render paragraphs
   const paragraphs = content.split(/\n+/);

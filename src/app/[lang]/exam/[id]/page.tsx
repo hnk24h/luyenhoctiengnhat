@@ -83,6 +83,7 @@ export default async function ExamPage({ params }: Props) {
       examSet={{
         ...examSet,
         lang: params.lang,
+        timeLimit: examSet.timeLimit === null ? undefined : examSet.timeLimit,
       }}
       questionsForClient={questionsForClient}
     />

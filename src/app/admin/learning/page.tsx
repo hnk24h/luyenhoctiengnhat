@@ -176,7 +176,7 @@ function AdminLearningPage() {
     setActiveLesId(null);
     setLessons([]);
     setItems([]);
-  }, [activeLevel, activeSkill, levels]);
+  }, [activeLevel, activeSkill, levels, subject]);
   const loadLessons = useCallback(async (catId: string) => {
     const res = await fetch(`/api/learning/lessons?categoryId=${catId}`);
     if (res.ok) setLessons(await res.json());
@@ -217,7 +217,7 @@ function AdminLearningPage() {
 
   useEffect(() => {
     loadCategories();
-  }, [activeLevel, activeSkill, levels]);
+  }, [loadCategories]);
 
   return (
     <>
