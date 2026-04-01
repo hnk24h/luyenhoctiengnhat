@@ -15,33 +15,90 @@ export const LearnBottomBar: React.FC<LearnBottomBarProps> = ({
 }) => {
   const safeLevels = Array.isArray(levels) ? levels : [];
   const safeSkills = Array.isArray(skills) ? skills : [];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border shadow-lg flex flex-col md:hidden animate-fade-up">
-      <div className="flex overflow-x-auto gap-2 px-2 py-2 scrollbar-hide">
-        {safeLevels.map(lv => (
-          <button
-            key={lv.code}
-            className={`flex flex-col items-center px-3 py-1 rounded-full font-semibold text-xs transition-all whitespace-nowrap ${selectedLevel === lv.code ? 'bg-primary text-white shadow-primary' : 'bg-muted text-ink-primary'}`}
-            onClick={() => setSelectedLevel(lv.code)}
-            style={{ minWidth: 56 }}
-          >
-            <span>{lv.label}</span>
-            {lv.desc && <span className="text-[10px] mt-0.5 opacity-70">{lv.desc}</span>}
-          </button>
-        ))}
-      </div>
-      <div className="flex justify-around items-center px-2 py-1 border-t border-border bg-surface">
-        {safeSkills.map(skill => (
-          <button
-            key={skill.key}
-            className={`flex flex-col items-center justify-center flex-1 py-2 transition-all ${selectedSkill === skill.key ? 'text-accent' : 'text-ink-muted'}`}
-            onClick={() => setSelectedSkill(skill.key)}
-          >
-            <span className="text-2xl mb-1">{skill.icon}</span>
-            <span className="text-xs font-semibold">{skill.label}</span>
-          </button>
-        ))}
-      </div>
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 flex flex-col md:hidden"
+      style={{
+        background: 'var(--bg-surface)',
+        borderTop: '1px solid var(--border)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.10)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
+      {/* ── Level tabs (horizontally scrollable) ── */}
+      {safeLevels.length > 0 && (
+        <div
+          className="flex overflow-x-auto gap-2 px-3 pt-2.5 pb-2"
+          style={{ scrollbarWidth: 'none' } as React.CSSProperties}
+        >
+          {safeLevels.map(lv => (
+            <button
+              key={lv.code}
+              onClick={() => setSelectedLevel(lv.code)}
+              className="flex flex-col items-center px-4 py-1.5 rounded-full font-bold text-[11px] transition-all whitespace-nowrap shrink-0 active:scale-95"
+              style={
+                selectedLevel === lv.code
+                  ? {
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      boxShadow: '0 2px 10px color-mix(in srgb, var(--primary) 40%, transparent)',
+                    }
+                  : {
+                      background: 'var(--bg-muted)',
+                      color: 'var(--text-secondary)',
+                    }
+              }
+            >
+              {lv.label}
+              {lv.desc && (
+                <span className="text-[9px] mt-0.5 font-normal opacity-70 leading-none">
+                  {lv.desc}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Skill tabs ── */}
+      {safeSkills.length > 0 && (
+        <div className="flex border-t" style={{ borderColor: 'var(--border)' }}>
+          {safeSkills.map(skill => {
+            const isActive = selectedSkill === skill.key;
+            return (
+              <button
+                key={skill.key}
+                onClick={() => setSelectedSkill(skill.key)}
+                className="flex flex-col items-center justify-center flex-1 py-2.5 gap-0.5 transition-all active:scale-95 min-w-0"
+                style={{
+                  color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                  borderTop: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
+                  marginTop: '-1px',
+                }}
+              >
+                <span
+                  className="flex items-center justify-center shrink-0"
+                  style={{ fontSize: '15px', lineHeight: 1 }}
+                >
+                  {skill.icon}
+                </span>
+                <span
+                  className="text-[10px] font-semibold leading-tight text-center w-full px-1.5 overflow-hidden"
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  } as React.CSSProperties}
+                >
+                  {skill.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 };

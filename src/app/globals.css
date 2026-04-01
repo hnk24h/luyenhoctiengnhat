@@ -58,6 +58,7 @@ html[data-appearance="dark"] {
 
 body {
   @apply antialiased;
+  overflow-x: hidden;
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-feature-settings: "cv02","cv03","cv04","cv11";
@@ -510,9 +511,12 @@ html[data-appearance="dark"] .border-gray-400 {
 .lp-root {
   margin-left:  calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
+  /* Use 100% width based on viewport minus scrollbar to avoid horizontal overflow.
+     dvw accounts for the scrollbar track; falls back to vw on older browsers. */
   width: 100vw;
+  max-width: 100%;
   margin-top: -8px;
-  overflow-x: hidden;
+  overflow-x: clip;
   background: #FAFBFF;
 }
 
@@ -736,6 +740,52 @@ html[data-appearance="dark"] .border-gray-400 {
 }
 .lp-testimonial-name  { font-size: 14px; font-weight: 700; color: #0F0D1A; }
 .lp-testimonial-level { font-size: 12px; font-weight: 600; }
+
+/* ── Landing Page — Mobile ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .lp-hero { padding: 52px 0 32px; }
+  .lp-hero-inner { flex-direction: column; gap: 0; }
+
+  .lp-h1 { font-size: clamp(1.85rem, 9vw, 2.6rem); margin-bottom: 14px; }
+  .lp-subhead { font-size: 0.93rem; margin-bottom: 24px; max-width: 100%; }
+
+  /* Full-width CTAs stacked vertically */
+  .lp-hero-ctas { flex-direction: column; gap: 10px; }
+  .lp-btn-primary,
+  .lp-btn-outline { width: 100%; justify-content: center; padding: 14px 20px; font-size: 14px; border-radius: 12px; }
+
+  .lp-trust-row { gap: 12px; flex-wrap: wrap; }
+
+  .lp-section-header { margin-bottom: 28px; }
+  .lp-section-title { font-size: clamp(1.4rem, 6vw, 1.9rem); }
+
+  /* Skills: 2 cols on mobile instead of 4 */
+  .lp-skills-section .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+  .lp-skill-card { padding: 16px 14px 14px; }
+  .lp-skill-icon-box { width: 42px; height: 42px; border-radius: 12px; margin-bottom: 10px; }
+  .lp-skill-name { font-size: 14px; }
+
+  /* Levels: 2 cols on mobile */
+  .lp-level-card-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Steps: already 1 col, reduce padding */
+  .lp-step-card { padding: 22px 18px; }
+
+  /* Testimonials: 1 col already, reduce card padding */
+  .lp-testimonial-card { padding: 18px; }
+
+  /* CTA section padding */
+  .lp-cta { padding: 56px 20px !important; }
+  .lp-cta-h2 { font-size: clamp(1.6rem, 7vw, 2.2rem); }
+  .lp-cta-btn-reg,
+  .lp-cta-btn-try { width: 100%; justify-content: center; padding: 14px 20px; font-size: 14px; }
+
+  /* Badge wrapping */
+  .lp-badge { font-size: 11px; padding: 6px 12px 6px 10px; }
+
+  /* Section padding */
+  section.py-20 { padding-top: 48px !important; padding-bottom: 48px !important; }
+}
 
 /* ── Landing Page — Dark Mode ─────────────────────────────────────────────── */
 html[data-appearance="dark"] .lp-root {

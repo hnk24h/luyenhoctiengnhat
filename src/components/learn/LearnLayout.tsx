@@ -14,7 +14,7 @@ interface LearnLayoutProps {
 export const LearnLayout: React.FC<LearnLayoutProps> = ({ sidebarProps, bottomBarProps, children }) => {
   return (
     <div
-      className="min-h-screen flex flex-col md:flex-row"
+      className="min-h-screen flex flex-col md:flex-row pt-4 md:pt-0"
       style={{ background: 'var(--bg-base)' }}
     >
       {/* Sidebar desktop */}
@@ -27,7 +27,7 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({ sidebarProps, bottomBa
       {/* Bottom bar mobile/tablet */}
       <LearnBottomBar {...bottomBarProps} />
       <main
-        className="flex-1 px-2 sm:px-4 md:px-8 py-6 md:py-8 pb-24 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-[0_4px_24px_0_rgba(61,58,140,0.07),0_1.5px_6px_0_rgba(0,0,0,0.04)] mb-8 max-w-full"
+        className="flex-1 px-3 sm:px-4 md:px-8 py-5 md:py-8 pb-[132px] md:pb-8 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-[0_4px_24px_0_rgba(61,58,140,0.07),0_1.5px_6px_0_rgba(0,0,0,0.04)] mb-8 max-w-full"
       >
         {children}
       </main>

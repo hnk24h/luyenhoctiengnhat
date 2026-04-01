@@ -29,7 +29,7 @@ function NavMenuComponent({
 }: NavMenuProps) {
   const t = useTranslations('menu');
   return (
-    <nav className="hidden md:flex items-center gap-2 flex-1 justify-center">
+    <nav className="hidden lg:flex items-center gap-2 flex-1 justify-center">
       {primaryLinks.map(link => {
         const active = isActive(link.href);
         const activeStyle   = { background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--primary)', fontWeight: 600 } as const;

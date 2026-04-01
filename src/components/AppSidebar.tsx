@@ -230,18 +230,21 @@ function SidebarPanel({
             const realIdx = items.indexOf(item);
             return (
               <button key={item.id} data-sidebar-item onClick={() => onSelect(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 w-full text-left transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-inset${active ? '' : ' hover:bg-[var(--bg-muted)]'}`}
+                className={`group flex items-center gap-3 px-4 py-3 w-full text-left transition-all relative focus:outline-none focus-visible:ring-2 focus-visible:ring-inset${active ? '' : ' hover:bg-[var(--bg-muted)]'}`}
                 style={active
-                  ? { background: 'var(--primary-light)', '--tw-ring-color': accentColor } as React.CSSProperties
+                  ? {
+                      background: `color-mix(in srgb, ${accentColor} 10%, var(--bg-surface))`,
+                      '--tw-ring-color': accentColor,
+                    } as React.CSSProperties
                   : { '--tw-ring-color': accentColor } as React.CSSProperties
                 }>
 
                 {/* Left accent bar */}
-                <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full transition-all"
+                <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full transition-all duration-200"
                   style={{ background: active ? accentColor : 'transparent' }} />
 
                 {/* Number → play circle */}
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all"
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-200"
                   style={active
                     ? { background: accentColor, boxShadow: `0 2px 10px color-mix(in srgb, ${accentColor} 40%, transparent)` }
                     : { background: item.levelBg ?? 'var(--bg-muted)' }}>
@@ -343,9 +346,9 @@ export function AppSidebar(props: AppSidebarProps) {
         </div>
       </aside>
 
-      {/* ── 8. Mobile: floating trigger button ── */}
+      {/* ── Mobile: floating trigger — bottom centre ── */}
       <button
-        className="lg:hidden fixed bottom-5 left-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
+        className="lg:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-5 py-3 rounded-full shadow-lg transition-all active:scale-95"
         style={{
           '--sac': props.accentColor,
           background: 'var(--sac)',

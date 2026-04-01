@@ -226,23 +226,6 @@ export function Navbar() {
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{currentSubjectMeta.flag} {currentSubjectMeta.label}</span>
                 </span>
               </Link>
-              {/* Language switcher */}
-              <LanguageSwitcher
-                currentLocale={locale}
-                onSwitch={(newLocale) => {
-                  // Chuyển route bằng prefix locale Next.js i18n
-                  const segments = pathname.split('/');
-                  // Nếu đã có locale ở [1], thay thế
-                  if (["vi", "en"].includes(segments[1])) {
-                    segments[1] = newLocale;
-                  } else {
-                    segments.splice(1, 0, newLocale);
-                  }
-                  const newPath = segments.join('/').replace(/^\/\//, '/');
-                  router.push(newPath);
-                }}
-                className="ml-2 hidden md:flex"
-              />
               {/* DropdownMenu cho chọn môn học */}
               <DropdownMenu open={modulesOpen} onClose={() => setOpenMenu(null)} className="top-full mt-2 left-0 w-64 rounded-2xl border p-2 shadow-xl z-50" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
                 <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>{t('modules')}</div>
@@ -274,7 +257,20 @@ export function Navbar() {
             />
 
             {/* ── Right controls ── */}
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto md:ml-0">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
+              {/* Language switcher */}
+              <LanguageSwitcher
+                currentLocale={locale}
+                onSwitch={(newLocale) => {
+                  const segs = pathname.split('/');
+                  if (["vi", "en"].includes(segs[1])) {
+                    segs[1] = newLocale;
+                  } else {
+                    segs.splice(1, 0, newLocale);
+                  }
+                  router.push(segs.join('/').replace(/^\/\//, '/'));
+                }}
+              />
               {/* Theme toggle */}
               <ThemeToggle appearance={appearance} resolvedAppearance={resolvedAppearance} setAppearance={setAppearance} />
               <ProfileDropdown
@@ -289,40 +285,41 @@ export function Navbar() {
               {/* Hamburger */}
               <button
                 onClick={() => setMobileOpen(o => !o)}
-                className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all"
                 style={{
                   color: mobileOpen ? 'var(--primary)' : 'var(--text-primary)',
                   background: mobileOpen ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
                 }}
-                aria-label="Menu">
+                aria-label="Menu"
+                aria-expanded={mobileOpen}>
                 {mobileOpen ? <FaXmark size={16} /> : <FaBars size={16} />}
               </button>
             </div>
           </div>
         </div>
-
-        {/* Mobile dropdown */}
-        <MobileMenu
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          currentLang={currentLang}
-          currentLocale={locale}
-          subjects={SUBJECTS.map(sub => ({
-            ...sub,
-            label: t(sub.label),
-            desc: t(sub.desc)
-          }))}
-          primaryLinks={primaryLinks.map(link => ({ ...link, label: t(link.label) }))}
-          exploreLinks={exploreLinks.map(link => ({ ...link, label: t(link.label) }))}
-          isActive={isActive}
-          LANG_LEVELS={Object.fromEntries(Object.entries(LANG_LEVELS).map(([lang, levels]) => [lang, levels.map(lv => ({ ...lv, desc: t(lv.desc) }))]))}
-          session={session}
-          profileLinks={profileLinks.map(link => ({ ...link, label: t(link.label) }))}
-          appearanceOptions={appearanceOptions.map(opt => ({ ...opt, label: t(opt.label) }))}
-          appearance={appearance}
-          setAppearance={setAppearance}
-        />
       </header>
+
+      {/* Mobile overlay — rendered outside header so position:fixed works correctly */}
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        currentLang={currentLang}
+        currentLocale={locale}
+        subjects={SUBJECTS.map(sub => ({
+          ...sub,
+          label: t(sub.label),
+          desc: t(sub.desc)
+        }))}
+        primaryLinks={primaryLinks.map(link => ({ ...link, label: t(link.label) }))}
+        exploreLinks={exploreLinks.map(link => ({ ...link, label: t(link.label) }))}
+        isActive={isActive}
+        LANG_LEVELS={Object.fromEntries(Object.entries(LANG_LEVELS).map(([lang, levels]) => [lang, levels.map(lv => ({ ...lv, desc: t(lv.desc) }))]))}
+        session={session}
+        profileLinks={profileLinks.map(link => ({ ...link, label: t(link.label) }))}
+        appearanceOptions={appearanceOptions.map(opt => ({ ...opt, label: t(opt.label) }))}
+        appearance={appearance}
+        setAppearance={setAppearance}
+      />
     </>
   );
 }
