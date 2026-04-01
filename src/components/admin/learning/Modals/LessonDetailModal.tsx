@@ -3,36 +3,9 @@ import { FaTimes, FaEdit, FaTrash, FaPlus, FaSearch, FaClone } from 'react-icons
 
 // Schema: Lesson gồm các trường: id, title, description, type, requiredTier, _count.items
 // CRUD: Sửa, Xóa, Thêm mục con (item), Search, Pagination
+import { useTranslations } from 'next-intl';
 
-
-// Local copy of Lesson and LearningItem interfaces to avoid cross-app-directory import issues
-interface Lesson {
-  id: string;
-  categoryId: string;
-  title: string;
-  description: string | null;
-  content: string | null;
-  type: string;
-  order: number;
-  requiredTier?: string;
-  _count: { items: number };
-  category: { name: string; skill: string; level: { code: string } };
-}
-interface ContentMeaning { id: string; language: string; meaning: string }
-interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
-interface LearningItem {
-  id: string;
-  lessonId: string;
-  type: string;
-  language: string;
-  term: string;
-  pronunciation: string | null;
-  meanings: ContentMeaning[];
-  examples: ContentExample[];
-  audioUrl: string | null;
-  imageUrl: string | null;
-  order: number;
-}
+import type { Lesson, LearningItem, ContentMeaning, ContentExample } from '@/types/lesson';
 
 interface LessonDetailModalProps {
   lesson: Lesson;
@@ -55,7 +28,7 @@ interface AddEditData {
 export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, items = [], onAddItem, onEditItem, onDeleteItem }: LessonDetailModalProps) {
   const [addingRow, setAddingRow] = useState(false);
   const [addData, setAddData] = useState<AddEditData>({ term: '', pronunciation: '', meanings: '', type: '' });
-
+  const t = useTranslations();
   // Clone row logic
   const handleCloneRow = (item: LearningItem) => {
     setAddingRow(true);
@@ -116,7 +89,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       setEditingHeader(false);
       setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
-      alert('Lưu bài học thất bại!');
+      alert(t('lessonDetail.saveFailed'));
     }
   };
 
@@ -181,7 +154,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       setEditingHeader(false);
       setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
-      alert('Lưu bài học thất bại!');
+      alert(t('lessonDetail.saveFailed'));
     }
   };
   // Xóa item khỏi DB và reload lại danh sách
@@ -280,12 +253,12 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
         <button
           className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 text-gray-500"
           onClick={onClose}
-          title="Đóng"
+          title={t('lessonDetail.cancel')}
         >
           <FaTimes size={18} />
         </button>
         <div className="flex items-center gap-2">
-          <h3 className="font-bold text-lg flex items-center gap-2">Chi tiết bài học</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2">{t('lessonDetail.title')}</h3>
         </div>
         <div className="card mb-2">
           <div className="flex items-center justify-end mb-2">

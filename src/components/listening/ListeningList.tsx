@@ -16,7 +16,7 @@ interface ListeningListProps {
   onSelect: (id: string) => void;
   onPlay?: (id: string) => void;
   isPlayingId?: string;
-  levelMeta: Record<string, { badgeBg: string; badgeText: string }>;
+  levelMeta: Record<string, { badgeBg: string; badgeText: string; accent?: string }>;
   heroBg: string;
   accent: string;
   loading?: boolean;

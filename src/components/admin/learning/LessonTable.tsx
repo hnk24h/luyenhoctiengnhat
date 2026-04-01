@@ -3,14 +3,8 @@ import { FaListUl, FaPlus, FaMagnifyingGlass, FaTrash, FaLock, FaChevronLeft, Fa
 import { FaCog, FaArrowsAlt } from 'react-icons/fa';
 import LessonDetailModal from '@/components/admin/learning/Modals/LessonDetailModal';
 
-// Copied from page.tsx to avoid import issues
-interface Lesson {
-    id: string; categoryId: string; title: string; description: string | null;
-    content: string | null; type: string; order: number;
-    requiredTier?: string;
-    _count: { items: number };
-    category: { name: string; skill: string; level: { code: string } };
-}
+import type { Lesson } from '@/types/lesson';
+
 interface Category {
     id: string; levelId: string; skill: string; name: string;
     description: string | null; icon: string | null; order: number;

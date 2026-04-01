@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Noto_Sans_JP, Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ChatBot } from '@/components/ChatBot';
 
@@ -81,12 +80,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children, params }: { children: React.ReactNode; params?: { locale?: string } }) {
+  // Map locale → BCP-47 lang attribute for accessibility and SEO
+  const localeToLang: Record<string, string> = { vi: 'vi', en: 'en' };
+  const lang = localeToLang[params?.locale ?? ''] ?? 'vi';
   return (
-    <html lang="vi" className={`${inter.variable}`} suppressHydrationWarning>
+    <html lang={lang} className={`${inter.variable}`} suppressHydrationWarning>
       <body className={notoSansJP.className} style={{ background: 'var(--bg-base)', color: 'var(--text-base)' }}>
         <Providers>
-          <Navbar />
           <main className="min-h-screen pt-2" style={{ background: 'var(--bg-base)' }}>
             <div className="mx-auto w-full" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
               {children}

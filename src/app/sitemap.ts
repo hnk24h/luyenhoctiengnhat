@@ -2,41 +2,91 @@ import type { MetadataRoute } from 'next';
 
 const BASE = 'https://e-learn.ikagi.site';
 
-// Static public pages
-const STATIC: { url: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]['changeFrequency'] }[] = [
-  { url: '',          priority: 1.0,  changeFrequency: 'weekly' },
-  { url: '/learn',    priority: 0.9,  changeFrequency: 'weekly' },
-  { url: '/levels',   priority: 0.9,  changeFrequency: 'weekly' },
-  { url: '/listening',priority: 0.8,  changeFrequency: 'weekly' },
-  { url: '/vocab',    priority: 0.8,  changeFrequency: 'weekly' },
-  { url: '/flashcards',priority: 0.7, changeFrequency: 'weekly' },
-  { url: '/auth/login',    priority: 0.4,  changeFrequency: 'monthly' },
-  { url: '/auth/register', priority: 0.4,  changeFrequency: 'monthly' },
-];
+// ─── Language / level config ────────────────────────────────────────────────
+const LANGS = ['ja', 'zh', 'ko'] as const;
+type Lang = typeof LANGS[number];
 
-// JLPT level pages
-const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'] as const;
-const TABS   = ['vocab', 'grammar'] as const;
+const LEVELS_BY_LANG: Record<Lang, string[]> = {
+  ja: ['N5', 'N4', 'N3', 'N2', 'N1'],
+  zh: ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6'],
+  ko: ['TOPIK1', 'TOPIK2', 'TOPIK3', 'TOPIK4', 'TOPIK5', 'TOPIK6'],
+};
+
+// Public pages per language
+const LANG_STATIC_PATHS = [
+  { path: '',          priority: 1.0,  changeFreq: 'weekly' },
+  { path: '/learn',    priority: 0.9,  changeFreq: 'weekly' },
+  { path: '/levels',   priority: 0.9,  changeFreq: 'weekly' },
+  { path: '/listening',priority: 0.85, changeFreq: 'weekly' },
+  { path: '/vocab',    priority: 0.85, changeFreq: 'weekly' },
+  { path: '/grammar',  priority: 0.8,  changeFreq: 'weekly' },
+  { path: '/reading',  priority: 0.8,  changeFreq: 'weekly' },
+  { path: '/alphabet', priority: 0.7,  changeFreq: 'monthly' },
+  { path: '/practice', priority: 0.7,  changeFreq: 'weekly' },
+] as const;
+
+// Global static pages (no lang prefix)
+const GLOBAL_STATIC = [
+  { url: '',               priority: 1.0,  changeFreq: 'weekly' },
+  { url: '/auth/login',    priority: 0.4,  changeFreq: 'monthly' },
+  { url: '/auth/register', priority: 0.4,  changeFreq: 'monthly' },
+] as const;
+
+type ChangeFreq = MetadataRoute.Sitemap[0]['changeFrequency'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const staticEntries: MetadataRoute.Sitemap = STATIC.map(({ url, priority, changeFrequency }) => ({
+  // 1. Global pages (no locale prefix)
+  const globalEntries: MetadataRoute.Sitemap = GLOBAL_STATIC.map(({ url, priority, changeFreq }) => ({
     url: `${BASE}${url}`,
     lastModified: now,
-    changeFrequency,
+    changeFrequency: changeFreq as ChangeFreq,
     priority,
   }));
 
-  // /learn/N5, /learn/N4 … (one per level)
-  const levelEntries: MetadataRoute.Sitemap = LEVELS.flatMap(level =>
-    TABS.map(tab => ({
-      url: `${BASE}/learn/${level}?tab=${tab}`,
+  // 2. Per-language static pages: /ja, /zh, /ko + each subpath
+  const langStaticEntries: MetadataRoute.Sitemap = LANGS.flatMap(lang =>
+    LANG_STATIC_PATHS.map(({ path, priority, changeFreq }) => ({
+      url: `${BASE}/${lang}${path}`,
       lastModified: now,
-      changeFrequency: 'weekly' as const,
+      changeFrequency: changeFreq as ChangeFreq,
+      priority,
+    }))
+  );
+
+  // 3. Per-language learn level pages: /ja/learn/N5, /zh/learn/HSK1, ...
+  const learnLevelEntries: MetadataRoute.Sitemap = LANGS.flatMap(lang =>
+    LEVELS_BY_LANG[lang].map(level => ({
+      url: `${BASE}/${lang}/learn/${level}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as ChangeFreq,
       priority: 0.85,
     }))
   );
 
-  return [...staticEntries, ...levelEntries];
+  // 4. Per-language exam level pages: /ja/levels/N5/exams, ...
+  const examLevelEntries: MetadataRoute.Sitemap = LANGS.flatMap(lang =>
+    LEVELS_BY_LANG[lang].flatMap(level => [
+      {
+        url: `${BASE}/${lang}/levels/${level}`,
+        lastModified: now,
+        changeFrequency: 'weekly' as ChangeFreq,
+        priority: 0.8,
+      },
+      {
+        url: `${BASE}/${lang}/levels/${level}/exams`,
+        lastModified: now,
+        changeFrequency: 'weekly' as ChangeFreq,
+        priority: 0.8,
+      },
+    ])
+  );
+
+  return [
+    ...globalEntries,
+    ...langStaticEntries,
+    ...learnLevelEntries,
+    ...examLevelEntries,
+  ];
 }

@@ -1,21 +1,8 @@
 import React from 'react';
 import { FaCirclePlus, FaFileArrowUp, FaPlus, FaPencil, FaTrash } from 'react-icons/fa6';
 
-// Copied from page.tsx to avoid import issues
-interface ContentMeaning { id: string; language: string; meaning: string }
-interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
-interface LearningItem {
-  id: string; lessonId: string; type: string; language: string; term: string;
-  pronunciation: string | null; meanings: ContentMeaning[]; examples: ContentExample[];
-  audioUrl: string | null; imageUrl: string | null; order: number;
-}
-interface Lesson {
-  id: string; categoryId: string; title: string; description: string | null;
-  content: string | null; type: string; order: number;
-  requiredTier?: string;
-  _count: { items: number };
-  category: { name: string; skill: string; level: { code: string } };
-}
+import type { Lesson, LearningItem } from '@/types/lesson';
+
 interface ItemPanelProps {
   items: LearningItem[];
   activeLesId: string | null;

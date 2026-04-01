@@ -14,6 +14,7 @@ import { CategoryModal } from '@/components/admin/learning/Modals/CategoryModal'
 import { LessonModal } from '@/components/admin/learning/Modals/LessonModal';
 import { ItemModal } from '@/components/admin/learning/Modals/ItemModal';
 import { ImportModal } from '@/components/admin/learning/Modals/ImportModal';
+import type { Lesson, LearningItem, ContentMeaning, ContentExample } from '@/types/lesson';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,21 +27,7 @@ interface Category {
   _count: { lessons: number };
 }
 
-interface Lesson {
-  id: string; categoryId: string; title: string; description: string | null;
-  content: string | null; type: string; order: number;
-  requiredTier?: string;
-  _count: { items: number };
-  category: { name: string; skill: string; level: { code: string } };
-}
-
-interface ContentMeaning { id: string; language: string; meaning: string }
-interface ContentExample { id: string; exampleText: string; translation: string | null; language: string; translationLanguage: string | null }
-interface LearningItem {
-  id: string; lessonId: string; type: string; language: string; term: string;
-  pronunciation: string | null; meanings: ContentMeaning[]; examples: ContentExample[];
-  audioUrl: string | null; imageUrl: string | null; order: number;
-}
+// Lesson, LearningItem, ContentMeaning, ContentExample imported from @/types/lesson
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

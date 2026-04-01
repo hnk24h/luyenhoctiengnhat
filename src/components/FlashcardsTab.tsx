@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VocabRefItem } from './../app/[lang]/vocab/page';
+import type { VocabRefItem } from '@/types/vocab';
 import { FaVolumeHigh } from 'react-icons/fa6';
 
 interface FlashcardsTabProps {
@@ -202,7 +202,7 @@ export const FlashcardsTab: React.FC<FlashcardsTabProps> = ({ items, color, font
           {pagedItems.map((item, idx) => (
             <div
               key={item.id}
-              ref={el => itemRefs.current[(page - 1) * pageSize + idx] = el}
+              ref={el => { itemRefs.current[(page - 1) * pageSize + idx] = el; }}
               className={`rounded-xl border-2 p-3 bg-white flex flex-col transition-all duration-150 shadow-sm ${(page - 1) * pageSize + idx === index ? 'ring-2 ring-blue-400 border-blue-400 bg-blue-50' : 'border-gray-200'} hover:bg-gray-100`}
               style={{ borderColor: (page - 1) * pageSize + idx === index ? '#3B82F6' : 'var(--border)' }}
             >

@@ -1,7 +1,38 @@
+
 import React from 'react';
 import { FaXmark, FaCheck } from 'react-icons/fa6';
 
-export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LESSON_TYPES, saving, saveLes }) {
+// Định nghĩa lại type Modal cho đúng với page.tsx
+type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
+
+interface LessonModalProps {
+  modal: Modal;
+  setModal: React.Dispatch<React.SetStateAction<Modal>>;
+  modalErr?: string;
+  lesForm: {
+    title: string;
+    description: string;
+    type: string;
+    order: number;
+    requiredTier: string;
+    audioFile?: File;
+    audioUrl?: string;
+  };
+  setLesForm: React.Dispatch<React.SetStateAction<{
+    title: string;
+    description: string;
+    type: string;
+    order: number;
+    requiredTier: string;
+    audioFile?: File;
+    audioUrl?: string;
+  }>>;
+  LESSON_TYPES: string[];
+  saving: boolean;
+  saveLes: () => void;
+}
+
+export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LESSON_TYPES, saving, saveLes }: LessonModalProps) {
   if (modal !== 'les-create' && modal !== 'les-edit') return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setModal(null)}>
