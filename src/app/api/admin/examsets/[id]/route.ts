@@ -6,7 +6,8 @@ import { prisma } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
@@ -21,7 +22,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any)?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });

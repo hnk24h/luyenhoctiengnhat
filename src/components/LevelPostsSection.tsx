@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { FaPen, FaXmark, FaPaperPlane, FaUsers } from 'react-icons/fa6';
 
 export interface LevelPostData {
@@ -121,11 +122,11 @@ export default function LevelPostsSection({ levelCode, initialPosts, userId, use
           </div>
         </div>
         {!userId && (
-          <a href="/auth/login"
+          <Link href="/auth/login"
             className="text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-all hover:scale-105"
             style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
             Đăng nhập để chia sẻ
-          </a>
+          </Link>
         )}
       </div>
 

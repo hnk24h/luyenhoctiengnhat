@@ -14,7 +14,8 @@ const SUBJECT_LABEL: Record<string, { label: string; flag: string }> = {
   PMP:  { label: 'Quản lý dự án — PMP', flag: '📋' },
 };
 
-export default async function AdminExamSetsPage({ searchParams }: { searchParams: { level?: string; subject?: string } }) {
+export default async function AdminExamSetsPage({ searchParams: rawSearchParams }: { searchParams: Promise<{ level?: string; subject?: string }> }) {
+  const searchParams = await rawSearchParams;
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') redirect('/');
 

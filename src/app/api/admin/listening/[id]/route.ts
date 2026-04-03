@@ -9,7 +9,8 @@ async function assertAdmin() {
   return Boolean(session && session.user.role === 'admin');
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const isAdmin = await assertAdmin();
   if (!isAdmin) return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
 
@@ -58,7 +59,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   return NextResponse.json(mapLessonToListeningPractice(updated));
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const isAdmin = await assertAdmin();
   if (!isAdmin) return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
 

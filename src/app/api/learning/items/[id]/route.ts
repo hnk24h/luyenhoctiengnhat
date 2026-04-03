@@ -9,7 +9,8 @@ function isAdmin(session: any) {
 }
 
 // PUT /api/learning/items/[id]
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -63,7 +64,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/learning/items/[id]
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 

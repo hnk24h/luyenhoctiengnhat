@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LearnLayout } from '@/components/learn/LearnLayout';
 import { LearnSidebar } from '@/components/LearnSidebar';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -116,7 +116,8 @@ function CardItem({
   );
 }
 
-export default function DeckPage({ params }: { params: { locale: string; lang: string; deckId: string } }) {
+export default function DeckPage() {
+  const params = useParams() as { locale: string; lang: string; deckId: string };
   // Sidebar đồng nhất: chỉ có skill SRS, level là "Tùy chỉnh" hoặc lấy từ deck
   const levels = [{ code: 'custom', label: 'Tùy chỉnh', desc: 'Bộ thẻ cá nhân' }];
   const skills = [{ key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={18} /> }];

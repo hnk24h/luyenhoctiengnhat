@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
   return {
     title: 'Học Tiếng Nhật',
     description: 'Học từ vựng và ngữ pháp tiếng Nhật theo chương trình Minna no Nihongo, Mimikara Oboeru, Shin Kanzen Master — từ N5 đến N1.',
-    alternates: { canonical: `https://e-learn.ikagi.site/${params.lang}/learn` },
+    alternates: { canonical: `https://e-learn.ikagi.site/${lang}/learn` },
     openGraph: {
       title: 'Học Tiếng Nhật N5~N1 | IkagiLearn',
       description: 'Từ vựng & ngữ pháp theo giáo trình chuẩn: Minna no Nihongo, Mimikara Oboeru, Shin Kanzen Master.',
-      url: `https://e-learn.ikagi.site/${params.lang}/learn`,
+      url: `https://e-learn.ikagi.site/${lang}/learn`,
     },
   };
 }
@@ -286,7 +287,8 @@ function getMotivationLine(options: {
   return `${options.firstName}, hãy chọn một đường học rõ ràng cho hôm nay: tiếp tục bài cũ, gia cố kỹ năng yếu hoặc ôn thi theo mục tiêu.`;
 }
 
-export default async function LearnPage({ params }: { params: { locale: string; lang: string } }) {
+export default async function LearnPage({ params: rawParams }: { params: Promise<{ locale: string; lang: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
 

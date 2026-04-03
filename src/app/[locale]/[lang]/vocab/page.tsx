@@ -3,14 +3,15 @@ import VocabClient from './VocabClient';
 
 const BASE = 'https://e-learn.ikagi.site';
 
-export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
   const langLabel: Record<string, { title: string; desc: string; exam: string }> = {
     ja: { title: 'Từ Vựng Tiếng Nhật JLPT N5~N1', desc: 'Học từ vựng tiếng Nhật theo từng cấp N5, N4, N3, N2, N1 — flashcard, SRS, tổng hợp theo chủ đề.', exam: 'JLPT' },
     zh: { title: 'Từ Vựng Tiếng Trung HSK', desc: 'Học từ vựng tiếng Trung theo cấp HSK1 đến HSK6 — flashcard, Pinyin, nghĩa tiếng Việt.', exam: 'HSK' },
     ko: { title: 'Từ Vựng Tiếng Hàn TOPIK', desc: 'Học từ vựng tiếng Hàn theo cấp TOPIK — flashcard, phiên âm, nghĩa tiếng Việt.', exam: 'TOPIK' },
   };
-  const m = langLabel[params.lang] ?? langLabel.ja;
-  const canonical = `${BASE}/${params.lang}/vocab`;
+  const m = langLabel[lang] ?? langLabel.ja;
+  const canonical = `${BASE}/${lang}/vocab`;
   return {
     title: m.title,
     description: m.desc,

@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 import { FaFont, FaRuler, FaHeadphones, FaFile } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
-interface Props { params: { locale: string; lang: string; level: string; skill: string; categoryId: string } }
+interface Props { params: Promise<{ locale: string; lang: string; level: string; skill: string; categoryId: string }> }
 
 async function getCategoryWithLessons(categoryId: string, userId?: string) {
   const category = await prisma.learningCategory.findUnique({
@@ -28,7 +28,8 @@ async function getCategoryWithLessons(categoryId: string, userId?: string) {
 
 export const dynamic = 'force-dynamic';
 
-export default async function LearnCategoryPage({ params }: Props) {
+export default async function LearnCategoryPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
 

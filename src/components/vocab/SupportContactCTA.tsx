@@ -1,4 +1,5 @@
 import React from "react";
+import Link from 'next/link';
 import { FaQuestionCircle } from "react-icons/fa";
 
 export default function SupportContactCTA() {
@@ -8,7 +9,7 @@ export default function SupportContactCTA() {
         <FaQuestionCircle className="text-blue-400" />
         <span className="font-semibold text-blue-700">Cần hỗ trợ?</span>
       </div>
-      <a href="/support" className="text-sm text-blue-600 underline hover:text-blue-800">Liên hệ tư vấn hoặc xem FAQ</a>
+      <Link href="/support" className="text-sm text-blue-600 underline hover:text-blue-800">Liên hệ tư vấn hoặc xem FAQ</Link>
     </div>
   );
 }

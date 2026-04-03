@@ -7,8 +7,9 @@ import { prisma } from '@/lib/db';
  */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { code: string } }
+  { params: rawParams }: { params: Promise<{ code: string }> }
 ) {
+  const params = await rawParams;
   const { code } = params;
 
   const ka = await prisma.pMPKnowledgeArea.findUnique({

@@ -6,7 +6,7 @@ import { getSkillLabel, SKILLS } from '@/lib/utils';
 import { FaTrophy, FaBook, FaLightbulb } from 'react-icons/fa6';
 import { AudioPlayer } from '@/components/AudioPlayer';
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 async function getSession(id: string) {
   return prisma.examSession.findUnique({
@@ -21,7 +21,8 @@ async function getSession(id: string) {
 
 export const dynamic = 'force-dynamic';
 
-export default async function ResultsPage({ params }: Props) {
+export default async function ResultsPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getSession(params.id);
   if (!session) notFound();
 

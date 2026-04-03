@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 import LessonClient from './LessonClient';
 
 interface Props {
-  params: { locale: string; lang: string; level: string; skill: string; categoryId: string; lessonId: string }
+  params: Promise<{ locale: string; lang: string; level: string; skill: string; categoryId: string; lessonId: string }>
 }
 
 async function getLesson(lessonId: string, userId?: string) {
@@ -23,7 +23,8 @@ async function getLesson(lessonId: string, userId?: string) {
 
 export const dynamic = 'force-dynamic';
 
-export default async function LessonPage({ params }: Props) {
+export default async function LessonPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id;
 

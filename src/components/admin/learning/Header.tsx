@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Header({ subject }: { subject: string }) {
   return (
     <header className="w-full">
@@ -5,12 +7,12 @@ export default function Header({ subject }: { subject: string }) {
         {/* Left: Breadcrumb and title */}
         <div className="flex-1 min-w-0">
           <div className="mb-2">
-            <a
+            <Link
               href="/admin"
               className="inline-block text-xs font-semibold rounded-full border border-white/30 bg-white/10 px-3 py-1 text-white/80 hover:bg-white/20 transition"
             >
               Admin
-            </a>
+            </Link>
             <span className="mx-2 text-white/60 text-xs">/</span>
             <span className="inline-block text-xs font-semibold rounded-full border border-white/30 bg-white/10 px-3 py-1 text-white/80">
               Quản lý bài học

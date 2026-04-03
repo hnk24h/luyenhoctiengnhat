@@ -15,7 +15,7 @@ import { ExamSidebarClient } from '@/components/learn/ExamSidebarClient';
 
 import ClientPage from './ClientPage';
 
-interface Props { params: { locale: string; lang: string; level: string } }
+interface Props { params: Promise<{ locale: string; lang: string; level: string }> }
 
 // Tối ưu type cho examSets props
 interface ExamSet {
@@ -91,7 +91,8 @@ const getCachedLevel = unstable_cache(
   { revalidate: 3600, tags: ['level-exam-structure'] },
 );
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: rawParams }: Props): Promise<Metadata> {
+  const params = await rawParams;
   const lv = params.level?.toUpperCase();
   const meta = LEVEL_META[lv];
   return {
@@ -105,7 +106,8 @@ export const dynamic = 'force-dynamic';
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 
-export default async function LevelTopPage({ params }: Props) {
+export default async function LevelTopPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
 

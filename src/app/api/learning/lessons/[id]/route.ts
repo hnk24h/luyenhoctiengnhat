@@ -9,7 +9,8 @@ function isAdmin(session: any) {
 }
 
 // GET /api/learning/lessons/[id]  — includes items
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const lesson = await prisma.learningLesson.findUnique({
     where: { id: params.id },
     include: {
@@ -22,7 +23,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 // PUT /api/learning/lessons/[id]
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -49,7 +51,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/learning/lessons/[id]
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -58,7 +61,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 }
 
 // POST /api/learning/lessons/[id]  — add item to lesson
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 

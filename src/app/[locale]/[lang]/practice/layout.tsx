@@ -3,9 +3,10 @@ import type { ReactNode } from 'react';
 
 const BASE = 'https://e-learn.ikagi.site';
 
-interface Props { children: ReactNode; params: { lang: string } }
+interface Props { children: ReactNode; params: Promise<{ lang: string }> }
 
-export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
+export async function generateMetadata({ params: rawParams }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const params = await rawParams;
   const langLabel: Record<string, { title: string; desc: string }> = {
     ja: { title: 'Luyện Tập Từ Vựng Tiếng Nhật — Flashcard & SRS', desc: 'Luyện tập từ vựng tiếng Nhật qua các bộ thẻ flashcard. Ôn tập thông minh theo thuật toán SRS, theo dõi tiến trình.' },
     zh: { title: 'Luyện Tập Từ Vựng Tiếng Trung — Flashcard & SRS', desc: 'Luyện tập từ vựng tiếng Trung qua flashcard và SRS. Quản lý bộ thẻ cá nhân.' },

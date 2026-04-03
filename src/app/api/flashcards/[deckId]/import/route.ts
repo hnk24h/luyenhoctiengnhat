@@ -3,11 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { deckId: string } }
+interface Ctx { params: Promise<{ deckId: string }> }
 
 // POST /api/flashcards/[deckId]/import
 // Body: { cards: [{ front, back, reading?, example? }] }
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

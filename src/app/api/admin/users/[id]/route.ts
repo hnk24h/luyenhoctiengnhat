@@ -9,7 +9,8 @@ function adminOnly(session: any) {
 }
 
 // GET /api/admin/users/[id] — full user profile + stats
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (adminOnly(session)) return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
 
@@ -37,7 +38,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // PUT /api/admin/users/[id] — update name, role
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (adminOnly(session)) return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
 
@@ -65,7 +67,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // DELETE /api/admin/users/[id] — delete user + all related data
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (adminOnly(session)) return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
 

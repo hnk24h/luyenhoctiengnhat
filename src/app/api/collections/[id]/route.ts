@@ -3,14 +3,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 async function getUser(email: string) {
   return prisma.user.findUnique({ where: { email } });
 }
 
 // PUT /api/collections/[id] — rename / recolor
-export async function PUT(req: NextRequest, { params }: Ctx) {
+export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await getUser(session.user.email);
@@ -31,7 +32,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/collections/[id] — delete collection (words remain, just delinked)
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await getUser(session.user.email);

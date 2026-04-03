@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 interface Passage {
   id: string; title: string; titleVi: string | null; content: string;
@@ -10,7 +11,8 @@ interface Passage {
 
 const TYPE_LABEL: Record<string, string> = { short: 'Đoạn ngắn', long: 'Bài dài', news: 'Tin tức' };
 
-export default function PrintPage({ params }: { params: { id: string } }) {
+export default function PrintPage() {
+  const params = useParams() as { id: string };
   const [passage, setPassage] = useState<Passage | null>(null);
 
   useEffect(() => {

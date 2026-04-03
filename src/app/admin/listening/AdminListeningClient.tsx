@@ -15,6 +15,7 @@ import {
   FaVolumeHigh,
   FaXmark,
 } from 'react-icons/fa6';
+import Link from 'next/link';
 import AdminPageHeader from '../_components/AdminPageHeader';
 import { LISTENING_PRACTICES, type ListeningMondai, type ListeningPractice } from '@/modules/listeningContent';
 import { MediaUploadField } from '@/components/MediaUploadField';
@@ -316,10 +317,10 @@ export default function AdminListeningClient() {
         breadcrumb="Quản lý bài nghe"
         badge={`${items.length} bài nghe`}
         actions={<>
-          <a href="/ja/listening"
+          <Link href="/ja/listening"
             className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
             <FaHeadphones size={13} /> Xem page
-          </a>
+          </Link>
           <a href="/samples/jlpt-listening-sample.json" download
             className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
             <FaDownload size={13} /> JSON mẫu

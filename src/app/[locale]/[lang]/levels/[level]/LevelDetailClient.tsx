@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { SKILLS, formatDuration } from '@/lib/utils';
 import { SkillIcon } from '@/components/SkillIcon';
 import { AudioPlayer } from '@/components/AudioPlayer';
@@ -1297,11 +1298,11 @@ function SidebarContent({
           <p className="text-xs font-bold mb-1.5" style={{ color: 'var(--primary)' }}>
             Đăng nhập để lưu tiến trình
           </p>
-          <a href="/auth/login"
+          <Link href="/auth/login"
             className="block text-center py-1.5 rounded-lg text-xs font-bold text-white"
             style={{ background: 'var(--primary)' }}>
             Đăng nhập
-          </a>
+          </Link>
         </div>
       )}
     </div>

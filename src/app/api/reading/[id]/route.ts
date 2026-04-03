@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { id: string } }
+interface Ctx { params: Promise<{ id: string }> }
 
 // GET /api/reading/[id]?lang=ja|zh — public single passage
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const lang = req.nextUrl.searchParams.get('lang') ?? 'ja';
 
   // ── Chinese passage branch ───────────────────────────────────────────────
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 }
 
 // PUT /api/reading/[id] — admin only
-export async function PUT(req: NextRequest, { params }: Ctx) {
+export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -60,7 +62,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/reading/[id] — admin only
-export async function DELETE(_: NextRequest, { params }: Ctx) {
+export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if ((session?.user as any)?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 

@@ -42,7 +42,8 @@ const SKILL_META: Record<string, { label: string; icon: ReactNode; color: string
   noi:  { label: 'Từ vựng', icon: <FaComments   size={10}/>, color: '#059669' },
 };
 
-export default async function LevelsPage({ params }: { params: { locale: string; lang: string } }) {
+export default async function LevelsPage({ params: rawParams }: { params: Promise<{ locale: string; lang: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId  = (session?.user as { id?: string } | undefined)?.id;
   const lang = params.lang ?? 'ja';

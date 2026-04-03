@@ -80,12 +80,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children, params }: { children: React.ReactNode; params?: { locale?: string } }) {
-  // Map locale → BCP-47 lang attribute for accessibility and SEO
-  const localeToLang: Record<string, string> = { vi: 'vi', en: 'en' };
-  const lang = localeToLang[params?.locale ?? ''] ?? 'vi';
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={lang} className={`${inter.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={`${inter.variable}`} suppressHydrationWarning>
       <body className={notoSansJP.className} style={{ background: 'var(--bg-base)', color: 'var(--text-base)', overflowX: 'clip' }}>
         <Providers>
           <main className="min-h-screen" style={{ background: 'var(--bg-base)' }}>

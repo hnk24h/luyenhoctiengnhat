@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { cardId: string } }
+interface Ctx { params: Promise<{ cardId: string }> }
 
 // Rating: 0=Again, 1=Hard, 2=Good, 3=Easy
 function computeNextSRS(
@@ -46,7 +46,8 @@ function computeNextSRS(
 }
 
 // POST /api/flashcards/cards/[cardId]/review
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

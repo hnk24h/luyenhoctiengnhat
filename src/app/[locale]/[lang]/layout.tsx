@@ -33,15 +33,16 @@ const LANG_SCHEMA: Record<string, object> = {
   },
 };
 
-export default function LangLayout({
+export default async function LangLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { lang: string };
+  params: Promise<{ lang: string }>;
 }) {
-  if (!VALID_LANGS.has(params.lang)) notFound();
-  const schema = LANG_SCHEMA[params.lang];
+  const { lang } = await params;
+  if (!VALID_LANGS.has(lang)) notFound();
+  const schema = LANG_SCHEMA[lang];
   return (
     <>
       {schema && (

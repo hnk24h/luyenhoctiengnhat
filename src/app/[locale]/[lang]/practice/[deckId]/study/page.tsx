@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -50,7 +50,8 @@ const RATING_CONFIG: {
   { rating: 3, label: 'Dễ',     hint: 'lâu hơn',    icon: <FaFaceGrinBeam size={16} />,bg: '#EFF6FF', color: '#2563EB' },
 ];
 
-export default function StudyPage({ params }: { params: { deckId: string } }) {
+export default function StudyPage() {
+    const params = useParams() as { deckId: string };
     // Khôi phục lại hàm startSession đúng vị trí trong component
     function startSession() {
       const pool = cardSource === 'due' ? allDue : allCards;

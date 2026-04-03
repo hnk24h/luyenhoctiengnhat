@@ -3,8 +3,9 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params: rawParams }: { params: Promise<{ id: string }> },
 ) {
+  const params = await rawParams;
   const examSet = await prisma.examSet.findUnique({
     where: { id: params.id },
     include: {

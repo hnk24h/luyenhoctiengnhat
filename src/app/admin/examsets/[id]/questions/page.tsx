@@ -5,11 +5,12 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import AdminQuestionsClient from './AdminQuestionsClient';
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminQuestionsPage({ params }: Props) {
+export default async function AdminQuestionsPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') redirect('/');
 

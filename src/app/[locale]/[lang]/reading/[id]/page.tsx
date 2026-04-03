@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaArrowLeft, FaBookmark, FaNewspaper, FaAlignLeft,
@@ -290,7 +291,8 @@ function GrammarAnalysisSection({ passage, layout = 'grid' }: { passage: Passage
   );
 }
 
-export default function ReadingDetailPage({ params }: { params: { locale: string; lang: string; id: string } }) {
+export default function ReadingDetailPage() {
+  const params = useParams() as { locale: string; lang: string; id: string };
   const { data: session } = useSession();
   const [passage,       setPassage]       = useState<Passage | null>(null);
   const [loading,       setLoading]       = useState(true);

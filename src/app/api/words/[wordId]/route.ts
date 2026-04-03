@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { wordId: string } }
+interface Ctx { params: Promise<{ wordId: string }> }
 
 // DELETE /api/words/[wordId]
-export async function DELETE(_: NextRequest, { params }: Ctx) {
+export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

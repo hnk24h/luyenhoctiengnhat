@@ -14,8 +14,8 @@ import LevelPostsSection, { type LevelPostData } from '@/components/LevelPostsSe
 import LearningPathMap, { type PathLesson } from '@/components/LearningPathMap';
 
 interface Props {
-  params: { locale: string; lang: string; level: string };
-  searchParams: { tab?: string };
+  params: Promise<{ locale: string; lang: string; level: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
 // ─── Static metadata ─────────────────────────────────────────────────────────
@@ -25,7 +25,8 @@ const LEVEL_LABEL: Record<string, string> = {
   N2: 'N2 Trung cao cấp', N1: 'N1 Cao cấp',
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: rawParams }: Props): Promise<Metadata> {
+  const params = await rawParams;
   const lv = params.level?.toUpperCase();
   const label = LEVEL_LABEL[lv] ?? lv;
   return {
@@ -250,7 +251,9 @@ export const dynamic = 'force-dynamic';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function LearnLevelPage({ params, searchParams }: Props) {
+export default async function LearnLevelPage({ params: rawParams, searchParams: rawSearchParams }: Props) {
+  const params = await rawParams;
+  const searchParams = await rawSearchParams;
   const session = await getServerSession(authOptions);
   const userId  = (session?.user as any)?.id as string | undefined;
 

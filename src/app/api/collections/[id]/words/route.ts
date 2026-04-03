@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 async function getUser(email: string) {
   return prisma.user.findUnique({ where: { email } });
@@ -11,7 +11,8 @@ async function getUser(email: string) {
 
 // POST /api/collections/[id]/words — add word(s) to collection
 // Body: { wordId } or { wordIds: string[] }
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await getUser(session.user.email);
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
 // DELETE /api/collections/[id]/words — remove word from collection
 // Body: { wordId }
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await getUser(session.user.email);

@@ -15,7 +15,8 @@ const VALID_TYPES = ['vocab', 'character', 'grammar', 'example', 'phrase', 'tone
 // Body: { format: 'json' | 'csv', data: string }
 // JSON data: JSON string of array of items
 // CSV data:  raw CSV text with header row
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params: rawParams }: { params: Promise<{ id: string }> }) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { deckId: string } }
+interface Ctx { params: Promise<{ deckId: string }> }
 
 async function getAuthorizedDeck(deckId: string, userEmail: string) {
   const user = await prisma.user.findUnique({ where: { email: userEmail } });
@@ -13,7 +13,8 @@ async function getAuthorizedDeck(deckId: string, userEmail: string) {
 }
 
 // GET /api/flashcards/[deckId] — deck + all cards with progress
-export async function GET(_: NextRequest, { params }: Ctx) {
+export async function GET(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -39,7 +40,8 @@ export async function GET(_: NextRequest, { params }: Ctx) {
 }
 
 // PUT /api/flashcards/[deckId] — update deck meta
-export async function PUT(req: NextRequest, { params }: Ctx) {
+export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -59,7 +61,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/flashcards/[deckId]
-export async function DELETE(_: NextRequest, { params }: Ctx) {
+export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

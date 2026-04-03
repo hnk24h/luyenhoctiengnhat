@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { cardId: string } }
+interface Ctx { params: Promise<{ cardId: string }> }
 
 async function getAuthorizedCard(cardId: string, userEmail: string) {
   const user = await prisma.user.findUnique({ where: { email: userEmail } });
@@ -15,7 +15,8 @@ async function getAuthorizedCard(cardId: string, userEmail: string) {
 }
 
 // PUT /api/flashcards/cards/[cardId]
-export async function PUT(req: NextRequest, { params }: Ctx) {
+export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -39,7 +40,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 }
 
 // DELETE /api/flashcards/cards/[cardId]
-export async function DELETE(_: NextRequest, { params }: Ctx) {
+export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

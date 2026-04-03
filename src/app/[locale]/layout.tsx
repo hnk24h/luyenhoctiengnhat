@@ -4,10 +4,11 @@ import { Navbar } from '@/components/Navbar';
 
 const VALID_LOCALES = new Set(['vi', 'en']);
 
-export default function LocaleLayout({ children, params }: { children: React.ReactNode; params: { locale: string } }) {
-  if (!VALID_LOCALES.has(params.locale)) notFound();
+export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!VALID_LOCALES.has(locale)) notFound();
   return (
-    <LocaleProvider params={params}>
+    <LocaleProvider params={{ locale }}>
       <Navbar />
       <div className="mx-auto w-full pt-5" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
         {children}

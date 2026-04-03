@@ -14,7 +14,8 @@ const SUBJECT_META: Record<string, { label: string; flag: string }> = {
   PMP:  { label: 'Quản lý dự án — PMP', flag: '📋' },
 };
 
-export default async function AdminLevelsPage({ searchParams }: { searchParams: { subject?: string } }) {
+export default async function AdminLevelsPage({ searchParams: rawSearchParams }: { searchParams: Promise<{ subject?: string }> }) {
+  const searchParams = await rawSearchParams;
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') redirect('/');
 

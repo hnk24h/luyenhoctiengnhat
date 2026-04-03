@@ -8,7 +8,7 @@ import { FaRegFile } from 'react-icons/fa6';
 import Link from 'next/link';
 import { ExamSidebarClient } from '@/components/learn/ExamSidebarClient';
 
-interface Props { params: { locale: string; lang: string; id: string } }
+interface Props { params: Promise<{ locale: string; lang: string; id: string }> }
 
 
 async function getExamSet(id: string) {
@@ -44,7 +44,8 @@ export const dynamic = 'force-dynamic';
 
 import ExamPageClient from "./ExamPageClient";
 
-export default async function ExamPage({ params }: Props) {
+export default async function ExamPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const examSet = await getExamSet(params.id);
   if (!examSet) notFound();
 

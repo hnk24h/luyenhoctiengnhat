@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: Request,
-  { params }: { params: { lessonId: string } },
+  { params: rawParams }: { params: Promise<{ lessonId: string }> },
 ) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
 

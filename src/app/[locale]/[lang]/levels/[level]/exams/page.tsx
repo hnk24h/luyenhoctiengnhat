@@ -6,9 +6,10 @@ import { prisma } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 import LevelDetailClient from '../LevelDetailClient';
 
-interface Props { params: { locale: string; lang: string; level: string } }
+interface Props { params: Promise<{ locale: string; lang: string; level: string }> }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params: rawParams }: Props): Promise<Metadata> {
+  const params = await rawParams;
   const examLabel: Record<string, string> = { ja: 'JLPT', zh: 'HSK', ko: 'TOPIK' };
   const exam = examLabel[params.lang] ?? 'JLPT';
   const level = params.level.toUpperCase();
@@ -40,7 +41,8 @@ const getCachedLevel = unstable_cache(
 
 export const dynamic = 'force-dynamic';
 
-export default async function LevelExamsPage({ params }: Props) {
+export default async function LevelExamsPage({ params: rawParams }: Props) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
 

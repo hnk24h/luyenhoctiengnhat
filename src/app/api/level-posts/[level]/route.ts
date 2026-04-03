@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-interface Ctx { params: { level: string } }
+interface Ctx { params: Promise<{ level: string }> }
 
 const SELECT = {
   id: true,
@@ -16,7 +16,8 @@ function toDto(p: { id: string; content: string; createdAt: Date; user: { name: 
   return { id: p.id, content: p.content, userName: p.user.name, createdAt: p.createdAt.toISOString() };
 }
 
-export async function GET(_: NextRequest, { params }: Ctx) {
+export async function GET(_: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const levelCode = params.level.toUpperCase();
   const posts = await prisma.levelPost.findMany({
     where: { levelCode },
@@ -27,7 +28,8 @@ export async function GET(_: NextRequest, { params }: Ctx) {
   return NextResponse.json(posts.map(toDto));
 }
 
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
+  const params = await rawParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

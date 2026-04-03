@@ -8,8 +8,8 @@ import { FaArrowLeft, FaGraduationCap } from 'react-icons/fa6';
 import LearnLevelClient, { type CategoryData } from '../LearnLevelClient';
 
 interface Props {
-  params: { locale: string; lang: string; level: string };
-  searchParams: { tab?: string };
+  params: Promise<{ locale: string; lang: string; level: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
 const LEVEL_ACCENT: Record<string, { color: string; rgb: string }> = {
@@ -51,7 +51,9 @@ const getCachedLevelStructure = unstable_cache(
 
 export const dynamic = 'force-dynamic';
 
-export default async function LearnLessonsPage({ params, searchParams }: Props) {
+export default async function LearnLessonsPage({ params: rawParams, searchParams: rawSearchParams }: Props) {
+  const params = await rawParams;
+  const searchParams = await rawSearchParams;
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string } | undefined)?.id;
 
