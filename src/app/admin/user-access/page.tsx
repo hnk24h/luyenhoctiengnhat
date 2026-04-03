@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { FaKey } from 'react-icons/fa6';
+import AdminPageHeader from '../_components/AdminPageHeader';
 
 type User = {
   id: string;
@@ -64,8 +66,8 @@ export default function AdminUserLessonAccess() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h2 className="text-lg font-bold mb-4">Quản lý quyền truy cập bài học theo user</h2>
+    <div className="max-w-xl mx-auto px-4 py-6">
+      <AdminPageHeader icon={<FaKey size={18}/>} title="Quyền truy cập bài học" breadcrumb="Phân quyền bài học" />
       <div className="mb-3">
         <label className="block mb-1 font-semibold">Chọn user:</label>
         <select className="input w-full" value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
@@ -88,7 +90,7 @@ export default function AdminUserLessonAccess() {
       <h3 className="font-bold mb-2">Danh sách quyền đã cấp:</h3>
       <ul className="space-y-2">
         {accesses.map(a => (
-          <li key={a.lesson.id} className="flex items-center justify-between bg-gray-100 rounded px-3 py-2">
+          <li key={a.lesson.id} className="flex items-center justify-between rounded px-3 py-2" style={{ background: 'var(--bg-muted)' }}>
             <span>{a.lesson.title} <span className="text-xs text-gray-500">({a.note || 'Không ghi chú'})</span></span>
             <button className="btn-secondary" onClick={() => revokeAccess(a.lesson.id)}>Thu hồi</button>
           </li>

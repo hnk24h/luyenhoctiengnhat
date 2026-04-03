@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 import LevelDetailClient from '../LevelDetailClient';
 
-interface Props { params: { lang: string; level: string } }
+interface Props { params: { locale: string; lang: string; level: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const examLabel: Record<string, string> = { ja: 'JLPT', zh: 'HSK', ko: 'TOPIK' };
@@ -77,6 +77,7 @@ export default async function LevelExamsPage({ params }: Props) {
 
   return (
     <LevelDetailClient
+      locale={params.locale}
       lang={params.lang}
       level={{ code: level.code, name: level.name, description: level.description }}
       examSets={examSets}

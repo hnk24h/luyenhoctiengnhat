@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') redirect('/');
+  if (!session || session.user?.role !== 'admin') redirect('/');
 
   const [
     userCount,
@@ -63,12 +63,12 @@ export default async function AdminPage() {
         { label: 'Bài học', value: jlptCategories, href: '/admin/learning?subject=JLPT' },
       ],
       links: [
-        { href: '/admin/levels?subject=JLPT', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'N5 → N1', bg: '#fee2e2', color: '#dc2626' },
-        { href: '/admin/examsets?subject=JLPT', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi theo kỹ năng', bg: '#dcfce7', color: '#15803d' },
-        { href: '/admin/learning?subject=JLPT', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: '#dbeafe', color: '#1d4ed8' },
-        { href: '/admin/reading?subject=JLPT', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: '#fff7ed', color: '#ea580c' },
-        { href: '/admin/listening?subject=JLPT', icon: <FaHeadphones size={18}/>, label: 'Bài nghe', desc: 'Audio transcript', bg: '#eff6ff', color: '#2563eb' },
-        { href: '/admin/import?subject=JLPT', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+        { href: '/admin/levels?subject=JLPT', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'N5 → N1', bg: 'rgba(220,38,38,0.12)', color: '#dc2626' },
+        { href: '/admin/examsets?subject=JLPT', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi theo kỹ năng', bg: 'rgba(22,163,74,0.12)', color: '#15803d' },
+        { href: '/admin/learning?subject=JLPT', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: 'rgba(29,78,216,0.12)', color: '#1d4ed8' },
+        { href: '/admin/reading?subject=JLPT', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: 'rgba(234,88,12,0.12)', color: '#ea580c' },
+        { href: '/admin/listening?subject=JLPT', icon: <FaHeadphones size={18}/>, label: 'Bài nghe', desc: 'Audio transcript', bg: 'rgba(37,99,235,0.12)', color: '#2563eb' },
+        { href: '/admin/import?subject=JLPT', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: 'rgba(67,56,202,0.12)', color: '#4338ca' },
       ],
     },
     {
@@ -89,11 +89,11 @@ export default async function AdminPage() {
         { label: 'Bài học', value: hskCategories, href: '/admin/learning?subject=HSK' },
       ],
       links: [
-        { href: '/admin/levels?subject=HSK', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'HSK 1 → 6', bg: '#fef9c3', color: '#a16207' },
-        { href: '/admin/examsets?subject=HSK', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi HSK', bg: '#dcfce7', color: '#15803d' },
-        { href: '/admin/learning?subject=HSK', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: '#dbeafe', color: '#1d4ed8' },
-        { href: '/admin/reading?subject=HSK', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: '#fff7ed', color: '#ea580c' },
-        { href: '/admin/import?subject=HSK', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+        { href: '/admin/levels?subject=HSK', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'HSK 1 → 6', bg: 'rgba(161,98,7,0.12)', color: '#a16207' },
+        { href: '/admin/examsets?subject=HSK', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Đề thi HSK', bg: 'rgba(22,163,74,0.12)', color: '#15803d' },
+        { href: '/admin/learning?subject=HSK', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'Từ vựng & ngữ pháp', bg: 'rgba(29,78,216,0.12)', color: '#1d4ed8' },
+        { href: '/admin/reading?subject=HSK', icon: <FaNewspaper size={18}/>, label: 'Bài đọc', desc: 'Reading passages', bg: 'rgba(234,88,12,0.12)', color: '#ea580c' },
+        { href: '/admin/import?subject=HSK', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: 'rgba(67,56,202,0.12)', color: '#4338ca' },
       ],
     },
     {
@@ -114,10 +114,10 @@ export default async function AdminPage() {
         { label: 'Bài học', value: pmpCategories, href: '/admin/learning?subject=PMP' },
       ],
       links: [
-        { href: '/admin/levels?subject=PMP', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'PMP level config', bg: '#dbeafe', color: '#1d4ed8' },
-        { href: '/admin/examsets?subject=PMP', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Mock exam PMP', bg: '#dcfce7', color: '#15803d' },
-        { href: '/admin/learning?subject=PMP', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'PMBOK theory, ITTOs', bg: '#ede9fe', color: '#7c3aed' },
-        { href: '/admin/import?subject=PMP', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: '#e0e7ff', color: '#4338ca' },
+        { href: '/admin/levels?subject=PMP', icon: <FaBullseye size={18}/>, label: 'Cấp độ', desc: 'PMP level config', bg: 'rgba(29,78,216,0.12)', color: '#1d4ed8' },
+        { href: '/admin/examsets?subject=PMP', icon: <FaBook size={18}/>, label: 'Bộ đề', desc: 'Mock exam PMP', bg: 'rgba(22,163,74,0.12)', color: '#15803d' },
+        { href: '/admin/learning?subject=PMP', icon: <FaBookOpen size={18}/>, label: 'Bài học', desc: 'PMBOK theory, ITTOs', bg: 'rgba(124,58,237,0.12)', color: '#7c3aed' },
+        { href: '/admin/import?subject=PMP', icon: <FaUpload size={18}/>, label: 'Import JSON', desc: 'Nhập hàng loạt', bg: 'rgba(67,56,202,0.12)', color: '#4338ca' },
       ],
     },
   ];

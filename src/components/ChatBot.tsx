@@ -61,6 +61,50 @@ export function ChatBot() {
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // ── Draggable Y position ────────────────────────────────────────────────
+  const BTN_SIZE = 52;
+  const DEFAULT_BOTTOM = 24;
+  const [btnBottom, setBtnBottom] = useState(DEFAULT_BOTTOM);
+  const dragging = useRef(false);
+  const hasDragged = useRef(false);
+  const startY = useRef(0);
+  const startBottom = useRef(0);
+  const currentBottom = useRef(DEFAULT_BOTTOM);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('chatbot-btn-bottom');
+    if (stored) {
+      const val = Number(stored);
+      setBtnBottom(val);
+      currentBottom.current = val;
+    }
+  }, []);
+
+  function handleBtnPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    dragging.current = true;
+    hasDragged.current = false;
+    startY.current = e.clientY;
+    startBottom.current = currentBottom.current;
+    btnRef.current?.setPointerCapture(e.pointerId);
+  }
+  function handleBtnPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    if (!dragging.current) return;
+    const dy = startY.current - e.clientY;
+    if (Math.abs(dy) > 5) hasDragged.current = true;
+    const max = window.innerHeight - BTN_SIZE - 8;
+    const next = Math.max(8, Math.min(max, startBottom.current + dy));
+    currentBottom.current = next;
+    setBtnBottom(next);
+  }
+  function handleBtnPointerUp() {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (hasDragged.current) {
+      localStorage.setItem('chatbot-btn-bottom', String(Math.round(currentBottom.current)));
+    }
+  }
+
   // Init messages on first open
   useEffect(() => {
     if (open && !hasOpened) {
@@ -138,13 +182,21 @@ export function ChatBot() {
     <>
       {/* Floating button */}
       <button
-        onClick={() => setOpen(o => !o)}
+        ref={btnRef}
+        onClick={() => { if (!hasDragged.current) setOpen(o => !o); }}
+        onPointerDown={handleBtnPointerDown}
+        onPointerMove={handleBtnPointerMove}
+        onPointerUp={handleBtnPointerUp}
         aria-label="Mở trợ lý Ikagi"
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+        className="fixed right-6 z-50 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95"
         style={{
-          width: 52, height: 52, borderRadius: '50%',
+          bottom: btnBottom,
+          width: BTN_SIZE, height: BTN_SIZE, borderRadius: '50%',
           background: 'linear-gradient(135deg, #7C3AED, #2563EB)',
           boxShadow: '0 4px 20px rgba(124,58,237,.45)',
+          touchAction: 'none',
+          cursor: dragging.current ? 'grabbing' : 'grab',
+          transition: dragging.current ? 'none' : 'transform .15s, box-shadow .15s',
         }}
       >
         {open
@@ -156,8 +208,9 @@ export function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-[76px] right-6 z-50 flex flex-col overflow-hidden"
+          className="fixed right-6 z-50 flex flex-col overflow-hidden"
           style={{
+            bottom: btnBottom + BTN_SIZE + 12,
             width: 340, height: 480,
             borderRadius: 20,
             border: '1px solid var(--border)',

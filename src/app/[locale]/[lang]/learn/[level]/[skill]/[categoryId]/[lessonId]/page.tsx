@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 import LessonClient from './LessonClient';
 
 interface Props {
-  params: { lang: string; level: string; skill: string; categoryId: string; lessonId: string }
+  params: { locale: string; lang: string; level: string; skill: string; categoryId: string; lessonId: string }
 }
 
 async function getLesson(lessonId: string, userId?: string) {
@@ -42,11 +42,11 @@ export default async function LessonPage({ params }: Props) {
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-xs mb-5 flex-wrap" style={{ color: 'var(--text-secondary)' }}>
-        <Link href="/learn" className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
+        <Link href={`/${params.locale}/${params.lang}/learn`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
         <span>/</span>
-        <Link href={`/${params.lang}/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
+        <Link href={`/${params.locale}/${params.lang}/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
         <span>/</span>
-        <Link href={`/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>
+        <Link href={`/${params.locale}/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>
           {category.name}
         </Link>
         <span>/</span>

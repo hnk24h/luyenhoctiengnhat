@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AdminPageHeader from '../_components/AdminPageHeader';
 import {
   FaUsers, FaArrowLeft, FaMagnifyingGlass, FaTrash, FaPencil,
   FaCheck, FaXmark, FaChevronLeft, FaChevronRight, FaShield,
@@ -37,7 +38,7 @@ function RoleBadge({ role }: { role: string }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
       style={isAdmin
-        ? { background: '#dbeafe', color: '#1d4ed8' }
+        ? { background: 'rgba(29,78,216,0.12)', color: '#1d4ed8' }
         : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
       {isAdmin ? <FaShield size={9} /> : <FaUser size={9} />}
       {isAdmin ? 'Admin' : 'User'}
@@ -211,7 +212,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/login');
     if (status === 'authenticated') {
-      const role = (session?.user as any)?.role;
+      const role = session?.user?.role;
       if (role !== 'admin' && role !== 'ADMIN') router.push('/');
     }
   }, [status, session, router]);
@@ -294,26 +295,24 @@ export default function AdminUsersPage() {
     }
   };
 
-  const selfId = (session?.user as any)?.id;
+  const selfId = session?.user?.id;
 
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 1rem' }}>
-
-      {/* Gradient header */}
-      <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
-            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
-            {' / '}Quản lý người dùng
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>👥 Người dùng</h1>
-          <div style={{ marginTop: 8 }}>
-            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{total} tài khoản</span>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <AdminPageHeader
+        icon={<FaUsers size={18} />}
+        title="Người dùng"
+        breadcrumb="Quản lý người dùng"
+        badge={`${total} tài khoản`}
+        actions={
+          <button onClick={() => { setCreateOpen(true); setCreateErr(''); setCreateForm({ name: '', email: '', password: '', role: 'user' }); }}
+            className="btn-primary flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold">
+            <FaUserPlus size={13} /> Thêm người dùng
+          </button>
+        }
+      />
 
       <div style={{ paddingBottom: 40 }}>
       {/* Toolbar */}
@@ -335,10 +334,6 @@ export default function AdminUsersPage() {
           ))}
           <button onClick={() => loadUsers()} className="btn-ghost p-2 rounded-xl" title="Làm mới">
             <FaArrowsRotate size={13} style={{ color: 'var(--text-muted)' }} />
-          </button>
-          <button onClick={() => { setCreateOpen(true); setCreateErr(''); setCreateForm({ name: '', email: '', password: '', role: 'user' }); }}
-            className="btn-primary flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold">
-            <FaUserPlus size={12} /> Thêm người dùng
           </button>
         </div>
       </div>
@@ -367,8 +362,10 @@ export default function AdminUsersPage() {
                   Không tìm thấy người dùng nào
                 </td></tr>
               ) : users.map(u => (
-                <tr key={u.id} className="border-t transition-colors hover:bg-gray-50/60 group"
-                  style={{ borderColor: 'var(--border)' }}>
+                <tr key={u.id} className="border-t transition-colors group"
+                  style={{ borderColor: 'var(--border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
 
                   {/* User info */}
                   <td className="px-4 py-3">

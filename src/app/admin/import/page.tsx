@@ -9,6 +9,7 @@ import {
   FaFile, FaKey, FaBullseye, FaBoxArchive, FaFileExport, FaFileImport, FaDownload,
   FaBookOpen, FaHeadphones, FaPencil, FaMicrophone,
 } from 'react-icons/fa6';
+import AdminPageHeader from '../_components/AdminPageHeader';
 
 const SAMPLE = {
   examSet: {
@@ -96,15 +97,8 @@ export default function AdminImportPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
-        <Link href="/admin" style={{ color: 'var(--text-muted)' }} className="text-sm hover:underline">← Admin</Link>
-      </div>
-      <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Import Ngân hàng câu hỏi</h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>
-        Upload file JSON hoặc paste JSON để import hàng loạt câu hỏi vào một bộ đề.
-      </p>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <AdminPageHeader icon={<FaFileImport size={18}/>} title="Import câu hỏi" breadcrumb="Import Ngân hàng câu hỏi" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

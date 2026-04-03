@@ -198,8 +198,8 @@ function GrammarPanel({ passage }: { passage: PassageDetail }) {
 
 // ─── Reading detail panel ─────────────────────────────────────────────────────
 
-function ReadingDetail({ passage, lang, savedWords, onWordSaved, savedCount }: {
-  passage: PassageDetail; lang: string;
+function ReadingDetail({ passage, lang, locale, savedWords, onWordSaved, savedCount }: {
+  passage: PassageDetail; lang: string; locale: string;
   savedWords: string[]; onWordSaved: (w: { term: string; contentId: string }) => void;
   savedCount: number;
 }) {
@@ -316,7 +316,7 @@ function ReadingDetail({ passage, lang, savedWords, onWordSaved, savedCount }: {
                 <FaBookmark size={13} style={{ color: 'var(--primary)' }} />
                 Đã lưu <strong>{savedCount}</strong> từ mới trong bài này
               </div>
-              <Link href={`/${lang}/vocab`}
+              <Link href={`/${locale}/${lang}/vocab`}
                 className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5 shrink-0">
                 <FaBook size={11} /> Xem từ vựng
               </Link>
@@ -380,6 +380,7 @@ export default function ReadingPage() {
 function ReadingPageContent() {
   const routeParams  = useParams();
   const lang         = (routeParams?.lang as string) ?? 'ja';
+  const locale       = (routeParams?.locale as string) ?? 'vi';
   const isChinese    = lang === 'zh';
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -528,6 +529,7 @@ function ReadingPageContent() {
               key={loadedPassage.id}
               passage={loadedPassage}
               lang={lang}
+              locale={locale}
               savedWords={savedWords}
               onWordSaved={handleWordSaved}
               savedCount={savedCount}

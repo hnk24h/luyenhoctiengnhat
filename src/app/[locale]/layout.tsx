@@ -9,7 +9,9 @@ export default function LocaleLayout({ children, params }: { children: React.Rea
   return (
     <LocaleProvider params={params}>
       <Navbar />
-      {children}
+      <div className="mx-auto w-full pt-5" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
+        {children}
+      </div>
     </LocaleProvider>
   );
 }

@@ -8,7 +8,7 @@ import { FaRegFile } from 'react-icons/fa6';
 import Link from 'next/link';
 import { ExamSidebarClient } from '@/components/learn/ExamSidebarClient';
 
-interface Props { params: { lang: string; id: string } }
+interface Props { params: { locale: string; lang: string; id: string } }
 
 
 async function getExamSet(id: string) {
@@ -77,6 +77,7 @@ export default async function ExamPage({ params }: Props) {
 
   return (
     <ExamPageClient
+      locale={params.locale}
       levels={LEVELS_OBJ}
       skills={SKILLS}
       examSetsForSidebar={examSetsForSidebar}

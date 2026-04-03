@@ -86,12 +86,10 @@ export default function RootLayout({ children, params }: { children: React.React
   const lang = localeToLang[params?.locale ?? ''] ?? 'vi';
   return (
     <html lang={lang} className={`${inter.variable}`} suppressHydrationWarning>
-      <body className={notoSansJP.className} style={{ background: 'var(--bg-base)', color: 'var(--text-base)' }}>
+      <body className={notoSansJP.className} style={{ background: 'var(--bg-base)', color: 'var(--text-base)', overflowX: 'clip' }}>
         <Providers>
-          <main className="min-h-screen pt-2" style={{ background: 'var(--bg-base)' }}>
-            <div className="mx-auto w-full" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
-              {children}
-            </div>
+          <main className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+            {children}
           </main>
           <Footer />
           <ChatBot />

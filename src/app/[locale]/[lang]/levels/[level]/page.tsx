@@ -15,7 +15,7 @@ import { ExamSidebarClient } from '@/components/learn/ExamSidebarClient';
 
 import ClientPage from './ClientPage';
 
-interface Props { params: { lang: string; level: string } }
+interface Props { params: { locale: string; lang: string; level: string } }
 
 // Tối ưu type cho examSets props
 interface ExamSet {

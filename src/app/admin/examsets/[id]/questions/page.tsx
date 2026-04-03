@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminQuestionsPage({ params }: Props) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') redirect('/');
+  if (!session || session.user?.role !== 'admin') redirect('/');
 
   const examSet = await prisma.examSet.findUnique({
     where: { id: params.id },

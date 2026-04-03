@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import Link from 'next/link';
+import { FaSeedling } from 'react-icons/fa6';
+import AdminPageHeader from '../_components/AdminPageHeader';
 
 export default function AdminSeedPage() {
   const [loading, setLoading] = useState(false);
@@ -55,17 +56,16 @@ export default function AdminSeedPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-10 space-y-6">
-      <Link href="/admin" className="text-sm text-gray-500 hover:text-red-600">← Admin</Link>
-      <h1 className="text-2xl font-bold text-gray-900">Seed dữ liệu mẫu</h1>
+    <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+      <AdminPageHeader icon={<FaSeedling size={18}/>} title="Seed dữ liệu" breadcrumb="Seed dữ liệu mẫu" />
 
       {/* Exam seed */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">🎓 Bộ đề luyện thi</h2>
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>🎓 Bộ đề luyện thi</h2>
+        <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
           Tạo các cấp độ N5~N1 và một số bộ đề mẫu cho N5 (Nghe, Đọc, Viết).
         </p>
-        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+        <ul className="text-sm list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-muted)' }}>
           <li>5 cấp độ: N5, N4, N3, N2, N1</li>
           <li>Bộ đề Nghe N5 - 3 câu trắc nghiệm</li>
           <li>Bộ đề Đọc N5 - 2 câu trắc nghiệm + 1 điền từ</li>
@@ -79,11 +79,11 @@ export default function AdminSeedPage() {
 
       {/* Learning seed */}
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">📚 Nội dung học N5</h2>
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>📚 Nội dung học N5</h2>
+        <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
           Tạo dữ liệu module học N5 đầy đủ với 4 kỹ năng: Nghe, Nói, Đọc, Viết.
         </p>
-        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+        <ul className="text-sm list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-muted)' }}>
           <li>Nghe: Hội thoại hàng ngày, Số/Ngày/Giờ (5 bài, 26 mục)</li>
           <li>Nói: Giới thiệu bản thân, Mẫu câu giao tiếp (4 bài, 22 mục)</li>
           <li>Đọc: Từ vựng chủ đề, Ngữ pháp N5 (5 bài, 28 mục)</li>
@@ -97,12 +97,12 @@ export default function AdminSeedPage() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">� Minna no Nihongo (N5 + N4)</h2>
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>📖 Minna no Nihongo (N5 + N4)</h2>
+        <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
           Seed 25 bài học của Minna no Nihongo I (N5, Bài 1~25) và II (N4, Bài 26~50).
           Mỗi bài có từ vựng + ngữ pháp riêng, hiển thị ở tab <strong>Từ vựng / Ngữ pháp</strong> trong trang học.
         </p>
-        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+        <ul className="text-sm list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-muted)' }}>
           <li>N5: 25 bài × (5 từ vựng + 2 ngữ pháp) = 175 mục</li>
           <li>N4: 25 bài × (5 từ vựng + 2 ngữ pháp) = 175 mục</li>
           <li>Tổng: 100 bài học, 350 mục từ vựng/ngữ pháp</li>
@@ -115,12 +115,12 @@ export default function AdminSeedPage() {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">📗 Mimikara Oboeru + SKM (N3・N2・N1)</h2>
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>📗 Mimikara Oboeru + SKM (N3・N2・N1)</h2>
+        <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
           Seed từ vựng theo <strong>Mimikara Oboeru N3/N2/N1 Goi</strong> và ngữ pháp theo <strong>Shin Kanzen Master N3/N2/N1</strong>.
           Mỗi cấp có 8 chương chủ đề, mỗi chương gồm 7 từ vựng + 3 ngữ pháp.
         </p>
-        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+        <ul className="text-sm list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-muted)' }}>
           <li>N3: 8 chương × (7 từ + 3 ngữ pháp) = 80 mục</li>
           <li>N2: 8 chương × (7 từ + 3 ngữ pháp) = 80 mục</li>
           <li>N1: 8 chương × (7 từ + 3 ngữ pháp) = 80 mục</li>
@@ -145,10 +145,11 @@ export default function AdminSeedPage() {
       </div>
 
       <div className="card">
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>🎧 Bài nghe N5~N1</h2>
+        <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
           Dùng đúng bộ dữ liệu mẫu hiện có trên page nghe để tạo ngân hàng bài nghe N5~N1 trong database.
         </p>
-        <ul className="text-sm text-gray-500 list-disc list-inside mb-4 space-y-1">
+        <ul className="text-sm list-disc list-inside mb-4 space-y-1" style={{ color: 'var(--text-muted)' }}>
           <li>Seed đủ 5 level từ N5 đến N1</li>
           <li>Giữ nguyên mondai, transcript, đáp án và giải thích</li>
           <li>Nếu audioUrl trống thì page nghe vẫn dùng Web Speech làm mặc định</li>

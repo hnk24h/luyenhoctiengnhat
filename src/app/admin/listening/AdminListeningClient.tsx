@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+
 import {
   FaDownload,
   FaFileImport,
@@ -15,6 +15,7 @@ import {
   FaVolumeHigh,
   FaXmark,
 } from 'react-icons/fa6';
+import AdminPageHeader from '../_components/AdminPageHeader';
 import { LISTENING_PRACTICES, type ListeningMondai, type ListeningPractice } from '@/modules/listeningContent';
 import { MediaUploadField } from '@/components/MediaUploadField';
 
@@ -308,31 +309,27 @@ export default function AdminListeningClient() {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1rem' }}>
-      {/* Gradient header */}
-      <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
-            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
-            {' / '}Quản lý bài nghe
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>🎧 Bài nghe JLPT</h1>
-          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{items.length} bài nghe</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <Link href="/ja/listening" style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaHeadphones size={12} /> Xem page
-          </Link>
-          <a href="/samples/jlpt-listening-sample.json" download style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaDownload size={12} /> JSON mẫu
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <AdminPageHeader
+        icon={<FaHeadphones size={18} />}
+        title="Bài nghe"
+        breadcrumb="Quản lý bài nghe"
+        badge={`${items.length} bài nghe`}
+        actions={<>
+          <a href="/ja/listening"
+            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaHeadphones size={13} /> Xem page
           </a>
-          <button onClick={openCreateDialog} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.9)', color: '#7c3aed', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaPlus size={12} /> Bài nghe mới
+          <a href="/samples/jlpt-listening-sample.json" download
+            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaDownload size={13} /> JSON mẫu
+          </a>
+          <button onClick={openCreateDialog}
+            className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaPlus size={13} /> Bài nghe mới
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       <div style={{ paddingBottom: 40 }}>
         <div>
@@ -403,7 +400,7 @@ export default function AdminListeningClient() {
                                 <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>{item.categoryName}</span>
                                 <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>{item.mondai}</span>
                                 {item.audioUrl && (
-                                  <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: '#eff6ff', color: '#1d4ed8' }}>
+                                  <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'rgba(29,78,216,0.12)', color: '#1d4ed8' }}>
                                     <FaVolumeHigh size={10} className="inline mr-1" /> audioUrl
                                   </span>
                                 )}

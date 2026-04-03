@@ -86,22 +86,47 @@ export default function ClientPage({
       {/* Danh sách bài thi dạng card, chỉ hiển thị theo kỹ năng đã chọn */}
       <div className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {level.examSets.filter((e: any) => e.skill === selectedSkill).length === 0 ? (
-          <div className="col-span-full text-ink-muted text-center py-8">Không có đề thi cho kỹ năng này.</div>
+          <div className="col-span-full text-center py-8" style={{ color: 'var(--text-muted)' }}>Không có đề thi cho kỹ năng này.</div>
         ) : (
-          level.examSets.filter((e: any) => e.skill === selectedSkill).map((e: any) => (
-            <div key={e.id} className="rounded-xl border border-border bg-white shadow-sm p-4 flex flex-col gap-2 transition-all hover:shadow-md">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{SKILL_INFO[e.skill]?.icon || '📋'}</span>
-                <span className="font-bold text-sm text-ink-primary flex-1">{e.title}</span>
+          level.examSets.filter((e: any) => e.skill === selectedSkill).map((e: any) => {
+            const prog = progressMap?.[e.id];
+            const attempted = prog && prog.attempts > 0;
+            return (
+              <div key={e.id} className="rounded-xl flex flex-col gap-2 transition-all hover:shadow-md"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)', padding: 16 }}>
+                <div className="flex items-start gap-2 mb-1">
+                  <span className="text-lg shrink-0">{SKILL_INFO[e.skill]?.icon || '📋'}</span>
+                  <span className="font-bold text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{e.title}</span>
+                  {attempted && (
+                    <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                      ✓ {prog.attempts} lần
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-xs flex-wrap mb-1" style={{ color: 'var(--text-muted)' }}>
+                  <span>{SKILL_INFO[e.skill]?.label || e.skill}</span>
+                  <span>• {e._count?.questions || 0} câu</span>
+                  {e.timeLimit && <span>• {e.timeLimit} phút</span>}
+                </div>
+                {attempted && prog.bestScore !== null && (
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+                      <div className="h-1.5 rounded-full" style={{ width: `${prog.bestScore}%`, background: prog.bestScore >= 70 ? '#16a34a' : prog.bestScore >= 50 ? '#d97706' : '#dc2626' }} />
+                    </div>
+                    <span className="text-[11px] font-bold shrink-0" style={{ color: prog.bestScore >= 70 ? '#16a34a' : prog.bestScore >= 50 ? '#d97706' : '#dc2626' }}>
+                      {Math.round(prog.bestScore)}%
+                    </span>
+                  </div>
+                )}
+                <Link href={`/${params.locale}/${params.lang}/exam/${e.id}`}
+                  className="mt-auto inline-block px-4 py-2 rounded-lg font-bold text-xs text-center transition-all hover:brightness-110"
+                  style={{ background: 'var(--primary)', color: '#fff' }}>
+                  {attempted ? 'Làm lại' : 'Làm bài'}
+                </Link>
               </div>
-              <div className="flex items-center gap-2 text-xs text-ink-muted mb-2">
-                <span>{SKILL_INFO[e.skill]?.label || e.skill}</span>
-                <span>• {e._count?.questions || 0} câu hỏi</span>
-                {e.timeLimit && <span>• {e.timeLimit} phút</span>}
-              </div>
-              <Link href={`/${params.lang}/exam/${e.id}`} className="mt-auto inline-block px-4 py-2 rounded-lg bg-primary text-white font-bold text-xs text-center transition-all hover:brightness-110">Làm bài</Link>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
       {/* Community posts */}

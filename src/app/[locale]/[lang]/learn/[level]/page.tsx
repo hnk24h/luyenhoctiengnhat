@@ -14,7 +14,7 @@ import LevelPostsSection, { type LevelPostData } from '@/components/LevelPostsSe
 import LearningPathMap, { type PathLesson } from '@/components/LearningPathMap';
 
 interface Props {
-  params: { lang: string; level: string };
+  params: { locale: string; lang: string; level: string };
   searchParams: { tab?: string };
 }
 
@@ -341,7 +341,7 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 mb-5 text-xs font-medium"
             style={{ color: 'rgba(255,255,255,0.55)' }}>
-            <Link href={`/${params.lang}/learn`}
+            <Link href={`/${params.locale}/${params.lang}/learn`}
               className="flex items-center gap-1 hover:text-white transition-colors">
               <FaArrowLeft size={9} /> Học
             </Link>
@@ -410,13 +410,13 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
 
               {/* CTA */}
               <div className="flex gap-2.5 flex-wrap">
-                <Link href={`/${params.lang}/learn/${level.code}/lessons?tab=vocab`}
+                <Link href={`/${params.locale}/${params.lang}/learn/${level.code}/lessons?tab=vocab`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-105"
                   style={{ background: 'white', color: meta.accent,
                            boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
                   <FaBookOpen size={12} /> Học Từ Vựng
                 </Link>
-                <Link href={`/${params.lang}/learn/${level.code}/lessons?tab=grammar`}
+                <Link href={`/${params.locale}/${params.lang}/learn/${level.code}/lessons?tab=grammar`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:scale-105 border"
                   style={{ borderColor: 'rgba(255,255,255,0.35)',
                            background: 'rgba(255,255,255,0.14)', color: 'white' }}>
@@ -544,7 +544,7 @@ export default async function LearnLevelPage({ params, searchParams }: Props) {
                 lessons={roadmapLessons}
                 accentColor={meta.accent}
                 accentRgb={meta.accentRgb}
-                lessonsHref={`/${params.lang}/learn/${level.code}/lessons`}
+                lessonsHref={`/${params.locale}/${params.lang}/learn/${level.code}/lessons`}
               />
             </div>
           )}

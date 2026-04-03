@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 import { FaFont, FaRuler, FaHeadphones, FaFile } from 'react-icons/fa6';
 import type { ReactNode } from 'react';
 
-interface Props { params: { lang: string; level: string; skill: string; categoryId: string } }
+interface Props { params: { locale: string; lang: string; level: string; skill: string; categoryId: string } }
 
 async function getCategoryWithLessons(categoryId: string, userId?: string) {
   const category = await prisma.learningCategory.findUnique({
@@ -44,9 +44,9 @@ export default async function LearnCategoryPage({ params }: Props) {
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm mb-5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
-        <Link href={`/${params.lang}/learn`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
+        <Link href={`/${params.locale}/${params.lang}/learn`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>
         <span>/</span>
-        <Link href={`/${params.lang}/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
+        <Link href={`/${params.locale}/${params.lang}/learn/${category.level.code}`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>{category.level.code}</Link>
         <span>/</span>
         <span style={{ color: 'var(--text-secondary)' }}>{category.name}</span>
       </div>
@@ -95,7 +95,7 @@ export default async function LearnCategoryPage({ params }: Props) {
           };
           return (
             <Link key={lesson.id}
-              href={`/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}/${lesson.id}`}
+              href={`/${params.locale}/${params.lang}/learn/${category.level.code}/${category.skill}/${category.id}/${lesson.id}`}
               className={`card-hover border flex items-center gap-4 py-4 group ${
                 isCompleted ? 'border-emerald-200' : ''
               }`}

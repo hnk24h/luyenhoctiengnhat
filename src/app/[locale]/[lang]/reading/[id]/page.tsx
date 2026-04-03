@@ -290,7 +290,7 @@ function GrammarAnalysisSection({ passage, layout = 'grid' }: { passage: Passage
   );
 }
 
-export default function ReadingDetailPage({ params }: { params: { lang: string; id: string } }) {
+export default function ReadingDetailPage({ params }: { params: { locale: string; lang: string; id: string } }) {
   const { data: session } = useSession();
   const [passage,       setPassage]       = useState<Passage | null>(null);
   const [loading,       setLoading]       = useState(true);
@@ -332,7 +332,7 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
   if (!passage) return (
     <div className="p-8 text-center">
       <p style={{ color: 'var(--text-muted)' }}>Không tìm thấy bài đọc.</p>
-      <Link href={`/${params.lang}/reading`} className="btn-primary inline-flex mt-4 items-center gap-2">
+      <Link href={`/${params.locale}/${params.lang}/reading`} className="btn-primary inline-flex mt-4 items-center gap-2">
         <FaArrowLeft size={12} /> Quay lại
       </Link>
     </div>
@@ -345,7 +345,7 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
     <main className="max-w-7xl mx-auto px-4 py-8">
 
       {/* Back */}
-      <Link href={`/${params.lang}/reading`}
+      <Link href={`/${params.locale}/${params.lang}/reading`}
         className="inline-flex items-center gap-1.5 text-sm mb-6 btn-ghost"
         style={{ color: 'var(--text-muted)' }}>
         <FaArrowLeft size={11} /> Danh sách bài đọc
@@ -463,7 +463,7 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
                 <FaBookmark size={13} style={{ color: 'var(--primary)' }} />
                 Đã lưu <strong>{savedCount}</strong> từ mới trong bài này
               </div>
-              <Link href={`/${params.lang}/vocab`}
+              <Link href={`/${params.locale}/${params.lang}/vocab`}
                 className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5 shrink-0">
                 <FaBook size={11} /> Xem từ vựng
               </Link>
@@ -482,7 +482,7 @@ export default function ReadingDetailPage({ params }: { params: { lang: string; 
               <span className="text-sm font-semibold">
                 {savedCount} từ đã lưu phiên này
               </span>
-              <Link href={`/${params.lang}/vocab`} className="ml-auto text-xs underline opacity-80 hover:opacity-100">
+              <Link href={`/${params.locale}/${params.lang}/vocab`} className="ml-auto text-xs underline opacity-80 hover:opacity-100">
                 Xem →
               </Link>
             </div>

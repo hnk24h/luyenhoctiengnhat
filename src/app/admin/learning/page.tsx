@@ -131,6 +131,11 @@ function AdminLearningPage() {
     if (activeCatId) loadLessons(activeCatId);
     if (activeLesId === id) { setActiveLesId(null); setItems([]); }
   }
+  async function bulkDeleteLes(ids: string[]) {
+    await Promise.all(ids.map(id => fetch(`/api/learning/lessons/${id}`, { method: 'DELETE' })));
+    if (activeCatId) loadLessons(activeCatId);
+    if (activeLesId && ids.includes(activeLesId)) { setActiveLesId(null); setItems([]); }
+  }
   function openItemCreate() {
     setItemForm({ ...ITEM_BLANK });
     setEditId(null); setModalErr(''); setModal('item-create');
@@ -247,6 +252,7 @@ function AdminLearningPage() {
             setActiveLesId={setActiveLesId}
             loadItems={loadItems}
             deleteLes={deleteLes}
+            bulkDeleteLes={bulkDeleteLes}
           />
         </div>
         {/* <ItemPanel

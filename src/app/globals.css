@@ -511,10 +511,7 @@ html[data-appearance="dark"] .border-gray-400 {
 .lp-root {
   margin-left:  calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  /* Use 100% width based on viewport minus scrollbar to avoid horizontal overflow.
-     dvw accounts for the scrollbar track; falls back to vw on older browsers. */
   width: 100vw;
-  max-width: 100%;
   margin-top: -8px;
   overflow-x: clip;
   background: #FAFBFF;

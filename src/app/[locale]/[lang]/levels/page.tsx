@@ -1,5 +1,4 @@
-import Image from 'next/image';
-export const dynamic = 'force-dynamic';
+﻿export const dynamic = 'force-dynamic';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -43,7 +42,7 @@ const SKILL_META: Record<string, { label: string; icon: ReactNode; color: string
   noi:  { label: 'Từ vựng', icon: <FaComments   size={10}/>, color: '#059669' },
 };
 
-export default async function LevelsPage({ params }: { params: { lang: string } }) {
+export default async function LevelsPage({ params }: { params: { locale: string; lang: string } }) {
   const session = await getServerSession(authOptions);
   const userId  = (session?.user as { id?: string } | undefined)?.id;
   const lang = params.lang ?? 'ja';
@@ -97,27 +96,13 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
       })
     : null;
 
-
-  // Dummy reviews & top rank (có thể fetch từ DB thực tế)
-  const reviews = [
-    { name: 'Nguyễn Văn A', avatar: '/avatars/ava1.png', text: 'Trang luyện thi rất trực quan, giúp mình ôn tập hiệu quả và tiết kiệm thời gian.' },
-    { name: 'Trần Thị B', avatar: '/avatars/ava2.png', text: 'Đề thi sát thực tế, giao diện dễ dùng, rất phù hợp cho người tự học.' },
-    { name: 'Lê C', avatar: '/avatars/ava3.png', text: 'Mình thích phần thống kê tiến trình và bảng xếp hạng, tạo động lực học tập.' },
-  ];
-  const topRank = [
-    { name: 'Nguyễn Văn A', score: 990, level: 'N1', avatar: '/avatars/ava1.png' },
-    { name: 'Trần Thị B', score: 950, level: 'N2', avatar: '/avatars/ava2.png' },
-    { name: 'Lê C', score: 900, level: 'N3', avatar: '/avatars/ava3.png' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero section tối giản */}
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+      {/* Hero section */}
       <section
-        className={`w-full py-14 md:py-24 flex flex-col items-center justify-center text-center border-b border-gray-200 relative overflow-hidden
-          ${lang === 'zh' ? 'bg-gradient-to-br from-[#fbeee6] via-[#f7f7f7] to-[#e6e6fa]' : 'bg-gradient-to-br from-[#f1f5f9] via-[#fdf6f0] to-[#f3f3f3]'}`}
+        className={`w-full py-14 md:py-24 flex flex-col items-center justify-center text-center relative overflow-hidden`}
+        style={{ borderBottom: '1px solid var(--border)', background: lang === 'zh' ? 'linear-gradient(135deg, #fbeee6, #f7f7f7, #e6e6fa)' : 'linear-gradient(135deg, var(--bg-surface), var(--bg-muted))' }}
       >
-        {/* Decorative SVG pattern background */}
         <div className="absolute inset-0 pointer-events-none select-none z-0">
           {lang === 'zh' ? (
             // Mây cuộn Trung Quốc
@@ -155,12 +140,12 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
               ? 'HSK1 → HSK6 · Đề thi thử tiếng Trung'
               : 'JLPT N5 → N1 · Đề thi thử tiếng Nhật'}
           </div>
-          <div className="text-base md:text-lg text-gray-600 mb-2 max-w-xl mx-auto">
+          <div className="text-base md:text-lg mb-2 max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
             {lang === 'zh'
               ? 'Chinh phục tiếng Trung hiện đại với đề thi thử HSK chuẩn quốc tế.'
               : 'Chinh phục tiếng Nhật cùng đề thi thử JLPT sát thực tế, giao diện tối giản.'}
           </div>
-          <div className="text-sm md:text-base text-gray-400 mb-6 max-w-xl mx-auto">
+          <div className="text-sm md:text-base mb-6 max-w-xl mx-auto" style={{ color: 'var(--text-muted)' }}>
             {lang === 'zh'
               ? 'Mây cuộn, sắc đỏ vàng truyền thống, giao diện lấy cảm hứng từ văn hoá Trung Hoa.'
               : 'Sóng Seigaiha, hoa anh đào, sắc đỏ xanh đặc trưng Nhật Bản.'}
@@ -189,9 +174,9 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                 skillCounts[es.skill] = (skillCounts[es.skill] ?? 0) + 1;
               }
               return (
-                <Link key={l.id} href={`/${lang}/levels/${l.code}`}
-                  className="group flex flex-col items-start gap-3 rounded-2xl border p-5 bg-white hover:shadow-lg transition-all duration-150"
-                  style={{ borderColor: '#E5E7EB' }}>
+                <Link key={l.id} href={`/${params.locale}/${lang}/levels/${l.code}`}
+                  className="group flex flex-col items-start gap-3 rounded-2xl border p-5 hover:shadow-lg transition-all duration-150"
+                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
                   {/* Level badge */}
                   <div className="flex items-center justify-center w-14 h-14 rounded-xl font-extrabold text-white text-xl mb-1"
                     style={{ background: meta.color }}>
@@ -199,9 +184,9 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                   </div>
                   {/* Info */}
                   <div className="flex-1 w-full flex flex-col items-start">
-                    <span className="text-base font-bold mb-0.5 text-gray-900">{l.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold mb-2 bg-gray-100 text-gray-600">{meta.desc}</span>
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-base font-bold mb-0.5" style={{ color: 'var(--text-primary)' }}>{l.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold mb-2" style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>{meta.desc}</span>
+                    <div className="flex items-center gap-2 flex-wrap mb-2" style={{ color: 'var(--text-muted)' }}>
                       <span className="text-xs flex items-center gap-1 text-gray-500">
                         <FaBookOpen size={10}/> {meta.vocab}
                       </span>
@@ -218,7 +203,8 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                         const sm = SKILL_META[skill];
                         if (!sm) return null;
                         return (
-                          <span key={skill} className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium inline-flex items-center gap-1">
+                          <span key={skill} className="text-[11px] px-1.5 py-0.5 rounded font-medium inline-flex items-center gap-1"
+                            style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
                             {sm.icon} {count}
                           </span>
                         );
@@ -227,18 +213,18 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
                     {/* Progress bar (logged in) */}
                     {prog && prog.total > 0 && (
                       <div className="w-full mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full overflow-hidden bg-gray-100">
-                          <div className="h-1.5 rounded-full transition-all duration-300 bg-blue-500"
-                            style={{ width: `${pct}%` }} />
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+                          <div className="h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${pct}%`, background: 'var(--primary)' }} />
                         </div>
-                        <span className="text-[11px] font-semibold shrink-0 text-blue-600">
+                        <span className="text-[11px] font-semibold shrink-0" style={{ color: 'var(--primary)' }}>
                           {prog.done}/{prog.total}
                         </span>
                       </div>
                     )}
                   </div>
                   {/* CTA arrow */}
-                  <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+                  <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--primary)' }}>
                     <span className="hidden sm:inline">Vào luyện thi</span>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
@@ -248,42 +234,6 @@ export default async function LevelsPage({ params }: { params: { lang: string } 
               );
             })
           )}
-        </div>
-      </section>
-
-
-      {/* Top học viên xuất sắc - UI đẹp hơn */}
-      <section className="max-w-3xl mx-auto px-4 py-10">
-        <h2 className="text-xl font-bold mb-6 text-gray-900 text-center tracking-tight">Top học viên xuất sắc</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {topRank.map((u, idx) => (
-            <div key={u.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center hover:shadow-md transition">
-              <div className="relative mb-3">
-                <Image src={u.avatar} alt={u.name} width={64} height={64} className="w-16 h-16 rounded-full border-2 border-blue-200 shadow" />
-                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full px-2 py-0.5 shadow">#{idx+1}</span>
-              </div>
-              <div className="font-semibold text-gray-900 text-lg mb-1">{u.name}</div>
-              <div className="text-xs text-gray-500 mb-2">Level: <span className="font-bold text-blue-600">{u.level}</span></div>
-              <div className="flex items-center gap-1 mt-auto">
-                <span className="text-xs text-gray-400">Điểm</span>
-                <span className="font-bold text-2xl text-blue-600 drop-shadow">{u.score}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Đánh giá học viên - UI đẹp hơn */}
-      <section className="max-w-3xl mx-auto px-4 py-10">
-        <h2 className="text-xl font-bold mb-6 text-gray-900 text-center tracking-tight">Cảm nhận học viên</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {reviews.map(r => (
-            <div key={r.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center hover:shadow-md transition">
-              <Image src={r.avatar} alt={r.name} width={56} height={56} className="w-14 h-14 rounded-full border-2 border-gray-200 mb-3" />
-              <div className="font-semibold text-gray-900 mb-1 text-center">{r.name}</div>
-              <div className="text-sm text-gray-600 italic text-center">“{r.text}”</div>
-            </div>
-          ))}
         </div>
       </section>
 

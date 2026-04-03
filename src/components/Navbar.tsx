@@ -115,7 +115,18 @@ export function Navbar() {
   const { appearance, resolvedAppearance, setAppearance } = useTheme();
   const navMenuRef = useRef<HTMLElement | null>(null);
 
-  const modulesOpen    = openMenu === 'modules';
+  // Subject switcher hover
+  const [subjectHoverOpen, setSubjectHoverOpen] = useState(false);
+  const subjectHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleSubjectEnter() {
+    if (subjectHoverTimer.current) clearTimeout(subjectHoverTimer.current);
+    setSubjectHoverOpen(true);
+  }
+  function handleSubjectLeave() {
+    subjectHoverTimer.current = setTimeout(() => setSubjectHoverOpen(false), 150);
+  }
+
+  const modulesOpen    = subjectHoverOpen;
   const exploreOpen    = openMenu === 'explore';
   const appearanceOpen = openMenu === 'appearance';
   const profileOpen    = openMenu === 'profile';
@@ -206,42 +217,70 @@ export function Navbar() {
   return (
     <>
       <header ref={navMenuRef}
+        className="sticky top-0 z-50"
         style={{
-          background: 'linear-gradient(to bottom, color-mix(in srgb, var(--primary) 11%, var(--bg-surface)), color-mix(in srgb, var(--primary) 5%, var(--bg-surface)))',
-          borderBottom: '1px solid color-mix(in srgb, var(--primary) 28%, transparent)',
-          boxShadow: '0 4px 28px -4px color-mix(in srgb, var(--primary) 14%, transparent)',
-        }}
-        className="sticky top-0 z-50 backdrop-blur-xl">
-        <div className="mx-auto px-6 sm:px-10 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
-          <div className="flex h-14 items-center gap-6">
+          background: 'color-mix(in srgb, var(--bg-surface) 90%, transparent)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border)',
+          boxShadow: '0 1px 12px rgba(0,0,0,0.05)',
+        } as React.CSSProperties}>
+        <div className="mx-auto px-5 sm:px-8 lg:px-10 w-full" style={{ maxWidth: 'var(--page-max-w)' }}>
+          <div className="flex h-[60px] items-center gap-5">
 
-            {/* ── Logo + language switcher ── */}
-            <div className="flex items-center gap-1 shrink-0">
+            {/* ── Logo + subject switcher ── */}
+            <div className="flex items-center gap-2 shrink-0">
               <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
                 <span className="transition-transform group-hover:scale-105">
-                  <LogoMark size={32} />
+                  <LogoMark size={34} />
                 </span>
-                <span className="hidden sm:flex flex-col leading-none gap-0.5">
-                  <span className="font-bold text-[13px] tracking-tight" style={{ color: 'var(--text-primary)' }}>IkagiLearn</span>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{currentSubjectMeta.flag} {currentSubjectMeta.label}</span>
+                <span className="hidden sm:block font-bold text-[14px] tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                  IkagiLearn
                 </span>
               </Link>
-              {/* DropdownMenu cho chọn môn học */}
-              <DropdownMenu open={modulesOpen} onClose={() => setOpenMenu(null)} className="top-full mt-2 left-0 w-64 rounded-2xl border p-2 shadow-xl z-50" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>{t('modules')}</div>
-                {SUBJECTS.map(sub => (
-                  <Link key={sub.id} href={sub.href}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
-                    style={{ color: 'var(--text-secondary)' }}>
-                    <span className="text-lg">{sub.flag}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t(sub.label)}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t(sub.desc)}</div>
-                    </div>
-                    {currentLang === sub.id && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sub.color }} />}
-                  </Link>
-                ))}
-              </DropdownMenu>
+
+              {/* Divider */}
+              <span className="hidden sm:block w-px h-4 mx-0.5" style={{ background: 'var(--border)' }} />
+
+              {/* Subject switcher pill */}
+              <div className="relative" onMouseEnter={handleSubjectEnter} onMouseLeave={handleSubjectLeave}>
+                <button
+                  aria-label="Switch subject"
+                  aria-expanded={modulesOpen}
+                  className="hidden sm:flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-full text-[11px] font-semibold transition-all border active:scale-95"
+                  style={{
+                    background: modulesOpen
+                      ? `color-mix(in srgb, ${currentSubjectMeta.color} 12%, var(--bg-muted))`
+                      : 'var(--bg-muted)',
+                    color: currentSubjectMeta.color,
+                    borderColor: modulesOpen
+                      ? `color-mix(in srgb, ${currentSubjectMeta.color} 35%, transparent)`
+                      : 'var(--border)',
+                  }}>
+                  <span className="text-sm leading-none">{currentSubjectMeta.flag}</span>
+                  <span>{t(currentSubjectMeta.label)}</span>
+                  <FaChevronDown size={8} style={{ transform: modulesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease', opacity: 0.6 }} />
+                </button>
+                {modulesOpen && (
+                  <div className="absolute top-full mt-1 left-0 w-64 rounded-2xl border p-2 shadow-xl z-50"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text-muted)' }}>{t('modules')}</div>
+                    {SUBJECTS.map(sub => (
+                      <Link key={sub.id} href={`/${locale}${sub.href}`}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all hover:bg-[var(--bg-muted)]"
+                        style={{ color: 'var(--text-secondary)' }}
+                        onClick={() => setSubjectHoverOpen(false)}>
+                        <span className="text-lg">{sub.flag}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t(sub.label)}</div>
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t(sub.desc)}</div>
+                        </div>
+                        {currentLang === sub.id && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: sub.color }} />}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ── Desktop navigation ── */}
@@ -257,7 +296,7 @@ export function Navbar() {
             />
 
             {/* ── Right controls ── */}
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
+            <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
               {/* Language switcher */}
               <LanguageSwitcher
                 currentLocale={locale}

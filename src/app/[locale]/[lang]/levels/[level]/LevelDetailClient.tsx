@@ -58,6 +58,7 @@ interface LoadedExam {
 }
 
 interface Props {
+  locale: string;
   lang: string;
   level: { code: string; name: string; description: string | null };
   examSets: ExamSetSummary[];
@@ -835,7 +836,7 @@ const SKILL_META: Record<string, { color: string; bg: string }> = {
 };
 
 
-export default function LevelDetailClient({ lang, level, examSets, isLoggedIn }: Props) {
+export default function LevelDetailClient({ locale, lang, level, examSets, isLoggedIn }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadedExam, setLoadedExam] = useState<LoadedExam | null>(null);
   const [loadingExam, setLoadingExam] = useState(false);
@@ -891,7 +892,7 @@ export default function LevelDetailClient({ lang, level, examSets, isLoggedIn }:
       {/* ══ MOBILE-ONLY TOP BAR (desktop: sidebar handles everything) ══ */}
       <div className="lg:hidden shrink-0 border-b px-4 flex items-center gap-2.5 h-10"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <a href={`/${lang}/levels`}
+        <a href={`/${locale}/${lang}/levels`}
           className="flex items-center gap-1.5 text-sm font-medium hover:opacity-70 transition-opacity shrink-0"
           style={{ color: 'var(--text-secondary)' }}>
           <FaArrowLeft size={11} /> Cấp độ
@@ -923,6 +924,7 @@ export default function LevelDetailClient({ lang, level, examSets, isLoggedIn }:
         <aside className="hidden lg:flex flex-col w-72 shrink-0"
           style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
           <SidebarContent
+            locale={locale}
             lang={lang}
             level={level} levelColor={levelColor}
             totalDone={totalDone} totalSets={totalSets} totalPct={totalPct}
@@ -938,6 +940,7 @@ export default function LevelDetailClient({ lang, level, examSets, isLoggedIn }:
           <aside className="lg:hidden fixed right-0 top-0 bottom-0 z-40 flex flex-col w-80 shadow-2xl"
             style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}>
             <SidebarContent
+              locale={locale}
               lang={lang}
               level={level} levelColor={levelColor}
               totalDone={totalDone} totalSets={totalSets} totalPct={totalPct}
@@ -1126,6 +1129,7 @@ export default function LevelDetailClient({ lang, level, examSets, isLoggedIn }:
 
 /* ── Sidebar content (shared: desktop aside + mobile drawer) ── */
 interface SidebarProps {
+  locale: string;
   lang: string;
   level: { code: string; name: string; description: string | null };
   levelColor: string;
@@ -1146,7 +1150,7 @@ interface SidebarProps {
 }
 
 function SidebarContent({
-  lang, level, levelColor, totalDone, totalSets, totalPct,
+  locale, lang, level, levelColor, totalDone, totalSets, totalPct,
   skillsWithData, filteredSets, activeSkill, setActiveSkill,
   selectedId, setSelectedId, setSidebarOpen, isLoggedIn,
 }: SidebarProps) {
@@ -1157,7 +1161,7 @@ function SidebarContent({
       <div className="shrink-0 px-5 pt-4 pb-4 relative"
         style={{ background: `linear-gradient(135deg, ${levelColor} 0%, ${levelColor}CC 100%)` }}>
         {/* Desktop back link */}
-        <a href={`/${lang}/levels`}
+        <a href={`/${locale}/${lang}/levels`}
           className="hidden lg:flex items-center gap-1 mb-3 text-xs font-semibold w-fit hover:opacity-100 transition-opacity"
           style={{ color: 'rgba(255,255,255,0.65)' }}>
           <FaArrowLeft size={9} /> Cấp độ

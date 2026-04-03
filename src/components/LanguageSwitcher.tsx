@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { FaChevronDown, FaCheck } from 'react-icons/fa6';
 
 const LOCALES = [
@@ -16,31 +16,26 @@ interface LanguageSwitcherProps {
 
 export function LanguageSwitcher({ currentLocale, onSwitch, className }: LanguageSwitcherProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const current = LOCALES.find(l => l.code === currentLocale) ?? LOCALES[0];
 
-  useEffect(() => {
-    if (!open) return;
-    function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('mousedown', handle);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handle);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [open]);
+  function handleMouseEnter() {
+    if (timer.current) clearTimeout(timer.current);
+    setOpen(true);
+  }
+  function handleMouseLeave() {
+    timer.current = setTimeout(() => setOpen(false), 150);
+  }
 
   return (
-    <div ref={ref} className={`relative ${className ?? ''}`}>
+    <div
+      className={`relative ${className ?? ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Ngôn ngữ: ${current.label}`}
@@ -59,7 +54,7 @@ export function LanguageSwitcher({ currentLocale, onSwitch, className }: Languag
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-full mt-2 w-44 rounded-2xl border p-1.5 z-50"
+          className="absolute right-0 top-full mt-1 w-44 rounded-2xl border p-1.5 z-50"
           style={{
             background: 'var(--bg-surface)',
             borderColor: 'var(--border)',

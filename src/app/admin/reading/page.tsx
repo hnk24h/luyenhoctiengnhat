@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AdminPageHeader from '../_components/AdminPageHeader';
 import {
   FaPlus, FaTrash, FaPencil, FaNewspaper, FaCheck, FaXmark,
   FaMagnifyingGlass, FaEye, FaEyeSlash, FaFileImport, FaFileExport,
@@ -70,7 +71,7 @@ export default function AdminReadingPage() {
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/auth/login'); return; }
     if (status === 'authenticated') {
-      const role = (session?.user as any)?.role;
+      const role = session?.user?.role;
       if (role !== 'admin' && role !== 'ADMIN') router.push('/');
     }
   }, [status, session, router]);
@@ -190,31 +191,27 @@ export default function AdminReadingPage() {
   function set(k: keyof typeof BLANK, v: any) { setForm(prev => ({ ...prev, [k]: v })); }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1rem' }}>
-      {/* Gradient header */}
-      <div style={{ background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)', borderRadius: 16, padding: '28px 32px', marginBottom: 24, marginTop: 24, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 13, opacity: 0.75, marginBottom: 6 }}>
-            <a href="/admin" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Admin</a>
-            {' / '}Quản lý bài đọc
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>📰 Bài đọc</h1>
-          <div style={{ marginTop: 8 }}>
-            <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: '2px 12px', fontSize: 12 }}>{passages.length} bài đọc</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={() => setShowImport(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaFileImport size={12} /> Import
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <AdminPageHeader
+        icon={<FaNewspaper size={18} />}
+        title="Bài đọc"
+        breadcrumb="Quản lý bài đọc"
+        badge={`${passages.length} bài đọc`}
+        actions={<>
+          <button onClick={() => setShowImport(true)}
+            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaFileImport size={13} /> Import
           </button>
-          <button onClick={handleExport} disabled={exporting || passages.length === 0} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaFileExport size={12} /> Export
+          <button onClick={handleExport} disabled={exporting || passages.length === 0}
+            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaFileExport size={13} /> Export
           </button>
-          <button onClick={openCreate} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.9)', color: '#ea580c', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FaPlus size={12} /> Thêm mới
+          <button onClick={openCreate}
+            className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1.5">
+            <FaPlus size={13} /> Thêm mới
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       <div style={{ paddingBottom: 40 }}>
 
@@ -281,7 +278,7 @@ export default function AdminReadingPage() {
                     <button onClick={() => togglePublish(p)}
                       className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full transition-all"
                       style={p.published
-                        ? { background: '#DCFCE7', color: '#15803D' }
+                        ? { background: 'rgba(22,163,74,0.12)', color: '#15803d' }
                         : { background: 'var(--border)', color: 'var(--text-muted)' }}>
                       {p.published ? <FaEye size={10} /> : <FaEyeSlash size={10} />}
                       {p.published ? 'Công khai' : 'Ẩn'}
@@ -299,7 +296,7 @@ export default function AdminReadingPage() {
                         <FaPencil size={13} />
                       </button>
                       <button onClick={() => remove(p.id)} className="btn-ghost p-1.5" title="Xóa"
-                        style={{ color: '#EF4444' }}>
+                        style={{ color: 'var(--danger, #EF4444)' }}>
                         <FaTrash size={13} />
                       </button>
                     </div>

@@ -8,7 +8,7 @@ import { FaArrowLeft, FaGraduationCap } from 'react-icons/fa6';
 import LearnLevelClient, { type CategoryData } from '../LearnLevelClient';
 
 interface Props {
-  params: { lang: string; level: string };
+  params: { locale: string; lang: string; level: string };
   searchParams: { tab?: string };
 }
 
@@ -105,7 +105,7 @@ export default async function LearnLessonsPage({ params, searchParams }: Props) 
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
         <Link
-          href={`/${params.lang}/learn/${level.code}`}
+          href={`/${params.locale}/${params.lang}/learn/${level.code}`}
           className="flex items-center gap-1.5 text-xs font-medium hover:opacity-70 transition-opacity"
           style={{ color: 'var(--text-secondary)' }}
         >
@@ -146,7 +146,7 @@ export default async function LearnLessonsPage({ params, searchParams }: Props) 
             {legacyCats.map(cat => (
               <Link
                 key={cat.id}
-                href={`/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}`}
+                href={`/${params.locale}/${params.lang}/learn/${level.code}/${cat.skill}/${cat.id}`}
                 className="card-hover border flex items-center gap-4"
               >
                 <div className="text-3xl flex-shrink-0">{cat.icon ?? '📂'}</div>

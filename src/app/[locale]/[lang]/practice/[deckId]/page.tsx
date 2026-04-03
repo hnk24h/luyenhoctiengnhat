@@ -116,7 +116,7 @@ function CardItem({
   );
 }
 
-export default function DeckPage({ params }: { params: { lang: string; deckId: string } }) {
+export default function DeckPage({ params }: { params: { locale: string; lang: string; deckId: string } }) {
   // Sidebar đồng nhất: chỉ có skill SRS, level là "Tùy chỉnh" hoặc lấy từ deck
   const levels = [{ code: 'custom', label: 'Tùy chỉnh', desc: 'Bộ thẻ cá nhân' }];
   const skills = [{ key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={18} /> }];
@@ -365,7 +365,7 @@ export default function DeckPage({ params }: { params: { lang: string; deckId: s
       bottomBarProps={{}}
     >
       {/* Back */}
-      <Link href={`/${params.lang}/practice`} className="inline-flex items-center gap-1.5 text-sm mb-6 btn-ghost" style={{ color: 'var(--text-muted)' }}>
+      <Link href={`/${params.locale}/${params.lang}/practice`} className="inline-flex items-center gap-1.5 text-sm mb-6 btn-ghost" style={{ color: 'var(--text-muted)' }}>
         <FaArrowLeft size={11} /> Danh sách bộ thẻ
       </Link>
 
@@ -433,7 +433,7 @@ export default function DeckPage({ params }: { params: { lang: string; deckId: s
                 <FaUpload size={11} /> Import
               </button>
               {deck.cards.length > 0 && (
-                <Link href={`/${params.lang}/practice/${deck.id}/study`}
+                <Link href={`/${params.locale}/${params.lang}/practice/${deck.id}/study`}
                   className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1.5"
                   style={{ background: deck.color }}>
                   <FaBolt size={11} /> Ôn tập
@@ -664,7 +664,7 @@ export default function DeckPage({ params }: { params: { lang: string; deckId: s
             <FaClockRotateLeft size={14} />
             <span><strong>{dueCards.length} thẻ</strong> cần ôn hôm nay</span>
           </div>
-          <Link href={`/${params.lang}/practice/${deck.id}/study`}
+          <Link href={`/${params.locale}/${params.lang}/practice/${deck.id}/study`}
             className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5 shrink-0"
             style={{ background: '#D97706' }}>
             <FaBolt size={11} /> Ôn ngay

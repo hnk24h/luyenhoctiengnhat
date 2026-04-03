@@ -28,6 +28,7 @@ interface ExamSet {
   [key: string]: any;
 }
 interface ExamPageClientProps {
+  locale: string;
   levels: Level[];
   skills: Skill[];
   examSetsForSidebar: any[];
@@ -36,6 +37,7 @@ interface ExamPageClientProps {
 }
 
 export default function ExamPageClient({
+  locale,
   levels,
   skills,
   examSetsForSidebar,
@@ -84,9 +86,9 @@ export default function ExamPageClient({
     >
       <LearnHeader icon={<FaRegFile />} title={examSet.title} subtitle={`Cấp độ: ${examSet.level.code}`} />
       <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
-        <Link href={`/${examSet.lang}/levels`} className="hover:text-red-600">Cấp độ</Link>
+        <Link href={`/${locale}/${examSet.lang}/levels`} className="hover:text-red-600">Cấp độ</Link>
         <span>/</span>
-        <Link href={`/${examSet.lang}/levels/${examSet.level.code}`} className="hover:text-red-600">{examSet.level.code}</Link>
+        <Link href={`/${locale}/${examSet.lang}/levels/${examSet.level.code}`} className="hover:text-red-600">{examSet.level.code}</Link>
         <span>/</span>
         <span className="text-gray-800">{examSet.title}</span>
       </div>

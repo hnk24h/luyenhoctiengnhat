@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import {
-  FaBullseye, FaBook, FaCircleQuestion, FaSeedling, FaUpload,
-  FaBookOpen, FaNewspaper, FaUsers, FaPalette, FaHeadphones, FaLayerGroup,
-  FaGear, FaChartLine, FaChevronRight,
+  FaBullseye, FaCircleQuestion, FaSeedling, FaUpload,
+  FaBookOpen, FaUsers, FaPalette, FaLayerGroup, FaChevronRight,
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -60,6 +58,55 @@ const S = {
   border:    { borderColor: 'var(--border)' },
 } as const;
 
+const accentStyle: Record<string, React.CSSProperties> = {
+  red:    { background: 'rgba(220,38,38,0.12)',  color: '#dc2626' },
+  yellow: { background: 'rgba(161,98,7,0.12)',   color: '#a16207' },
+  blue:   { background: 'rgba(37,99,235,0.12)',  color: '#2563eb' },
+  purple: { background: 'rgba(124,58,237,0.12)', color: '#7c3aed' },
+};
+
+// ─── Subject Card ─────────────────────────────────────────────────────────────
+
+function SubjectCard({ lang }: { lang: LangData }) {
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{ ...S.surface, boxShadow: 'var(--shadow-sm)' }}>
+      {/* Header */}
+      <div className="flex items-center gap-2.5">
+        <span style={{ fontSize: 26, lineHeight: 1 }}>{lang.flag}</span>
+        <div>
+          <div className="text-sm font-bold" style={S.textPrimary}>{lang.shortLabel}</div>
+          <span className="text-xs font-medium px-1.5 py-0.5 rounded-full"
+            style={accentStyle[lang.accent] ?? {}}>
+            {lang.desc}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-2">
+        {lang.stats.map(s => (
+          <Link key={s.label} href={s.href}
+            className="rounded-xl p-2.5 text-center transition-all hover:-translate-y-0.5"
+            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
+            <div className="text-lg font-bold tabular-nums leading-none" style={S.textPrimary}>
+              {s.value.toLocaleString()}
+            </div>
+            <div className="text-xs mt-0.5" style={S.textMuted}>{s.label}</div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick link to first management page */}
+      <Link href={lang.links[0]?.href ?? `/admin/levels?subject=${lang.key}`}
+        className="text-xs text-center py-1.5 rounded-lg transition-all hover:-translate-y-0.5"
+        style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', ...S.textSecondary }}>
+        Quản lý {lang.shortLabel} →
+      </Link>
+    </div>
+  );
+}
+
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon, href, iconBg, iconColor }: {
@@ -90,43 +137,26 @@ function StatCard({ label, value, icon, href, iconBg, iconColor }: {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AdminDashboardClient({ global, languages }: Props) {
-  const [active, setActive] = useState(languages[0]?.key ?? '');
-  const lang = languages.find(l => l.key === active) ?? languages[0];
-
   return (
-    <div className="min-h-screen" style={S.pageBg}>
+    <div style={S.pageBg}>
 
-      {/* ── Top Header ───────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20" style={{ ...S.surface, borderTop: 'none', borderLeft: 'none', borderRight: 'none' }}>
-        <div className="max-w-6xl mx-auto px-6 h-[60px] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
-              <FaChartLine size={14} className="text-white"/>
-            </div>
-            <div>
-              <span className="font-bold text-sm" style={S.textPrimary}>Admin Panel</span>
-              <span className="mx-2" style={S.textMuted}>|</span>
-              <span className="text-sm" style={S.textMuted}>Hệ thống luyện thi đa ngôn ngữ</span>
-            </div>
-          </div>
-          <Link href="/admin/settings"
-            className="flex items-center gap-1.5 text-sm transition-colors px-3 py-1.5 rounded-lg"
-            style={S.textSecondary}>
-            <FaGear size={13}/> Cài đặt
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <main className="px-5 py-6 space-y-7">
 
         {/* ── Page title ───────────────────────────────────────────── */}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={S.textPrimary}>Dashboard</h1>
-          <p className="text-sm mt-1" style={S.textSecondary}>Tổng quan nội dung và người dùng hệ thống</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight" style={S.textPrimary}>Dashboard</h1>
+            <p className="text-sm mt-0.5" style={S.textSecondary}>Tổng quan nội dung và người dùng</p>
+          </div>
+          <Link href="/admin/settings"
+            className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ ...S.surface, ...S.textSecondary }}>
+            Cài đặt hệ thống
+          </Link>
         </div>
 
         {/* ── Global stats ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           <StatCard label="Người dùng" value={global.users}
             icon={<FaUsers size={18}/>} href="/admin/users"
             iconColor="#7c3aed" iconBg="rgba(124,58,237,.15)"/>
@@ -141,99 +171,20 @@ export default function AdminDashboardClient({ global, languages }: Props) {
             iconColor="#d97706" iconBg="rgba(217,119,6,.15)"/>
         </div>
 
-        {/* ── Language panel ───────────────────────────────────────── */}
+        {/* ── Subject overview ────────────────────────────────────── */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={S.textMuted}>Quản lý theo môn học</p>
-          <div className="rounded-2xl overflow-hidden" style={{ ...S.surface, boxShadow: 'var(--shadow-sm)' }}>
-            <div className="flex min-h-[360px]">
-
-              {/* ── Vertical sidebar tabs ──────────────────────────── */}
-              <nav className="w-52 flex-shrink-0 p-3 flex flex-col gap-1"
-                style={{ borderRight: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
-                {languages.map(l => {
-                  const isActive = active === l.key;
-                  return (
-                    <button key={l.key} onClick={() => setActive(l.key)}
-                      className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-150"
-                      style={isActive
-                        ? { background: 'var(--bg-surface)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)' }
-                        : { background: 'transparent', border: '1px solid transparent' }
-                      }>
-                      <span className="text-2xl leading-none">{l.flag}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold leading-tight"
-                          style={isActive ? S.textPrimary : S.textSecondary}>
-                          {l.shortLabel}
-                        </div>
-                        <div className="text-xs mt-0.5 truncate" style={S.textMuted}>{l.desc}</div>
-                      </div>
-                      {isActive && (
-                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ background: 'var(--primary)' }}/>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
-
-              {/* ── Content area ────────────────────────────────────── */}
-              {lang && (
-                <div className="flex-1 p-6 flex flex-col gap-5">
-
-                  {/* Lang header */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{lang.flag}</span>
-                    <div>
-                      <h3 className="text-lg font-bold leading-tight" style={S.textPrimary}>{lang.label}</h3>
-                      <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-0.5 font-medium ${lang.badgeClass}`}>{lang.desc}</span>
-                    </div>
-                  </div>
-
-                  {/* Sub-stats row */}
-                  <div className="grid grid-cols-4 gap-3">
-                    {lang.stats.map(s => (
-                      <Link key={s.label} href={s.href}
-                        className="rounded-xl p-3.5 transition-all hover:-translate-y-0.5"
-                        style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
-                        <div className="text-2xl font-bold tabular-nums leading-none" style={S.textPrimary}>
-                          {s.value.toLocaleString()}
-                        </div>
-                        <div className="text-xs mt-1" style={S.textMuted}>{s.label}</div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Divider */}
-                  <hr style={{ borderColor: 'var(--border)' }}/>
-
-                  {/* Action cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {lang.links.map(l => (
-                      <Link key={l.href} href={l.href}
-                        className="group flex items-center gap-3 p-3.5 rounded-xl transition-all duration-150 hover:-translate-y-0.5"
-                        style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: l.bg, color: l.color }}>
-                          {l.icon}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold leading-tight truncate" style={S.textPrimary}>{l.label}</div>
-                          <div className="text-xs mt-0.5 truncate" style={S.textMuted}>{l.desc}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                </div>
-              )}
-            </div>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={S.textMuted}>
+            Theo môn học
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {languages.map(lang => <SubjectCard key={lang.key} lang={lang} />)}
           </div>
         </section>
 
         {/* ── System tools ─────────────────────────────────────────── */}
         <section>
           <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={S.textMuted}>Công cụ hệ thống</p>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
             {[
               { href: '/admin/seed',   icon: <FaSeedling size={16}/>,  label: 'Seed dữ liệu', desc: 'Khởi tạo dữ liệu mẫu',   iconBg: 'rgba(161,98,7,.15)',    iconColor: '#d97706' },
               { href: '/admin/users',  icon: <FaUsers size={16}/>,     label: 'Người dùng',   desc: 'Quản lý tài khoản',       iconBg: 'rgba(124,58,237,.15)',  iconColor: '#7c3aed' },

@@ -72,7 +72,7 @@ export default function AdminLevelsClient({ levels: initial, subject }: { levels
 
         {/* Form card */}
         <div style={{ background: 'var(--bg-surface)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,.08)', overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '14px 20px', background: isAdding ? '#dc2626' : '#2563EB', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '14px 20px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
               {isAdding ? <FaPlus size={14} /> : <FaPen size={14} />}
               {isAdding ? 'Thêm cấp độ mới' : `Chỉnh sửa: ${editing?.code}`}

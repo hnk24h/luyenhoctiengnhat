@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { FaChartBar, FaChevronDown } from 'react-icons/fa6';
 import type { IconType } from 'react-icons';
@@ -15,6 +15,19 @@ interface ProfileDropdownProps {
 }
 
 export function ProfileDropdown({ session, profileOpen, toggleMenu, isActive, profileLinks, signOut }: ProfileDropdownProps) {
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleMouseEnter() {
+    if (timer.current) clearTimeout(timer.current);
+    setHoverOpen(true);
+  }
+  function handleMouseLeave() {
+    timer.current = setTimeout(() => setHoverOpen(false), 150);
+  }
+
+  const isOpen = hoverOpen || profileOpen;
+
   if (!session) {
     return (
       <>
@@ -32,22 +45,25 @@ export function ProfileDropdown({ session, profileOpen, toggleMenu, isActive, pr
     );
   }
   return (
-    <div className="relative hidden md:block">
+    <div
+      className="relative hidden md:block"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <button
-        onClick={() => toggleMenu('profile')}
-        aria-expanded={profileOpen}
+        aria-expanded={isOpen}
         aria-haspopup="true"
         className="flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all hover:bg-[var(--bg-muted)]"
-        style={{ color: profileOpen ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+        style={{ color: isOpen ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
         <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
           style={{ background: 'var(--primary)' }}>
           {session.user?.name?.[0]?.toUpperCase() ?? 'U'}
         </span>
         <span className="hidden lg:block text-sm font-medium max-w-[90px] truncate" style={{ color: 'var(--text-primary)' }}>{session.user?.name}</span>
-        <FaChevronDown size={10} style={{ transform: profileOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
+        <FaChevronDown size={10} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s ease' }} />
       </button>
-      {profileOpen && (
-        <div className="absolute top-full mt-2 right-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
+      {isOpen && (
+        <div className="absolute top-full mt-1 right-0 w-56 rounded-2xl border p-2 shadow-xl z-50"
           style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
           <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1 border-b" style={{ borderColor: 'var(--border)' }}>
             <span className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { FaListUl, FaPlus, FaMagnifyingGlass, FaTrash, FaLock, FaChevronLeft, FaChevronRight, FaRegEye, FaXmark } from 'react-icons/fa6';
-import { FaCog, FaArrowsAlt } from 'react-icons/fa';
+import { FaListUl, FaPlus, FaTrash, FaChevronLeft, FaChevronRight, FaRegEye } from 'react-icons/fa6';
 import LessonDetailModal from '@/components/admin/learning/Modals/LessonDetailModal';
+import { ConfirmDialog } from '@/components/admin/ui/ConfirmDialog';
 
 import type { Lesson } from '@/types/lesson';
 
@@ -21,6 +21,7 @@ interface LessonTableProps {
     setActiveLesId: (id: string) => void;
     loadItems: (lessonId: string) => void;
     deleteLes: (id: string) => void;
+    bulkDeleteLes?: (ids: string[]) => void;
 }
 
 export default function LessonTable({
@@ -33,13 +34,44 @@ export default function LessonTable({
         setActiveLesId,
         loadItems,
         deleteLes,
+        bulkDeleteLes,
 }: LessonTableProps) {
-    // Pagination state
+    // Bulk selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     // Context menu state
     const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; lesson: Lesson | null }>({ visible: false, x: 0, y: 0, lesson: null });
-    const [lessonDetail, setLessonDetail] = useState<Lesson | null>(null); // lesson object or null
-    const [lessonItems, setLessonItems] = useState([]); // items of lesson
+    const [lessonDetail, setLessonDetail] = useState<Lesson | null>(null);
+    const [lessonItems, setLessonItems] = useState([]);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Reset selection when lessons list changes
+    React.useEffect(() => { setSelectedIds(new Set()); }, [lessons]);
+
+    function toggleSelect(id: string) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }
+
+    function toggleSelectAll(checked: boolean) {
+        setSelectedIds(checked ? new Set(pagedLessons.map(l => l.id)) : new Set());
+    }
+
+    function handleBulkDelete() {
+        if (selectedIds.size === 0) return;
+        setConfirmBulkDelete(true);
+    }
+
+    function executeBulkDelete() {
+        const ids = Array.from(selectedIds);
+        if (bulkDeleteLes) bulkDeleteLes(ids);
+        else ids.forEach(id => deleteLes(id));
+        setSelectedIds(new Set());
+        setConfirmBulkDelete(false);
+    }
 
     // Hide context menu on click outside
     React.useEffect(() => {
@@ -74,16 +106,6 @@ export default function LessonTable({
         setContextMenu({ ...contextMenu, visible: false });
     }
 
-
-    function handleSetting() {
-        alert('Tính năng Setting cho bài học này sẽ sớm có!');
-        setContextMenu({ ...contextMenu, visible: false });
-    }
-
-    function handleMove() {
-        alert('Tính năng Move (di chuyển) bài học sẽ sớm có!');
-        setContextMenu({ ...contextMenu, visible: false });
-    }
     const [page, setPage] = useState(1);
     const pageSize = 10;
     const totalPages = Math.max(1, Math.ceil(lessons.length / pageSize));
@@ -97,6 +119,17 @@ export default function LessonTable({
 
     return (
         <div className="card p-4 mt-4">
+            {/* Confirm bulk delete */}
+            <ConfirmDialog
+                open={confirmBulkDelete}
+                title={`Xoá ${selectedIds.size} bài học?`}
+                description="Hành động này không thể hoàn tác. Tất cả mục học trong các bài học này cũng sẽ bị xoá."
+                confirmLabel="Xoá tất cả"
+                danger
+                onConfirm={executeBulkDelete}
+                onCancel={() => setConfirmBulkDelete(false)}
+            />
+
             {/* Lesson detail modal */}
             {lessonDetail && (
                 <LessonDetailModal
@@ -114,17 +147,25 @@ export default function LessonTable({
                 <div className="text-center text-sm text-muted py-8">Chọn chủ đề để xem danh sách bài học.</div>
             ) : (
                 <>
-                    <div className="flex justify-start mb-2 gap-2">
+                    <div className="flex justify-start mb-2 gap-2 flex-wrap">
                         <h2 className="font-bold text-base flex items-center gap-2">
                             <FaListUl className="inline" size={15} style={{ color: 'var(--primary)' }} />
                             <span>Bài học ({lessons.length})</span>
                         </h2>
                         <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <input className="input w-64 text-sm py-1.5" placeholder="Tìm bài học..." value={lesSearch} onChange={e => setLesSearch(e.target.value)} />
                                 <button onClick={openLesCreate} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold btn-primary">
                                     <FaPlus size={10} /> Thêm
                                 </button>
+                                {selectedIds.size > 0 && (
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold"
+                                        style={{ background: '#fee2e2', color: '#dc2626' }}>
+                                        <FaTrash size={10} /> Xoá {selectedIds.size} mục đã chọn
+                                    </button>
+                                )}
                             </div>
                         </div>
                         {/* Pagination controls */}
@@ -148,7 +189,9 @@ export default function LessonTable({
                                 <div className="px-1 py-2 flex items-center justify-center min-w-0 w-8">
                                     <input
                                         type="checkbox"
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all w-4 h-4 accent-blue-600 hover:shadow-sm"
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all w-4 h-4 accent-blue-600"
+                                        checked={pagedLessons.length > 0 && pagedLessons.every(l => selectedIds.has(l.id))}
+                                        onChange={e => toggleSelectAll(e.target.checked)}
                                     />
                                 </div>
                                 <div className="px-1 py-2 font-semibold min-w-0 w-12 text-center">Thứ tự</div>
@@ -166,6 +209,7 @@ export default function LessonTable({
                                 <div
                                     key={les.id}
                                     className="group grid grid-cols-[32px_48px_1.5fr_0.8fr_0.8fr_1.2fr_0.7fr_0.8fr] items-center border-b hover:bg-blue-50 transition rounded cursor-pointer"
+                                    style={selectedIds.has(les.id) ? { background: '#eff6ff' } : {}}
                                     onContextMenu={e => handleContextMenu(e, les)}
                                     onDoubleClick={async () => {
                                         try {
@@ -182,8 +226,13 @@ export default function LessonTable({
                                         setLessonDetail(les);
                                     }}
                                 >
-                                    <div className="px-1 py-2 flex items-center justify-center min-w-0 w-8">
-                                        <input type="checkbox" />
+                                    <div className="px-1 py-2 flex items-center justify-center min-w-0 w-8" onClick={e => { e.stopPropagation(); toggleSelect(les.id); }}>
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 accent-blue-600"
+                                            checked={selectedIds.has(les.id)}
+                                            onChange={() => toggleSelect(les.id)}
+                                        />
                                     </div>
                                     <div className="px-1 py-2 text-center min-w-0 w-12">
                                         <span>{les.order}</span>
@@ -211,7 +260,7 @@ export default function LessonTable({
                                     </div>
                                 </div>
                             ))}
-                            {/* Context menu */}
+                            {/* Context menu — only "Xem chi tiết" */}
                             {contextMenu.visible && (
                                 <div
                                     ref={menuRef}
@@ -224,20 +273,6 @@ export default function LessonTable({
                                     >
                                         <FaRegEye className="text-blue-500" />
                                         Xem chi tiết
-                                    </button>
-                                    <button
-                                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition"
-                                        onClick={handleSetting}
-                                    >
-                                        <FaCog className="text-gray-500" />
-                                        Cài đặt
-                                    </button>
-                                    <button
-                                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition"
-                                        onClick={handleMove}
-                                    >
-                                        <FaArrowsAlt className="text-green-500" />
-                                        Di chuyển
                                     </button>
                                 </div>
                             )}

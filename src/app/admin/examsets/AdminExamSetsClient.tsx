@@ -17,9 +17,11 @@ interface ExamSet {
 
 const BLANK_FORM = { levelId: '', skill: 'nghe', title: '', description: '', timeLimit: '' };
 
-const SKILL_COLORS: Record<string, string> = {
-  nghe: 'bg-blue-100 text-blue-700', noi: 'bg-green-100 text-green-700',
-  doc: 'bg-yellow-100 text-yellow-700', viet: 'bg-purple-100 text-purple-700',
+const SKILL_STYLES: Record<string, React.CSSProperties> = {
+  nghe: { background: 'rgba(29,78,216,0.12)',   color: '#1d4ed8' },
+  noi:  { background: 'rgba(22,163,74,0.12)',    color: '#15803d' },
+  doc:  { background: 'rgba(202,138,4,0.12)',    color: '#a16207' },
+  viet: { background: 'rgba(109,40,217,0.12)',   color: '#6d28d9' },
 };
 const SKILL_ICONS: Record<string, ReactNode> = {
   nghe: <FaHeadphones size={16} />,
@@ -109,7 +111,7 @@ export default function AdminExamSetsClient({
 
       {/* Form card */}
         <div style={{ background: 'var(--bg-surface)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,.08)', overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '14px 20px', background: isAdding ? 'var(--primary)' : '#2563EB', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '14px 20px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
               {isAdding ? <FaPlus size={14} /> : <FaPen size={14} />}
               {isAdding ? 'Thêm bộ đề mới' : `Chỉnh sửa: ${editing?.title}`}
@@ -170,7 +172,7 @@ export default function AdminExamSetsClient({
                   <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{s.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '1px 6px', borderRadius: 4 }}>{s.level.code}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${SKILL_COLORS[s.skill] ?? 'bg-gray-100 text-gray-600'}`}>{s.skill}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={SKILL_STYLES[s.skill] ?? { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>{s.skill}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s._count.questions} câu</span>
                     {s.timeLimit && <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2 }}><FaClock size={9} /> {s.timeLimit / 60}p</span>}
                   </div>

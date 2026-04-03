@@ -134,8 +134,8 @@ async function getLevelsWithContent(subject: Subject) {
   });
 }
 
-function getLessonHref(lesson: ContinueLesson, lang: string) {
-  return `/${lang}/learn/${lesson.category.level.code}/${lesson.category.skill}/${lesson.categoryId}/${lesson.id}`;
+function getLessonHref(lesson: ContinueLesson, locale: string, lang: string) {
+  return `/${locale}/${lang}/learn/${lesson.category.level.code}/${lesson.category.skill}/${lesson.categoryId}/${lesson.id}`;
 }
 
 function formatDateVi(date: Date) {
@@ -225,15 +225,16 @@ function getPrimarySkills(level: LevelWithContent) {
 function getSkillHref(
   skill: SkillKey,
   levels: LevelWithContent[],
-  preferredLevelCode?: string | null,
+  preferredLevelCode: string | null | undefined,
+  locale: string,
   lang = 'ja',
 ) {
   if (skill === 'nghe') {
-    return preferredLevelCode ? `/${lang}/listening?level=${preferredLevelCode}` : `/${lang}/listening`;
+    return preferredLevelCode ? `/${locale}/${lang}/listening?level=${preferredLevelCode}` : `/${locale}/${lang}/listening`;
   }
 
   if (skill === 'doc') {
-    return preferredLevelCode ? `/${lang}/reading?level=${preferredLevelCode}` : `/${lang}/reading`;
+    return preferredLevelCode ? `/${locale}/${lang}/reading?level=${preferredLevelCode}` : `/${locale}/${lang}/reading`;
   }
 
   const preferredLevel = preferredLevelCode
@@ -242,17 +243,17 @@ function getSkillHref(
   const preferredCategory = preferredLevel?.learningCategories.find((category) => category.skill === skill);
 
   if (preferredCategory) {
-    return `/${lang}/learn/${preferredLevelCode}/${skill}/${preferredCategory.id}`;
+    return `/${locale}/${lang}/learn/${preferredLevelCode}/${skill}/${preferredCategory.id}`;
   }
 
   for (const level of levels) {
     const firstCategory = level.learningCategories.find((category) => category.skill === skill);
     if (firstCategory) {
-      return `/${lang}/learn/${level.code}/${skill}/${firstCategory.id}`;
+      return `/${locale}/${lang}/learn/${level.code}/${skill}/${firstCategory.id}`;
     }
   }
 
-  return `/${lang}/learn`;
+  return `/${locale}/${lang}/learn`;
 }
 
 function getMotivationLine(options: {
@@ -285,7 +286,7 @@ function getMotivationLine(options: {
   return `${options.firstName}, hãy chọn một đường học rõ ràng cho hôm nay: tiếp tục bài cũ, gia cố kỹ năng yếu hoặc ôn thi theo mục tiêu.`;
 }
 
-export default async function LearnPage({ params }: { params: { lang: string } }) {
+export default async function LearnPage({ params }: { params: { locale: string; lang: string } }) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
 
@@ -404,14 +405,14 @@ export default async function LearnPage({ params }: { params: { lang: string } }
               eyebrow: 'Tiếp tục học',
               title: continueLesson.title,
               description: `Quay lại ${continueLesson.category.name} (${continueLesson.category.level.code}) để giữ mạch học thay vì chọn lại từ đầu.`,
-              href: getLessonHref(continueLesson, params.lang),
+              href: getLessonHref(continueLesson, params.locale, params.lang),
               cta: 'Tiếp tục đúng bài',
             }
           : {
               eyebrow: 'Khởi động lại lộ trình',
               title: 'Chọn level đang phù hợp nhất',
               description: 'Nếu bạn chưa có bài dang dở, bắt đầu từ level dễ nhất bạn có thể học đều mỗi ngày.',
-              href: preferredLevelCode ? `/${params.lang}/learn/${preferredLevelCode}` : `/${params.lang}/learn/N5`,
+              href: preferredLevelCode ? `/${params.locale}/${params.lang}/learn/${preferredLevelCode}` : `/${params.locale}/${params.lang}/learn/N5`,
               cta: 'Vào lộ trình hiện tại',
             },
         weakSkill
@@ -421,14 +422,14 @@ export default async function LearnPage({ params }: { params: { lang: string } }
               description: weakSkill.avg !== null
                 ? `Điểm trung bình gần đây khoảng ${weakSkill.avg}%. Ôn tập trung vào kỹ năng này sẽ tạo khác biệt rõ nhất.`
                 : 'Học theo kỹ năng sẽ hiệu quả hơn khi bạn đã biết rõ phần mình yếu nhất.',
-              href: getSkillHref(weakSkill.key as SkillKey, typedLevels, preferredLevelCode, params.lang),
+              href: getSkillHref(weakSkill.key as SkillKey, typedLevels, preferredLevelCode, params.locale, params.lang),
               cta: `Luyện ${weakSkill.label.toLowerCase()}`,
             }
           : {
               eyebrow: 'Chọn kỹ năng trọng tâm',
               title: 'Ôn theo kỹ năng khi cần sửa điểm yếu',
               description: 'Nếu bạn đã biết rõ phần mình hay sai, đi thẳng vào từng kỹ năng sẽ nhanh hơn học dàn trải.',
-              href: getSkillHref('doc', typedLevels, preferredLevelCode, params.lang),
+              href: getSkillHref('doc', typedLevels, preferredLevelCode, params.locale, params.lang),
               cta: 'Mở lối tắt kỹ năng',
             },
         activeExamPlan
@@ -436,14 +437,14 @@ export default async function LearnPage({ params }: { params: { lang: string } }
               eyebrow: 'Ôn thi theo deadline',
               title: `Giữ mục tiêu ${activeExamPlan.targetLevelCode}`,
               description: `Mốc thi hiện tại là ${formatDateVi(activeExamPlan.examDate)}. Hãy dùng thi thử để kiểm tra tiến độ mỗi tuần.`,
-              href: `/${params.lang}/levels`,
+              href: `/${params.locale}/${params.lang}/levels`,
               cta: 'Vào khu luyện thi',
             }
           : {
               eyebrow: 'Chuẩn bị kỳ thi',
               title: 'Đưa việc học về đúng format JLPT',
               description: 'Khi đã có nền tảng, thi thử đều đặn giúp bạn nhìn rõ tốc độ, điểm yếu và áp lực thời gian.',
-              href: `/${params.lang}/levels`,
+              href: `/${params.locale}/${params.lang}/levels`,
               cta: 'Bắt đầu ôn thi',
             },
       ]
@@ -452,21 +453,21 @@ export default async function LearnPage({ params }: { params: { lang: string } }
           eyebrow: 'Mới bắt đầu',
           title: 'Đi từ N5 để xây nền',
           description: 'Nếu chưa chắc level hiện tại, đi từ N5 giúp bạn giữ lộ trình rõ ràng và ít bỏ sót nền tảng hơn.',
-          href: `/${params.lang}/learn/N5`,
+          href: `/${params.locale}/${params.lang}/learn/N5`,
           cta: 'Bắt đầu từ N5',
         },
         {
           eyebrow: 'Ôn theo kỹ năng',
           title: 'Chọn đúng phần cần cải thiện',
           description: 'Nghe và đọc phù hợp khi bạn đã biết kỹ năng nào đang kéo điểm xuống.',
-          href: `/${params.lang}/reading`,
+          href: `/${params.locale}/${params.lang}/reading`,
           cta: 'Vào lối tắt kỹ năng',
         },
         {
           eyebrow: 'Chuẩn bị thi JLPT',
           title: 'Luyện đề theo áp lực thật',
           description: 'Khi cần chuyển từ học kiến thức sang làm bài, thi thử là cách nhanh nhất để thấy khoảng cách hiện tại.',
-          href: `/${params.lang}/levels`,
+          href: `/${params.locale}/${params.lang}/levels`,
           cta: 'Vào khu luyện thi',
         },
       ];
@@ -570,7 +571,7 @@ export default async function LearnPage({ params }: { params: { lang: string } }
               {Object.entries(LEVEL_META).map(([code, meta]) => (
                 <Link
                   key={code}
-                  href={`/${params.lang}/learn/${code}`}
+                  href={`/${params.locale}/${params.lang}/learn/${code}`}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   style={{ background: meta.bg, color: meta.color }}
                 >
@@ -613,7 +614,7 @@ export default async function LearnPage({ params }: { params: { lang: string } }
                 return (
                   <Link
                     key={level.id}
-                    href={`/${params.lang}/learn/${level.code}`}
+                    href={`/${params.locale}/${params.lang}/learn/${level.code}`}
                     className="group relative flex flex-col rounded-2xl p-6 overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
                     style={{ background: meta.bg }}
                   >
@@ -704,7 +705,7 @@ export default async function LearnPage({ params }: { params: { lang: string } }
               })}
 
               <Link
-                href={`/${params.lang}/levels`}
+                href={`/${params.locale}/${params.lang}/levels`}
                 className="flex flex-col items-center justify-center rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-xl gap-3"
                 style={{ background: 'var(--primary)', color: '#fff' }}
               >
@@ -788,7 +789,7 @@ export default async function LearnPage({ params }: { params: { lang: string } }
                       : `Đây là bài tiếp theo phù hợp nhất trong level ${continueLesson.category.level.code} để bạn quay lại nhịp học ngay.`}
                   </p>
                 </div>
-                <Link href={getLessonHref(continueLesson, params.lang)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" style={{ background: 'var(--primary)', color: '#fff' }}>
+                <Link href={getLessonHref(continueLesson, params.locale, params.lang)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" style={{ background: 'var(--primary)', color: '#fff' }}>
                   <FaRoute size={14} />
                   Tiếp tục bài này
                 </Link>
