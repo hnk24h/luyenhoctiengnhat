@@ -1,3 +1,11 @@
+/**
+ * POST /api/admin/seed  — Admin UI trigger for basic data seeding.
+ * Requires admin session cookie.
+ *
+ * CLI alternative (no server needed):
+ *   pnpm db:seed-basic
+ *   # or: npx tsx scripts/seed/seed-basic.ts
+ */
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

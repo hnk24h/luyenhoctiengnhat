@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 interface Ctx { params: Promise<{ cardId: string }> }
 
@@ -15,17 +15,17 @@ async function getAuthorizedCard(cardId: string, userId: string) {
 // PUT /api/flashcards/cards/[cardId]
 export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedCard(params.cardId, session.user.id);
-  if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const auth = await getAuthorizedCard(params.cardId, user.id);
+  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   let body: { front?: string; back?: string; reading?: string; example?: string; imageUrl?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { front, back, reading, example, imageUrl } = body;
@@ -45,23 +45,23 @@ export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
     const normalized = { ...card, progress: card.progress[0] ?? null };
     return NextResponse.json(normalized);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 // DELETE /api/flashcards/cards/[cardId]
-export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+export async function DELETE(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedCard(params.cardId, session.user.id);
-  if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const auth = await getAuthorizedCard(params.cardId, user.id);
+  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   try {
     await prisma.flashcard.delete({ where: { id: params.cardId } });
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

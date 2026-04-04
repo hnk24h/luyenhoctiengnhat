@@ -12,7 +12,7 @@
 
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { getToken } from 'next-auth/jwt';
+import { jwtVerify } from 'jose';
 import { authOptions } from './auth';
 
 export interface ApiUser {
@@ -22,6 +22,10 @@ export interface ApiUser {
   name?: string | null;
 }
 
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.NEXTAUTH_SECRET ?? 'fallback-secret-change-me'
+);
+
 /**
  * Returns the authenticated user from either cookie session (web) or
  * Authorization Bearer token (mobile). Returns null if not authenticated.
@@ -30,17 +34,21 @@ export async function getApiUser(req: NextRequest): Promise<ApiUser | null> {
   // Try Bearer header first — used by mobile clients
   const authHeader = req.headers.get('authorization');
   if (authHeader?.startsWith('Bearer ')) {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-    if (token?.id) {
+    const rawToken = authHeader.slice(7).trim();
+    try {
+      const { payload } = await jwtVerify(rawToken, JWT_SECRET);
+      const id = (payload.id ?? payload.sub) as string | undefined;
+      if (!id) return null;
       return {
-        id: token.id as string,
-        role: (token.role as string) ?? 'user',
+        id,
+        role: (payload.role as string) ?? 'user',
+        email: payload.email as string | null,
+        name: payload.name as string | null,
       };
+    } catch {
+      // Invalid / expired token
+      return null;
     }
-    return null;
   }
 
   // Fall back to cookie session — used by web browser
@@ -57,8 +65,6 @@ export async function getApiUser(req: NextRequest): Promise<ApiUser | null> {
 
 /**
  * Convenience: returns only the userId string or null.
- * Replaces the common `const user = await prisma.user.findUnique({ where: { email } })`
- * pattern in protected routes.
  */
 export async function getApiUserId(req: NextRequest): Promise<string | null> {
   const user = await getApiUser(req);

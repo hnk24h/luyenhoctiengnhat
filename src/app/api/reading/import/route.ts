@@ -20,7 +20,7 @@ interface PassageJson {
 // POST /api/reading/import  — admin only, bulk upsert from JSON array
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== 'admin' && (session?.user as any)?.role !== 'ADMIN') {
+  if (session?.user?.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

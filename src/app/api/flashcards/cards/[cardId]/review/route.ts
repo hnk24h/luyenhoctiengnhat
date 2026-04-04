@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 interface Ctx { params: Promise<{ cardId: string }> }
 
@@ -48,10 +48,10 @@ function computeNextSRS(
 // POST /api/flashcards/cards/[cardId]/review
 export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   const card = await prisma.flashcard.findFirst({
     where: { id: params.cardId, deck: { userId } },
@@ -61,18 +61,18 @@ export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
       },
     },
   });
-  if (!card) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!card) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   let body: { rating: 0 | 1 | 2 | 3 };
   try {
     body = await req.json() as { rating: 0 | 1 | 2 | 3 };
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { rating } = body;
   if (![0, 1, 2, 3].includes(rating)) {
-    return NextResponse.json({ error: 'rating must be 0-3' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'rating must be 0-3', 400);
   }
 
   const existing = card.progress[0] ?? null;
@@ -108,6 +108,6 @@ export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
 
     return NextResponse.json({ progress, nextDue: dueAt });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

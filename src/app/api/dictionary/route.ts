@@ -9,6 +9,7 @@ async function lookupMazii(word: string): Promise<{
   meanings?: { pos: string; defs: string[]; tags: string[] }[];
   jlpt?: string[];
   is_common?: boolean;
+  lang?: string;
 }> {
   const res = await fetch('https://mazii.net/api/search', {
     method: 'POST',
@@ -36,7 +37,7 @@ async function lookupMazii(word: string): Promise<{
     jlpt:      [],
     is_common: false,
     lang:      'vi',
-  } as any;
+  };
 }
 
 // ── Jisho Japanese-English lookup ─────────────────────────────────────────────

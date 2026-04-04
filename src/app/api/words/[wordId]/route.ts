@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 interface Ctx { params: Promise<{ wordId: string }> }
 
 // DELETE /api/words/[wordId]
-export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+export async function DELETE(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  try {
+    const word = await prisma.savedWord.findFirst({ where: { id: params.wordId, userId: user.id } });
+    if (!word) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
-  const word = await prisma.savedWord.findFirst({ where: { id: params.wordId, userId: user.id } });
-  if (!word) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  await prisma.savedWord.delete({ where: { id: params.wordId } });
-  return NextResponse.json({ ok: true });
+    await prisma.savedWord.delete({ where: { id: params.wordId } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
+  }
 }

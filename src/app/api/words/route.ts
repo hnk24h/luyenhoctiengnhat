@@ -1,56 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 // GET /api/words — list user's saved words (with linked Content + meanings)
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+// Supports optional pagination: ?page=1&limit=20 (mobile)
+export async function GET(req: NextRequest) {
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
+
+  const { searchParams } = new URL(req.url);
+  const limitParam = searchParams.get('limit');
+  const paginated = limitParam !== null;
+  const limit = Math.min(Math.max(parseInt(limitParam ?? '20', 10) || 20, 1), 100);
+  const page  = Math.max(parseInt(searchParams.get('page') ?? '1', 10) || 1, 1);
 
   try {
-    const words = await prisma.savedWord.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        content: {
-          select: {
-            id: true, term: true, pronunciation: true, language: true,
-            meanings: { select: { language: true, meaning: true } },
-            examples: { select: { exampleText: true, translation: true } },
+    const [words, total] = await Promise.all([
+      prisma.savedWord.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          content: {
+            select: {
+              id: true, term: true, pronunciation: true, language: true,
+              meanings: { select: { language: true, meaning: true } },
+              examples: { select: { exampleText: true, translation: true } },
+            },
+          },
+          collections: {
+            select: { collection: { select: { id: true, name: true, color: true } } },
           },
         },
-        collections: {
-          select: { collection: { select: { id: true, name: true, color: true } } },
-        },
-      },
-    });
+        ...(paginated ? { skip: (page - 1) * limit, take: limit } : {}),
+      }),
+      paginated ? prisma.savedWord.count({ where: { userId } }) : Promise.resolve(0),
+    ]);
 
-    return NextResponse.json(
-      words.map(w => ({
-        ...w,
-        collections: w.collections.map(c => c.collection),
-      }))
-    );
+    const mapped = words.map(w => ({
+      ...w,
+      collections: w.collections.map(c => c.collection),
+    }));
+
+    if (paginated) {
+      return NextResponse.json({ data: mapped, total, page, limit, hasMore: page * limit < total });
+    }
+    return NextResponse.json(mapped);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 // POST /api/words — save a word by contentId
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   let body: { contentId?: string; context?: string; term?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { contentId, context } = body;
@@ -59,9 +73,9 @@ export async function POST(req: NextRequest) {
   let resolvedContentId: string | undefined = contentId;
   if (!resolvedContentId) {
     const { term } = body;
-    if (!term?.trim()) return NextResponse.json({ error: 'contentId hoặc term là bắt buộc' }, { status: 400 });
+    if (!term?.trim()) return apiError(ApiCode.VALIDATION, 'contentId hoặc term là bắt buộc', 400);
     const found = await prisma.content.findFirst({ where: { term: term.trim() } });
-    if (!found) return NextResponse.json({ error: 'Từ này chưa có trong hệ thống học tập' }, { status: 404 });
+    if (!found) return apiError(ApiCode.NOT_FOUND, 'Từ này chưa có trong hệ thống học tập', 404);
     resolvedContentId = found.id;
   }
 
@@ -76,6 +90,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(word, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

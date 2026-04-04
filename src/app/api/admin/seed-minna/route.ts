@@ -1,9 +1,11 @@
 ﻿/**
- * POST /api/admin/seed-minna
- * Seeds Minna no Nihongo N5 (Bài 1~25) and N4 (Bài 26~50) vocab + grammar
- * into LearningCategory (skill='vocab'|'grammar') → LearningLesson → LearningItem.
+ * POST /api/admin/seed-minna  — Admin UI trigger for Minna no Nihongo content.
+ * Requires admin session cookie.
+ *
+ * CLI alternative (no server needed):
+ *   pnpm db:seed-minna
+ *   # or: npx tsx prisma/seed-minna.ts
  */
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

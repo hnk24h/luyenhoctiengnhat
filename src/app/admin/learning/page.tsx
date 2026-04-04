@@ -202,7 +202,7 @@ function AdminLearningPage() {
     });
     const json = await res.json();
     setImporting(false);
-    if (!res.ok) { setImportErr(json.error ?? 'Lỗi import'); return; }
+    if (!res.ok) { setImportErr(json.error?.message ?? 'Lỗi import'); return; }
     setImportResult(json);
     loadItems(activeLesId);
   }

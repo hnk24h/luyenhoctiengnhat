@@ -11,7 +11,7 @@ export async function GET(
 ) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  const userId = (session?.user as any)?.id as string | undefined;
+  const userId = session?.user?.id;
 
   const lesson = await prisma.learningLesson.findUnique({
     where: { id: params.lessonId },

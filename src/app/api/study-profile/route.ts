@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
-async function getCurrentUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return null;
-  return session.user.id;
-}
-
-export async function GET() {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
+  const userId = user.id;
 
   try {
     const profile = await prisma.userStudyProfile.findUnique({
@@ -30,25 +25,27 @@ export async function GET() {
         : null,
     });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
+  const userId = user.id;
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
-  const weeklyGoal = typeof (body as any)?.weeklyGoal === 'number' ? Math.round((body as any).weeklyGoal) : NaN;
+  const bodyData = body as { weeklyGoal?: unknown };
+  const weeklyGoal = typeof bodyData?.weeklyGoal === 'number' ? Math.round(bodyData.weeklyGoal) : NaN;
 
   if (!Number.isFinite(weeklyGoal) || weeklyGoal < 3 || weeklyGoal > 50) {
-    return NextResponse.json({ error: 'Weekly goal must be between 3 and 50' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'Weekly goal must be between 3 and 50', 400);
   }
 
   const existing = await prisma.userStudyProfile.findUnique({
@@ -83,6 +80,6 @@ export async function PATCH(req: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

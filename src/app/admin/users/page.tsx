@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
       body: JSON.stringify({ name: editName, role: editRole }),
     });
     if (!res.ok) {
-      const e = await res.json(); setEditErr(e.error ?? 'Lỗi'); setSaving(false); return;
+      const e = await res.json(); setEditErr(e.error?.message ?? 'Lỗi'); setSaving(false); return;
     }
     setSaving(false); setEditUser(null);
     loadUsers();
@@ -276,7 +276,7 @@ export default function AdminUsersPage() {
       body: JSON.stringify(createForm),
     });
     if (!res.ok) {
-      const e = await res.json(); setCreateErr(e.error ?? 'Lỗi'); setCreating(false); return;
+      const e = await res.json(); setCreateErr(e.error?.message ?? 'Lỗi'); setCreating(false); return;
     }
     setCreating(false); setCreateOpen(false);
     setCreateForm({ name: '', email: '', password: '', role: 'user' });

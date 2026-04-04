@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 interface Ctx { params: Promise<{ deckId: string }> }
 
 // POST /api/flashcards/[deckId]/cards — add a card to a deck
 export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   const deck = await prisma.flashcardDeck.findFirst({ where: { id: params.deckId, userId } });
-  if (!deck) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!deck) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   let body: { front?: string; back?: string; reading?: string; example?: string; imageUrl?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { front, back, reading, example, imageUrl } = body;
   if (!front?.trim() || !back?.trim()) {
-    return NextResponse.json({ error: 'front and back are required' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'front and back are required', 400);
   }
 
   try {
@@ -47,6 +47,6 @@ export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
     const normalized = { ...card, progress: card.progress[0] ?? null };
     return NextResponse.json(normalized, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

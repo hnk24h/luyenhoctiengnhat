@@ -1,46 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 // GET /api/collections — list user's collections with word count
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+// Supports optional pagination: ?page=1&limit=20 (mobile)
+export async function GET(req: NextRequest) {
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
+
+  const { searchParams } = new URL(req.url);
+  const limitParam = searchParams.get('limit');
+  const paginated = limitParam !== null;
+  const limit = Math.min(Math.max(parseInt(limitParam ?? '20', 10) || 20, 1), 100);
+  const page  = Math.max(parseInt(searchParams.get('page') ?? '1', 10) || 1, 1);
 
   try {
-    const collections = await prisma.wordCollection.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'asc' },
-      include: { _count: { select: { words: true } } },
-    });
+    const [collections, total] = await Promise.all([
+      prisma.wordCollection.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+        include: { _count: { select: { words: true } } },
+        ...(paginated ? { skip: (page - 1) * limit, take: limit } : {}),
+      }),
+      paginated ? prisma.wordCollection.count({ where: { userId } }) : Promise.resolve(0),
+    ]);
 
-    return NextResponse.json(
-      collections.map(c => ({ id: c.id, name: c.name, color: c.color, wordCount: c._count.words, createdAt: c.createdAt }))
-    );
+    const mapped = collections.map(c => ({ id: c.id, name: c.name, color: c.color, wordCount: c._count.words, createdAt: c.createdAt }));
+
+    if (paginated) {
+      return NextResponse.json({ data: mapped, total, page, limit, hasMore: page * limit < total });
+    }
+    return NextResponse.json(mapped);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 // POST /api/collections — create new collection
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   let body: { name?: string; color?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { name, color } = body;
-  if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 });
+  if (!name?.trim()) return apiError(ApiCode.VALIDATION, 'Name required', 400);
 
   try {
     const col = await prisma.wordCollection.create({
@@ -48,6 +62,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ...col, wordCount: 0 }, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Collection name already exists' }, { status: 409 });
+    return apiError(ApiCode.CONFLICT, 'Collection name already exists', 409);
   }
 }

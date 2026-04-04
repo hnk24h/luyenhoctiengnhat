@@ -1,3 +1,11 @@
+/**
+ * POST /api/admin/seed-listening  — Admin UI trigger for listening content.
+ * Requires admin session cookie.
+ *
+ * CLI alternative (no server needed — create a prisma/seed-listening.ts if needed):
+ *   Adapt the logic in this file into a standalone tsx script
+ *   following the pattern in scripts/seed/seed-basic.ts.
+ */
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

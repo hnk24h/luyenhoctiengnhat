@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 interface Ctx { params: Promise<{ deckId: string }> }
 
@@ -11,13 +11,13 @@ async function getAuthorizedDeck(deckId: string, userId: string) {
 }
 
 // GET /api/flashcards/[deckId] — deck + all cards with progress
-export async function GET(_: NextRequest, { params: rawParams }: Ctx) {
+export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedDeck(params.deckId, session.user.id);
-  if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const auth = await getAuthorizedDeck(params.deckId, user.id);
+  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   try {
     const deck = await prisma.flashcardDeck.findUnique({
@@ -37,24 +37,24 @@ export async function GET(_: NextRequest, { params: rawParams }: Ctx) {
     };
     return NextResponse.json(normalized);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 // PUT /api/flashcards/[deckId] — update deck meta
 export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedDeck(params.deckId, session.user.id);
-  if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const auth = await getAuthorizedDeck(params.deckId, user.id);
+  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   let body: { title?: string; description?: string; color?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { title, description, color } = body;
@@ -69,23 +69,23 @@ export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
     });
     return NextResponse.json(deck);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 // DELETE /api/flashcards/[deckId]
-export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
+export async function DELETE(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedDeck(params.deckId, session.user.id);
-  if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const auth = await getAuthorizedDeck(params.deckId, user.id);
+  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   try {
     await prisma.flashcardDeck.delete({ where: { id: params.deckId } });
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

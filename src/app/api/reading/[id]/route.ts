@@ -40,33 +40,41 @@ export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
 export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (session?.user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const data = await req.json();
-  const passage = await prisma.readingPassage.update({
-    where: { id: params.id },
-    data: {
-      title:     data.title?.trim(),
-      titleVi:   data.titleVi?.trim() || null,
-      content:   data.content?.trim(),
-      summary:   data.summary?.trim() || null,
-      level:     data.level,
-      type:      data.type,
-      source:    data.source?.trim() || null,
-      sourceUrl: data.sourceUrl?.trim() || null,
-      tags:      data.tags || null,
-      published: data.published ?? true,
-    },
-  });
-  return NextResponse.json(passage);
+  try {
+    const data = await req.json();
+    const passage = await prisma.readingPassage.update({
+      where: { id: params.id },
+      data: {
+        title:     data.title?.trim(),
+        titleVi:   data.titleVi?.trim() || null,
+        content:   data.content?.trim(),
+        summary:   data.summary?.trim() || null,
+        level:     data.level,
+        type:      data.type,
+        source:    data.source?.trim() || null,
+        sourceUrl: data.sourceUrl?.trim() || null,
+        tags:      data.tags || null,
+        published: data.published ?? true,
+      },
+    });
+    return NextResponse.json(passage);
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 // DELETE /api/reading/[id] — admin only
 export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if ((session?.user as any)?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (session?.user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  await prisma.readingPassage.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await prisma.readingPassage.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

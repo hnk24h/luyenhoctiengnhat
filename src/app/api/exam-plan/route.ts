@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 function parseExamDate(value: unknown) {
   if (typeof value !== 'string') return null;
@@ -19,15 +19,10 @@ function parsePositiveInt(value: unknown) {
   return rounded > 0 ? rounded : null;
 }
 
-async function getCurrentUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return null;
-  return session.user.id;
-}
-
-export async function GET() {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function GET(req: NextRequest) {
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
+  const userId = user.id;
 
   try {
     const plan = await prisma.userExamPlan.findUnique({
@@ -51,31 +46,42 @@ export async function GET() {
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getCurrentUserId();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
+  const userId = user.id;
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
-  const targetLevelCode = typeof (body as any)?.targetLevelCode === 'string' ? (body as any).targetLevelCode.trim().toUpperCase() : '';
-  const examDate = parseExamDate((body as any)?.examDate);
-  const daysLeftAtSave = parsePositiveInt((body as any)?.daysLeftAtSave);
-  const weeksLeftAtSave = parsePositiveInt((body as any)?.weeksLeftAtSave);
-  const examsPerWeek = parsePositiveInt((body as any)?.examsPerWeek);
-  const studySessionsPerWeek = parsePositiveInt((body as any)?.studySessionsPerWeek);
-  const reviewDays = parsePositiveInt((body as any)?.reviewDays);
+  const bodyData = body as {
+    targetLevelCode?: unknown;
+    examDate?: unknown;
+    daysLeftAtSave?: unknown;
+    weeksLeftAtSave?: unknown;
+    examsPerWeek?: unknown;
+    studySessionsPerWeek?: unknown;
+    reviewDays?: unknown;
+  };
+
+  const targetLevelCode = typeof bodyData?.targetLevelCode === 'string' ? bodyData.targetLevelCode.trim().toUpperCase() : '';
+  const examDate = parseExamDate(bodyData?.examDate);
+  const daysLeftAtSave = parsePositiveInt(bodyData?.daysLeftAtSave);
+  const weeksLeftAtSave = parsePositiveInt(bodyData?.weeksLeftAtSave);
+  const examsPerWeek = parsePositiveInt(bodyData?.examsPerWeek);
+  const studySessionsPerWeek = parsePositiveInt(bodyData?.studySessionsPerWeek);
+  const reviewDays = parsePositiveInt(bodyData?.reviewDays);
 
   if (!targetLevelCode || !examDate || !daysLeftAtSave || !weeksLeftAtSave || !examsPerWeek || !studySessionsPerWeek || !reviewDays) {
-    return NextResponse.json({ error: 'Invalid plan payload' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'Invalid plan payload', 400);
   }
 
   const level = await prisma.level.findUnique({
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!level) {
-    return NextResponse.json({ error: 'Level not found' }, { status: 404 });
+    return apiError(ApiCode.NOT_FOUND, 'Level not found', 404);
   }
 
   try {
@@ -124,6 +130,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }

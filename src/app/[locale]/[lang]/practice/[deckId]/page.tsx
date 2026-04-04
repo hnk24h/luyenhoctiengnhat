@@ -316,7 +316,7 @@ export default function DeckPage() {
       await loadDeck();
     } else {
       const err = await res.json();
-      setImportError(err.error || 'Import thất bại');
+      setImportError(err.error?.message || 'Import thất bại');
     }
     setImporting(false);
   }

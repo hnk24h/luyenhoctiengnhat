@@ -1,9 +1,11 @@
 ﻿/**
- * POST /api/admin/seed-mimikara
- * Seeds Mimikara Oboeru vocab (N3/N2/N1) + Shin Kanzen Master grammar (N3/N2/N1)
- * into LearningCategory (skill='vocab'|'grammar') → LearningLesson → LearningItem.
+ * POST /api/admin/seed-mimikara  — Admin UI trigger for Mimikara content.
+ * Requires admin session cookie.
+ *
+ * CLI alternative (no server needed — create a prisma/seed-mimikara.ts if needed):
+ *   Adapt the logic in this file into a standalone tsx script
+ *   following the pattern in scripts/seed/seed-basic.ts.
  */
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

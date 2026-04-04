@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, extname } from 'path';
 import { randomUUID } from 'crypto';
+import { apiError, ApiCode } from '@/lib/api-response';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -11,20 +12,20 @@ const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
   }
 
   const formData = await req.formData();
   const file = formData.get('image') as File | null;
 
   if (!file) {
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'No file provided', 400);
   }
   if (!ALLOWED.includes(file.type)) {
-    return NextResponse.json({ error: 'Only JPEG, PNG, GIF, WEBP allowed' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'Only JPEG, PNG, GIF, WEBP allowed', 400);
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'File too large (max 5 MB)' }, { status: 400 });
+    return apiError(ApiCode.VALIDATION, 'File too large (max 5 MB)', 400);
   }
 
   const ext = extname(file.name) || `.${file.type.split('/')[1]}`;

@@ -1,23 +1,23 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getApiUser } from '@/lib/api-auth';
 import { prisma } from '@/lib/db';
+import { apiError, ApiCode } from '@/lib/api-response';
 
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized', message: 'Chưa đăng nhập.' }, { status: 401 });
+export async function POST(req: NextRequest) {
+  const user = await getApiUser(req);
+  if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Chưa đăng nhập.', 401);
 
-  const userId = session.user.id;
+  const userId = user.id;
 
   let body: { lessonId?: string; completed?: boolean };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(ApiCode.INVALID_JSON, 'Invalid JSON body', 400);
   }
 
   const { lessonId, completed } = body;
-  if (!lessonId) return NextResponse.json({ error: 'Missing lessonId', message: 'Thiếu lessonId.' }, { status: 400 });
+  if (!lessonId) return apiError(ApiCode.VALIDATION, 'Thiếu lessonId.', 400);
 
   try {
     const prog = await prisma.lessonProgress.upsert({
@@ -27,6 +27,6 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(prog);
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(ApiCode.INTERNAL, 'Internal server error', 500);
   }
 }
