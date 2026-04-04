@@ -9,6 +9,11 @@
      160px skyscraper fits at 1440px+; 300px display fits at 1700px+. */
   --page-max-w: 1440px;
 
+  /* ── Content shell (shared across all page types) ── */
+  --content-max-w: 1152px;           /* = Tailwind max-w-6xl              */
+  --page-px: clamp(16px, 3vw, 24px); /* responsive horizontal page padding */
+  --page-py: 32px;                   /* standard vertical page padding     */
+
   --bg-base:    #F7F6F2;
   --bg-surface: #FFFFFF;
   --bg-muted:   #EFEDE7;
@@ -856,3 +861,332 @@ html[data-appearance="dark"] .lp-testimonial-text     { color: #D1D5DB; }
 html[data-appearance="dark"] .lp-testimonial-name     { color: #F9FAFB; }
 html[data-appearance="dark"] .lp-float-label { color: #F3F4F6; }
 html[data-appearance="dark"] .lp-float-sub   { color: #9CA3AF; }
+
+/* ─────────────────────────────────────────────────────────────────
+   STANDARD PAGE SHELL
+   Use on the root <div> of any standard content page inside [locale]
+   that does not have its own full-bleed sections.
+───────────────────────────────────────────────────────────────── */
+.page-std {
+  max-width: var(--content-max-w);
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: var(--page-py);
+  padding-bottom: 56px;
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD  (db-*)
+═══════════════════════════════════════════════════════════════════ */
+.db-root {
+  max-width: var(--content-max-w);
+  margin: 0 auto;
+  padding: var(--page-py) var(--page-px) 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Hero ── */
+.db-hero {
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--bg-surface), var(--bg-base));
+  padding: 28px;
+  overflow: hidden;
+  position: relative;
+}
+.db-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% -10%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 60%);
+  pointer-events: none;
+}
+.db-hero-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  position: relative;
+}
+@media (max-width: 640px) {
+  .db-hero-inner { grid-template-columns: 1fr; }
+}
+.db-hero-left { display: flex; flex-direction: column; gap: 8px; }
+.db-greeting-badge { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.db-streak-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 99px;
+  background: #FFF7ED; color: #EA580C;
+  border: 1px solid #FED7AA;
+}
+.db-hero-title { font-size: clamp(22px, 4vw, 32px); font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.db-hero-name { color: var(--primary); }
+.db-hero-sub { font-size: 14px; color: var(--text-secondary); max-width: 480px; }
+.db-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+/* ── Weekly ring card ── */
+.db-weekly-card {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px;
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.db-weekly-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--primary); }
+.db-weekly-ring-wrap { position: relative; width: 100px; height: 100px; }
+.db-ring { width: 100%; height: 100%; }
+.db-ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.db-ring-pct { font-size: 18px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.db-ring-sub  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.db-weekly-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; text-align: center; }
+.db-weekly-item { display: flex; flex-direction: column; gap: 2px; }
+.db-weekly-val { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.db-weekly-key { font-size: 10px; color: var(--text-muted); }
+
+/* ── Stats row ── */
+.db-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 768px) { .db-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .db-stats { grid-template-columns: 1fr; } }
+
+.db-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: border-color .15s;
+}
+.db-stat-card:hover { border-color: var(--sc-color); }
+.db-stat-icon-wrap {
+  width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sc-bg); color: var(--sc-color);
+}
+.db-stat-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.db-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); }
+.db-stat-value { font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.db-stat-detail { font-size: 11px; color: var(--text-secondary); }
+
+/* ── Main grid ── */
+.db-main-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) { .db-main-grid { grid-template-columns: 1fr; } }
+.db-col-left  { display: flex; flex-direction: column; gap: 16px; }
+.db-col-right { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Shared card base ── */
+.db-continue-card, .db-actions-card, .db-examplan-card,
+.db-progress-card, .db-alerts-card, .db-skill-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px;
+}
+
+/* ── Card header ── */
+.db-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+}
+.db-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+/* ── Continue card ── */
+.db-continue-card {
+  background: linear-gradient(135deg, var(--primary-light), var(--bg-surface));
+  display: flex; flex-direction: column; gap: 6px;
+}
+.db-continue-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em;
+  color: var(--primary); margin-bottom: 4px;
+}
+.db-continue-level { font-size: 11px; font-weight: 600; color: var(--primary); letter-spacing: .08em; text-transform: uppercase; }
+.db-continue-title { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.db-continue-cat   { font-size: 13px; color: var(--text-secondary); }
+
+/* ── Action list ── */
+.db-action-list { display: flex; flex-direction: column; gap: 10px; }
+.db-action-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: 18px;
+  background: var(--bg-base); border: 1px solid var(--border);
+  transition: border-color .15s;
+}
+.db-action-item:hover { border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+.db-action-icon {
+  width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.db-action-body { flex: 1; min-width: 0; }
+.db-action-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.db-action-sub   { font-size: 11px; color: var(--text-secondary); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-action-cta   { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+
+/* ── Exam plan ── */
+.db-examplan-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 520px) { .db-examplan-grid { grid-template-columns: repeat(2, 1fr); } }
+.db-examplan-item { background: var(--bg-base); border-radius: 14px; padding: 10px; }
+.db-examplan-val  { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.db-examplan-key  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Level bars ── */
+.db-current-level {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  background: var(--primary-light); border-radius: 18px; padding: 14px 16px; margin-bottom: 14px;
+}
+.db-cur-level-code { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.db-cur-level-sub  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.db-cur-level-pct  { font-size: 22px; font-weight: 800; color: var(--primary); }
+.db-level-bars { display: flex; flex-direction: column; gap: 10px; }
+.db-level-bar-row  { display: flex; align-items: center; gap: 10px; }
+.db-level-bar-code { font-size: 12px; font-weight: 600; color: var(--text-secondary); width: 40px; flex-shrink: 0; }
+.db-level-bar-track { flex: 1; height: 7px; border-radius: 99px; background: var(--bg-muted); overflow: hidden; }
+.db-level-bar-fill  { height: 100%; border-radius: 99px; background: var(--primary); transition: width .4s ease; }
+.db-level-bar-pct   { font-size: 11px; color: var(--text-muted); width: 32px; text-align: right; flex-shrink: 0; }
+
+/* ── Alerts ── */
+.db-alert-list { display: flex; flex-direction: column; gap: 8px; }
+.db-alert-item { display: flex; gap: 8px; font-size: 13px; color: var(--text-secondary); padding: 10px 12px; background: var(--bg-base); border-radius: 14px; }
+
+/* ── Skill grid ── */
+.db-skill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.db-skill-item  {
+  background: var(--bg-base); border-radius: 16px; padding: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+}
+.db-skill-icon  { width: 34px; height: 34px; border-radius: 11px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; }
+.db-skill-name  { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.db-skill-count { font-size: 10px; color: var(--text-muted); }
+.db-skill-score { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-top: 2px; }
+
+/* ── Recommendations ── */
+.db-rec-section {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 24px; padding: 20px;
+}
+.db-rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.db-rec-card {
+  display: block; background: var(--bg-base); border: 1px solid var(--border);
+  border-radius: 18px; padding: 14px;
+  transition: border-color .15s, box-shadow .15s;
+  text-decoration: none;
+}
+.db-rec-card:hover { border-color: var(--primary); box-shadow: 0 2px 12px rgba(61,58,140,.1); }
+.db-rec-meta  { font-size: 11px; font-weight: 700; color: var(--primary); letter-spacing: .06em; margin-bottom: 6px; }
+.db-rec-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.db-rec-sub   { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.db-rec-focus { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+/* ── History ── */
+.db-history-section {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 24px; padding: 20px;
+}
+.db-empty {
+  background: var(--bg-base); border: 1px solid var(--border);
+  border-radius: 18px; padding: 32px; text-align: center;
+  font-size: 14px; color: var(--text-muted);
+}
+.db-session-list { display: flex; flex-direction: column; gap: 8px; }
+.db-session-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 18px;
+  padding: 10px 14px;
+  transition: border-color .15s;
+}
+.db-session-row:hover { border-color: color-mix(in srgb, var(--primary) 30%, transparent); }
+.db-session-icon {
+  width: 38px; height: 38px; border-radius: 13px; flex-shrink: 0;
+  background: var(--primary-light); display: flex; align-items: center; justify-content: center;
+}
+.db-session-info { flex: 1; min-width: 0; }
+.db-session-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-session-meta  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.db-session-score { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.db-session-qq    { font-size: 10px; color: var(--text-muted); }
+
+/* ── Buttons ── */
+.db-btn-primary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 14px; font-size: 13px; font-weight: 700;
+  background: var(--primary); color: #fff;
+  transition: background .15s, box-shadow .15s;
+  text-decoration: none;
+}
+.db-btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 12px rgba(61,58,140,.25); }
+.db-btn-secondary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 18px; border-radius: 14px; font-size: 13px; font-weight: 600;
+  background: var(--bg-muted); color: var(--text-primary); border: 1px solid var(--border);
+  transition: border-color .15s;
+  text-decoration: none;
+}
+.db-btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.db-btn-xs {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  background: var(--bg-muted); color: var(--text-secondary); border: 1px solid var(--border);
+  transition: border-color .15s;
+  text-decoration: none; white-space: nowrap; flex-shrink: 0;
+}
+.db-btn-xs:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── Dark mode ── */
+html[data-appearance="dark"] .db-hero {
+  background: linear-gradient(135deg, #1A1D2E, #111318);
+  border-color: rgba(255,255,255,.07);
+}
+html[data-appearance="dark"] .db-weekly-card      { background: #111318; border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-stat-card        { background: #161B26; border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-continue-card    { background: linear-gradient(135deg, rgba(61,58,140,.15), #161B26); border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-actions-card,
+html[data-appearance="dark"] .db-examplan-card,
+html[data-appearance="dark"] .db-progress-card,
+html[data-appearance="dark"] .db-alerts-card,
+html[data-appearance="dark"] .db-skill-card,
+html[data-appearance="dark"] .db-rec-section,
+html[data-appearance="dark"] .db-history-section  { background: #161B26; border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-action-item      { background: #1A1D2E; border-color: rgba(255,255,255,.06); }
+html[data-appearance="dark"] .db-alert-item,
+html[data-appearance="dark"] .db-examplan-item,
+html[data-appearance="dark"] .db-skill-item,
+html[data-appearance="dark"] .db-level-bars .db-level-bar-track { background: rgba(255,255,255,.04); }
+html[data-appearance="dark"] .db-current-level    { background: rgba(61,58,140,.18); }
+html[data-appearance="dark"] .db-rec-card         { background: #1A1D2E; border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-session-row      { background: #1A1D2E; border-color: rgba(255,255,255,.06); }
+html[data-appearance="dark"] .db-empty            { background: #1A1D2E; border-color: rgba(255,255,255,.07); }
+html[data-appearance="dark"] .db-streak-badge     { background: rgba(234,88,12,.15); border-color: rgba(234,88,12,.3); }
+html[data-appearance="dark"] .db-btn-secondary    { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: #E5E7EB; }
+html[data-appearance="dark"] .db-btn-xs           { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: #9CA3AF; }
+html[data-appearance="dark"] .db-hero-title       { color: #F9FAFB; }
+html[data-appearance="dark"] .db-continue-title   { color: #F9FAFB; }
+html[data-appearance="dark"] .db-card-title       { color: #F9FAFB; }
+html[data-appearance="dark"] .db-session-title    { color: #F9FAFB; }
+html[data-appearance="dark"] .db-skill-name       { color: #F9FAFB; }
+html[data-appearance="dark"] .db-stat-value       { color: #F9FAFB; }
+html[data-appearance="dark"] .db-action-label     { color: #F9FAFB; }
+html[data-appearance="dark"] .db-examplan-val     { color: #F9FAFB; }
+html[data-appearance="dark"] .db-cur-level-code   { color: #F9FAFB; }
+html[data-appearance="dark"] .db-rec-title        { color: #F9FAFB; }
+html[data-appearance="dark"] .db-weekly-val       { color: #F9FAFB; }
+html[data-appearance="dark"] .db-ring-pct         { color: #F9FAFB; }

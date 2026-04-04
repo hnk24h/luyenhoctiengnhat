@@ -6,12 +6,19 @@ import { prisma } from '@/lib/db';
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ message: 'Vui lòng đăng nhập để nộp bài.' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized', message: 'Vui lòng đăng nhập để nộp bài.' }, { status: 401 });
   }
 
-  const { examSetId, answers } = await req.json();
+  let body: { examSetId?: string; answers?: Record<string, string> };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { examSetId, answers } = body;
   if (!examSetId || !answers) {
-    return NextResponse.json({ message: 'Thiếu dữ liệu bài thi.' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required fields', message: 'Thiếu dữ liệu bài thi.' }, { status: 400 });
   }
 
   const examSet = await prisma.examSet.findUnique({
@@ -19,7 +26,7 @@ export async function POST(req: Request) {
     include: { questions: true },
   });
   if (!examSet) {
-    return NextResponse.json({ message: 'Bộ đề không tồn tại.' }, { status: 404 });
+    return NextResponse.json({ error: 'Not found', message: 'Bộ đề không tồn tại.' }, { status: 404 });
   }
 
   // Chấm điểm
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
 
   const totalQ = examSet.questions.length;
   const score = totalQ > 0 ? parseFloat(((correctQ / totalQ) * 100).toFixed(1)) : 0;
-  const userId = (session.user as any).id;
+  const userId = session.user.id;
 
   const examSession = await prisma.examSession.create({
     data: {
@@ -85,7 +92,11 @@ export async function POST(req: Request) {
     });
   }
 
-  // Remove the manual scoring loop since it's now inline in ExamAnswer create
+// Remove the manual scoring loop since it's now inline in ExamAnswer create
   // Keep scoring variables from the loop above
-  return NextResponse.json({ sessionId: examSession.id, score, correctQ, totalQ });
+  try {
+    return NextResponse.json({ sessionId: examSession.id, score, correctQ, totalQ });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

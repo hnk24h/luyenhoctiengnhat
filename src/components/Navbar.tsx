@@ -162,7 +162,7 @@ export function Navbar() {
 
   const visibleLinks = activeNavLinks.filter(l => !l.authRequired || session);
   const profileLinks: { href: string; label: string; icon: IconType }[] = [
-    ...(isAdmin ? [{ href: '/admin', label: t('profile'), icon: FaGear }] : []),
+    ...(isAdmin ? [{ href: '/admin', label: 'profile', icon: FaGear }] : []),
   ];
   const primaryLinks = useMemo(() => {
     if (currentLang === 'en') return visibleLinks;
@@ -182,9 +182,9 @@ export function Navbar() {
     [primaryLinks, visibleLinks]
   );
   const appearanceOptions: { id: AppearanceMode; label: string; icon: IconType }[] = [
-    { id: 'light', label: t('appearance_light'), icon: FaSun },
-    { id: 'dark', label: t('appearance_dark'), icon: FaMoon },
-    { id: 'system', label: t('appearance_system'), icon: FaDesktop },
+    { id: 'light', label: 'appearance_light', icon: FaSun },
+    { id: 'dark', label: 'appearance_dark', icon: FaMoon },
+    { id: 'system', label: 'appearance_system', icon: FaDesktop },
   ];
   const currentAppearanceIcon = appearance === 'system'
     ? FaDesktop

@@ -69,7 +69,7 @@ export default function KnowledgeAreaDetailPage() {
     if (!code) return;
     setLoading(true);
     fetch(`/api/pmp/knowledge-areas/${code}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.resolve(null))
       .then(d => setKa(d))
       .catch(() => setKa(null))
       .finally(() => setLoading(false));

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Không có câu trả lời.' }, { status: 400 });
   }
 
-  const userId = (session.user as any).id as string;
+  const userId = session.user.id;
   const totalQ = answers.length;
   const correctQ = answers.filter(a => a.correct).length;
   const score = parseFloat(((correctQ / totalQ) * 100).toFixed(1));

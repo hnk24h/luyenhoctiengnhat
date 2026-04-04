@@ -3,50 +3,56 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-async function getCurrentUser() {
+async function getCurrentUserId(): Promise<string | null> {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return null;
-
-  return prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  });
+  if (!session?.user?.id) return null;
+  return session.user.id;
 }
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const profile = await prisma.userStudyProfile.findUnique({
-    where: { userId: user.id },
-  });
+  try {
+    const profile = await prisma.userStudyProfile.findUnique({
+      where: { userId },
+    });
 
-  return NextResponse.json({
-    profile: profile
-      ? {
-          weeklyGoal: profile.weeklyGoal,
-          currentStreak: profile.currentStreak,
-          longestStreak: profile.longestStreak,
-          lastActivityDate: profile.lastActivityDate?.toISOString().slice(0, 10) ?? null,
-          updatedAt: profile.updatedAt.toISOString(),
-        }
-      : null,
-  });
+    return NextResponse.json({
+      profile: profile
+        ? {
+            weeklyGoal: profile.weeklyGoal,
+            currentStreak: profile.currentStreak,
+            longestStreak: profile.longestStreak,
+            lastActivityDate: profile.lastActivityDate?.toISOString().slice(0, 10) ?? null,
+            updatedAt: profile.updatedAt.toISOString(),
+          }
+        : null,
+    });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json();
-  const weeklyGoal = typeof body?.weeklyGoal === 'number' ? Math.round(body.weeklyGoal) : NaN;
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const weeklyGoal = typeof (body as any)?.weeklyGoal === 'number' ? Math.round((body as any).weeklyGoal) : NaN;
 
   if (!Number.isFinite(weeklyGoal) || weeklyGoal < 3 || weeklyGoal > 50) {
     return NextResponse.json({ error: 'Weekly goal must be between 3 and 50' }, { status: 400 });
   }
 
   const existing = await prisma.userStudyProfile.findUnique({
-    where: { userId: user.id },
+    where: { userId },
     select: {
       currentStreak: true,
       longestStreak: true,
@@ -54,25 +60,29 @@ export async function PATCH(req: NextRequest) {
     },
   });
 
-  const profile = await prisma.userStudyProfile.upsert({
-    where: { userId: user.id },
-    update: { weeklyGoal },
-    create: {
-      userId: user.id,
-      weeklyGoal,
-      currentStreak: existing?.currentStreak ?? 0,
-      longestStreak: existing?.longestStreak ?? 0,
-      lastActivityDate: existing?.lastActivityDate ?? null,
-    },
-  });
+  try {
+    const profile = await prisma.userStudyProfile.upsert({
+      where: { userId },
+      update: { weeklyGoal },
+      create: {
+        userId,
+        weeklyGoal,
+        currentStreak: existing?.currentStreak ?? 0,
+        longestStreak: existing?.longestStreak ?? 0,
+        lastActivityDate: existing?.lastActivityDate ?? null,
+      },
+    });
 
-  return NextResponse.json({
-    profile: {
-      weeklyGoal: profile.weeklyGoal,
-      currentStreak: profile.currentStreak,
-      longestStreak: profile.longestStreak,
-      lastActivityDate: profile.lastActivityDate?.toISOString().slice(0, 10) ?? null,
-      updatedAt: profile.updatedAt.toISOString(),
-    },
-  });
+    return NextResponse.json({
+      profile: {
+        weeklyGoal: profile.weeklyGoal,
+        currentStreak: profile.currentStreak,
+        longestStreak: profile.longestStreak,
+        lastActivityDate: profile.lastActivityDate?.toISOString().slice(0, 10) ?? null,
+        updatedAt: profile.updatedAt.toISOString(),
+      },
+    });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

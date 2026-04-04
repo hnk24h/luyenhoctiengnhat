@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 export async function PUT(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') {
+  if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
   }
   const { type, content, options, answer, explain, audioUrl, imageUrl, order } = await req.json();
@@ -23,7 +23,7 @@ export async function PUT(req: Request, { params: rawParams }: { params: Promise
 export async function DELETE(_req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') {
+  if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
   }
   await prisma.question.delete({ where: { id: params.id } });

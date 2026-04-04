@@ -6,36 +6,45 @@ import { prisma } from '@/lib/db';
 // GET /api/collections — list user's collections with word count
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const userId = session.user.id;
 
-  const collections = await prisma.wordCollection.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'asc' },
-    include: { _count: { select: { words: true } } },
-  });
+  try {
+    const collections = await prisma.wordCollection.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      include: { _count: { select: { words: true } } },
+    });
 
-  return NextResponse.json(
-    collections.map(c => ({ id: c.id, name: c.name, color: c.color, wordCount: c._count.words, createdAt: c.createdAt }))
-  );
+    return NextResponse.json(
+      collections.map(c => ({ id: c.id, name: c.name, color: c.color, wordCount: c._count.words, createdAt: c.createdAt }))
+    );
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 // POST /api/collections — create new collection
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const userId = session.user.id;
 
-  const { name, color } = await req.json();
+  let body: { name?: string; color?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { name, color } = body;
   if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 });
 
   try {
     const col = await prisma.wordCollection.create({
-      data: { userId: user.id, name: name.trim(), color: color ?? '#4F46E5' },
+      data: { userId, name: name.trim(), color: color ?? '#4F46E5' },
     });
     return NextResponse.json({ ...col, wordCount: 0 }, { status: 201 });
   } catch {

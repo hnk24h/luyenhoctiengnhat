@@ -5,49 +5,63 @@ import { prisma } from '@/lib/db';
 
 interface Ctx { params: Promise<{ cardId: string }> }
 
-async function getAuthorizedCard(cardId: string, userEmail: string) {
-  const user = await prisma.user.findUnique({ where: { email: userEmail } });
-  if (!user) return null;
+async function getAuthorizedCard(cardId: string, userId: string) {
   const card = await prisma.flashcard.findFirst({
-    where: { id: cardId, deck: { userId: user.id } },
+    where: { id: cardId, deck: { userId } },
   });
-  return card ? { card, user } : null;
+  return card ? { card, userId } : null;
 }
 
 // PUT /api/flashcards/cards/[cardId]
 export async function PUT(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const auth = await getAuthorizedCard(params.cardId, session.user.email);
+  const auth = await getAuthorizedCard(params.cardId, session.user.id);
   if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { front, back, reading, example, imageUrl } = await req.json();
-  const card = await prisma.flashcard.update({
-    where: { id: params.cardId },
-    data: {
-      front:    front?.trim()    || auth.card.front,
-      back:     back?.trim()     || auth.card.back,
-      reading:  reading?.trim()  ?? auth.card.reading,
-      example:  example?.trim()  ?? auth.card.example,
-      imageUrl: imageUrl !== undefined ? (imageUrl?.trim() || null) : auth.card.imageUrl,
-    },
-    include: { progress: { where: { userId: auth.user.id } } },
-  });
-  const normalized = { ...card, progress: card.progress[0] ?? null };
-  return NextResponse.json(normalized);
+  let body: { front?: string; back?: string; reading?: string; example?: string; imageUrl?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { front, back, reading, example, imageUrl } = body;
+
+  try {
+    const card = await prisma.flashcard.update({
+      where: { id: params.cardId },
+      data: {
+        front:    front?.trim()    || auth.card.front,
+        back:     back?.trim()     || auth.card.back,
+        reading:  reading?.trim()  ?? auth.card.reading,
+        example:  example?.trim()  ?? auth.card.example,
+        imageUrl: imageUrl !== undefined ? (imageUrl?.trim() || null) : auth.card.imageUrl,
+      },
+      include: { progress: { where: { userId: auth.userId } } },
+    });
+    const normalized = { ...card, progress: card.progress[0] ?? null };
+    return NextResponse.json(normalized);
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 // DELETE /api/flashcards/cards/[cardId]
 export async function DELETE(_: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const auth = await getAuthorizedCard(params.cardId, session.user.email);
+  const auth = await getAuthorizedCard(params.cardId, session.user.id);
   if (!auth) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  await prisma.flashcard.delete({ where: { id: params.cardId } });
-  return NextResponse.json({ ok: true });
+  try {
+    await prisma.flashcard.delete({ where: { id: params.cardId } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

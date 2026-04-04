@@ -5,33 +5,37 @@ import { prisma } from '@/lib/db';
 
 type Ctx = { params: Promise<{ id: string }> };
 
-async function getUser(email: string) {
-  return prisma.user.findUnique({ where: { email } });
-}
-
 // POST /api/collections/[id]/words — add word(s) to collection
 // Body: { wordId } or { wordIds: string[] }
 export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await getUser(session.user.email);
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = session.user.id;
 
   const col = await prisma.wordCollection.findUnique({ where: { id: params.id } });
-  if (!col || col.userId !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!col || col.userId !== userId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const body = await req.json();
+  let body: { wordIds?: string[]; wordId?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
   const ids: string[] = body.wordIds ?? (body.wordId ? [body.wordId] : []);
   if (!ids.length) return NextResponse.json({ error: 'wordId required' }, { status: 400 });
 
-  // skipDuplicates — ignore if already linked
-  await prisma.savedWordsOnCollections.createMany({
-    data: ids.map(wordId => ({ wordId, collectionId: params.id })),
-    skipDuplicates: true,
-  });
-
-  return NextResponse.json({ ok: true, added: ids.length });
+  try {
+    // skipDuplicates — ignore if already linked
+    await prisma.savedWordsOnCollections.createMany({
+      data: ids.map(wordId => ({ wordId, collectionId: params.id })),
+      skipDuplicates: true,
+    });
+    return NextResponse.json({ ok: true, added: ids.length });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 // DELETE /api/collections/[id]/words — remove word from collection
@@ -39,19 +43,28 @@ export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
 export async function DELETE(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await getUser(session.user.email);
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = session.user.id;
 
   const col = await prisma.wordCollection.findUnique({ where: { id: params.id } });
-  if (!col || col.userId !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!col || col.userId !== userId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { wordId } = await req.json();
+  let body: { wordId?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { wordId } = body;
   if (!wordId) return NextResponse.json({ error: 'wordId required' }, { status: 400 });
 
-  await prisma.savedWordsOnCollections.delete({
-    where: { wordId_collectionId: { wordId, collectionId: params.id } },
-  });
-
-  return NextResponse.json({ ok: true });
+  try {
+    await prisma.savedWordsOnCollections.delete({
+      where: { wordId_collectionId: { wordId, collectionId: params.id } },
+    });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

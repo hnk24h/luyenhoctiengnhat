@@ -37,10 +37,7 @@ export async function GET(req: NextRequest) {
 
   // Admins can see all passages including unpublished
   const session = (admin || doExport) ? await getServerSession(authOptions) : null;
-  const isAdmin = (admin || doExport) && (
-    (session?.user as any)?.role === 'ADMIN' ||
-    (session?.user as any)?.role === 'admin'
-  );
+  const isAdmin = (admin || doExport) && session?.user?.role === 'admin';
 
   if (doExport && !isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -104,8 +101,7 @@ export async function GET(req: NextRequest) {
 // POST /api/reading — admin only
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  const role = (session?.user as any)?.role;
-  if (role !== 'admin' && role !== 'ADMIN') {
+  if (session?.user?.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

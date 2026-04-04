@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') {
+  if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
   }
   const { examSetId, type, content, options, answer, explain, audioUrl, imageUrl, order } = await req.json();

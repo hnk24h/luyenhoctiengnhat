@@ -10,7 +10,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   return (
     <LocaleProvider params={{ locale }}>
       <Navbar />
-      <div className="mx-auto w-full pt-5" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
+      <div className="mx-auto w-full px-4 sm:px-6 pt-4" style={{ maxWidth: 'var(--page-max-w)', background: 'var(--bg-base)' }}>
         {children}
       </div>
     </LocaleProvider>

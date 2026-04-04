@@ -476,7 +476,7 @@ export default async function LearnPage({ params: rawParams }: { params: Promise
 
   return (
     <div>
-      <section className="py-12 px-4" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+      <section className="py-12" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--primary)' }}>
             NỘI DUNG HỌC
@@ -591,7 +591,7 @@ export default async function LearnPage({ params: rawParams }: { params: Promise
         </div>
       </section>
 
-      <section className="py-10 px-4" style={{ background: 'var(--bg-base)' }}>
+      <section className="py-10" style={{ background: 'var(--bg-base)' }}>
         <div className="max-w-6xl mx-auto">
           {typedLevels.length === 0 ? (
             <div className="card text-center py-16" style={{ color: 'var(--text-muted)' }}>
@@ -728,7 +728,7 @@ export default async function LearnPage({ params: rawParams }: { params: Promise
         </div>
       </section>
 
-      <section className="py-10 px-4" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
+      <section className="py-10" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="flex items-start justify-between gap-4 flex-wrap mb-5">
             <div>

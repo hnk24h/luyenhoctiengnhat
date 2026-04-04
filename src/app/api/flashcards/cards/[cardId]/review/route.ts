@@ -49,22 +49,28 @@ function computeNextSRS(
 export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  const userId = session.user.id;
 
   const card = await prisma.flashcard.findFirst({
-    where: { id: params.cardId, deck: { userId: user.id } },
+    where: { id: params.cardId, deck: { userId } },
     include: {
       progress: {
-        where: { userId: user.id }, // FIXED: filter by userId after composite unique fix
+        where: { userId }, // FIXED: filter by userId after composite unique fix
       },
     },
   });
   if (!card) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { rating } = await req.json() as { rating: 0 | 1 | 2 | 3 };
+  let body: { rating: 0 | 1 | 2 | 3 };
+  try {
+    body = await req.json() as { rating: 0 | 1 | 2 | 3 };
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { rating } = body;
   if (![0, 1, 2, 3].includes(rating)) {
     return NextResponse.json({ error: 'rating must be 0-3' }, { status: 400 });
   }
@@ -77,27 +83,31 @@ export async function POST(req: NextRequest, { params: rawParams }: Ctx) {
     existing?.easeFactor  ?? 2.5,
   );
 
-  const progress = await prisma.flashcardProgress.upsert({
-    where: { userId_cardId: { userId: user.id, cardId: params.cardId } },
-    update: {
-      repetitions,
-      interval,
-      easeFactor,
-      dueAt,
-      lastReview: new Date(),
-      totalReviews: { increment: 1 },
-    },
-    create: {
-      cardId: params.cardId,
-      userId: user.id,
-      repetitions,
-      interval,
-      easeFactor,
-      dueAt,
-      lastReview: new Date(),
-      totalReviews: 1,
-    },
-  });
+  try {
+    const progress = await prisma.flashcardProgress.upsert({
+      where: { userId_cardId: { userId, cardId: params.cardId } },
+      update: {
+        repetitions,
+        interval,
+        easeFactor,
+        dueAt,
+        lastReview: new Date(),
+        totalReviews: { increment: 1 },
+      },
+      create: {
+        cardId: params.cardId,
+        userId,
+        repetitions,
+        interval,
+        easeFactor,
+        dueAt,
+        lastReview: new Date(),
+        totalReviews: 1,
+      },
+    });
 
-  return NextResponse.json({ progress, nextDue: dueAt });
+    return NextResponse.json({ progress, nextDue: dueAt });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

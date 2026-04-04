@@ -42,7 +42,7 @@ export default async function LearnCategoryPage({ params: rawParams }: Props) {
     : 0;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10">
+    <div className="page-std">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm mb-5 flex-wrap" style={{ color: 'var(--text-muted)' }}>
         <Link href={`/${params.locale}/${params.lang}/learn`} className="hover:underline" style={{ color: 'var(--text-secondary)' }}>Học</Link>

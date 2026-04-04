@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== 'admin') {
+  if (!session || session.user?.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
   }
   const { levelId, skill, title, description, timeLimit } = await req.json();

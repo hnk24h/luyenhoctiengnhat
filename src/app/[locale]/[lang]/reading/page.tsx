@@ -478,7 +478,7 @@ function ReadingPageContent() {
   const accentColor = isChinese ? '#DC2626' : '#3D3A8C';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-row">
+    <div className="min-h-screen flex flex-row" style={{ background: 'var(--bg-base)' }}>
       {/* Sidebar trái giống grammar/vocab */}
       <div className="hidden md:block pl-6 pr-2">
         <LearnSidebar
@@ -496,7 +496,7 @@ function ReadingPageContent() {
       {/* Main content */}
       <div ref={detailRef} className="flex-1 overflow-y-auto flex justify-center items-start py-8 px-2 sm:px-6">
         <div
-          className="w-full max-w-[900px] bg-white rounded-2xl border border-gray-200 shadow-lg px-4 sm:px-8 py-8 min-h-[60vh]"
+          className="w-full max-w-[900px] rounded-2xl px-4 sm:px-8 py-8 min-h-[60vh]"
           style={{
             background: 'var(--bg-surface)',
             borderRadius: 20,

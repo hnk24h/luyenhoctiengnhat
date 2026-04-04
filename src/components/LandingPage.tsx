@@ -257,7 +257,13 @@ function getConfig(lang: string): LangConfig {
 }
 
 /* ── Component ──────────────────────────────────────────────────────── */
-export function LandingPage({ lang }: { lang: string }) {
+/** Prefix a path with /{locale} only for language-specific routes */
+function lp(locale: string, path: string): string {
+  if (/^\/(?:ja|zh|ko|vi|en)\//.test(path)) return `/${locale}${path}`;
+  return path;
+}
+
+export function LandingPage({ lang, locale = 'vi' }: { lang: string; locale?: string }) {
   const cfg = getConfig(lang);
   const tripled = [...cfg.marquee, ...cfg.marquee, ...cfg.marquee];
 
@@ -298,10 +304,10 @@ export function LandingPage({ lang }: { lang: string }) {
               <p className="lp-subhead">{cfg.subhead}</p>
 
               <div className="lp-hero-ctas">
-                <Link href={cfg.cta_learn_href} className="lp-btn-primary">
+                <Link href={lp(locale, cfg.cta_learn_href)} className="lp-btn-primary">
                   {cfg.cta_learn_text} <FaArrowRight size={14}/>
                 </Link>
-                <Link href={cfg.cta_exam_href} className="lp-btn-outline">
+                <Link href={lp(locale, cfg.cta_exam_href)} className="lp-btn-outline">
                   <FaPlay size={13}/> {cfg.cta_exam_text}
                 </Link>
               </div>
@@ -401,7 +407,7 @@ export function LandingPage({ lang }: { lang: string }) {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {cfg.skills.map(s => (
-              <Link key={s.label} href={s.href} className="lp-skill-card"
+              <Link key={s.label} href={lp(locale, s.href)} className="lp-skill-card"
                 style={{ '--sk-bg-from': s.from, '--sk-bg-to': s.to, '--sk-color': s.key_color } as React.CSSProperties}>
                 <div className="lp-skill-icon-box" style={{ background: s.icon_bg, color: '#fff' }}>{s.icon}</div>
                 <div className="lp-skill-name">{s.label}</div>
@@ -424,7 +430,7 @@ export function LandingPage({ lang }: { lang: string }) {
 
           <div className={cfg.levels_grid}>
             {cfg.levels.map((l) => (
-              <Link key={l.code} href={`/${lang}/learn/${l.code}`} className="lp-level-card"
+              <Link key={l.code} href={`/${locale}/${lang}/learn/${l.code}`} className="lp-level-card"
                 style={{ '--lc-rgb': l.rgb, '--lc-from': l.from, '--lc-to': l.to } as React.CSSProperties}>
                 <div className="lp-level-head" style={{ background: `linear-gradient(135deg, ${l.from}, ${l.to})` }}>
                   <div className="lp-level-kanji">{l.kanji}</div>
@@ -495,7 +501,7 @@ export function LandingPage({ lang }: { lang: string }) {
             <Link href={cfg.register_href} className="lp-cta-btn-reg">
               Đăng ký miễn phí <FaArrowRight size={13}/>
             </Link>
-            <Link href={cfg.try_href} className="lp-cta-btn-try">
+            <Link href={lp(locale, cfg.try_href)} className="lp-cta-btn-try">
               <FaPlay size={12}/> Học thử ngay
             </Link>
           </div>

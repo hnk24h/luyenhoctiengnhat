@@ -32,6 +32,11 @@ async function ensureListeningCategory(levelCode: string) {
 }
 
 export async function POST() {
+  // Seed endpoints are disabled in production to prevent accidental data operations
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
+  }
+
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'admin') {
     return NextResponse.json({ message: 'Không có quyền.' }, { status: 403 });
