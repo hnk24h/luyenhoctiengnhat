@@ -1,9 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaTriangleExclamation } from 'react-icons/fa6';
+import { FaTriangleExclamation, FaGoogle } from 'react-icons/fa6';
+import { FaFacebook } from 'react-icons/fa';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated') router.replace('/');
@@ -32,6 +34,13 @@ export default function RegisterPage() {
     setLoading(false);
   }
 
+  async function handleSSORegister(provider: 'google' | 'facebook') {
+    setSsoLoading(provider);
+    setError('');
+    // SSO register = same as SSO login (auto-creates user if not exists)
+    await signIn(provider, { callbackUrl: '/' });
+  }
+
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -43,6 +52,41 @@ export default function RegisterPage() {
         </div>
 
         <div className="card">
+          {/* SSO Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={() => handleSSORegister('google')}
+              disabled={!!ssoLoading}
+              className="w-full flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <FaGoogle className="text-red-500" size={18} />
+              {ssoLoading === 'google' ? 'Đang chuyển hướng...' : 'Đăng ký với Google'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSSORegister('facebook')}
+              disabled={!!ssoLoading}
+              className="w-full flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <FaFacebook className="text-blue-600" size={18} />
+              {ssoLoading === 'facebook' ? 'Đang chuyển hướng...' : 'Đăng ký với Facebook'}
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--border)' }} />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="px-2" style={{ background: 'var(--bg-card, #fff)', color: 'var(--text-muted)' }}>hoặc</span>
+            </div>
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Họ tên</label>

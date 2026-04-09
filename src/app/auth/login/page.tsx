@@ -1,21 +1,33 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FaTriangleExclamation } from 'react-icons/fa6';
+import { FaTriangleExclamation, FaGoogle } from 'react-icons/fa6';
+import { FaFacebook } from 'react-icons/fa';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated') router.replace('/');
   }, [status, router]);
+
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err === 'OAuthAccountNotLinked') {
+      setError('Email này đã được đăng ký bằng phương thức khác. Vui lòng đăng nhập bằng email/mật khẩu.');
+    } else if (err === 'OAuthCallbackError') {
+      setError('Đăng nhập thất bại. Vui lòng thử lại.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,6 +36,12 @@ export default function LoginPage() {
     if (res?.ok) { router.push('/'); router.refresh(); }
     else { setError('Email hoặc mật khẩu không đúng.'); }
     setLoading(false);
+  }
+
+  async function handleSSOLogin(provider: 'google' | 'facebook') {
+    setSsoLoading(provider);
+    setError('');
+    await signIn(provider, { callbackUrl: '/' });
   }
 
   return (
@@ -38,6 +56,41 @@ export default function LoginPage() {
         </div>
 
         <div className="card">
+          {/* SSO Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={() => handleSSOLogin('google')}
+              disabled={!!ssoLoading}
+              className="w-full flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <FaGoogle className="text-red-500" size={18} />
+              {ssoLoading === 'google' ? 'Đang chuyển hướng...' : 'Đăng nhập với Google'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSSOLogin('facebook')}
+              disabled={!!ssoLoading}
+              className="w-full flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <FaFacebook className="text-blue-600" size={18} />
+              {ssoLoading === 'facebook' ? 'Đang chuyển hướng...' : 'Đăng nhập với Facebook'}
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--border)' }} />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="px-2" style={{ background: 'var(--bg-card, #fff)', color: 'var(--text-muted)' }}>hoặc</span>
+            </div>
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Email</label>
