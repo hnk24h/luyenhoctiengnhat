@@ -421,3 +421,7 @@ export async function seeder09() {
     console.log(`     ${c.level}  ${c.type.padEnd(6)}  ${c._count} bài`);
   }
 }
+
+seeder09()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
