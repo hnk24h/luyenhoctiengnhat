@@ -25,6 +25,7 @@ export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
       source: null,
       sourceUrl: null,
       tags: passage.topic ? JSON.stringify([passage.topic]) : null,
+      charCount: passage.content.length,
       createdAt: passage.createdAt.toISOString(),
       pinyin: passage.pinyin ?? null,
       translation: passage.translation ?? null,
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
 
   const passage = await prisma.readingPassage.findUnique({ where: { id: params.id } });
   if (!passage || !passage.published) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(passage);
+  return NextResponse.json({ ...passage, charCount: passage.content.length });
 }
 
 // PUT /api/reading/[id] — admin only

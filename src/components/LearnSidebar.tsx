@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FaLayerGroup, FaBookOpen, FaHeadphones, FaPenNib, FaBook, FaRetweet } from 'react-icons/fa6';
+import { FaLayerGroup, FaBookOpen, FaHeadphones, FaPenNib, FaBook, FaRetweet, FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
+import { UserProgressCard } from './learn/UserProgressCard';
 
 
 export interface SidebarLevel {
@@ -31,6 +32,8 @@ interface LearnSidebarProps {
   skills: SidebarSkill[];
   title?: string;
   showLevelProgress?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 
@@ -38,12 +41,13 @@ interface LearnSidebarProps {
 
 export const LearnSidebar: React.FC<LearnSidebarProps> = ({
   selectedLevel, setSelectedLevel, selectedSkill, setSelectedSkill, levels, skills, title,
+  collapsed = false, onToggleCollapse,
 }) => {
   return (
     <aside
-      className="w-64 max-w-full rounded-2xl flex flex-col transition-all duration-300 sticky top-[72px] self-start overflow-hidden"
+      className={`${collapsed ? 'w-14' : 'w-64'} max-w-full rounded-2xl flex flex-col transition-all duration-300 ease-in-out sticky top-[72px] self-start overflow-hidden`}
       style={{
-        minWidth: 200,
+        minWidth: collapsed ? 56 : 200,
         zIndex: 20,
         boxShadow: '0 4px 24px rgba(0,0,0,0.09)',
         border: '1px solid var(--border)',
@@ -54,7 +58,7 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2.5 px-4 py-3.5 shrink-0"
+        className={`flex items-center ${collapsed ? 'justify-center px-2' : 'gap-2.5 px-4'} py-3.5 shrink-0 transition-all duration-300`}
         style={{
           borderBottom: '1px solid var(--border)',
           background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 72%, #000) 100%)',
@@ -64,18 +68,27 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
           style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(4px)' }}>
           <FaLayerGroup size={15} className="text-white" />
         </div>
-        <span className="font-bold text-[14px] text-white tracking-wide select-none">
+        <span className={`font-bold text-[14px] text-white tracking-wide select-none transition-all duration-300 ${
+          collapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'
+        }`}>
           {title || 'Học'}
         </span>
       </div>
 
+      {/* User progress card */}
+      <div style={{ borderBottom: '1px solid var(--border)' }}>
+        <UserProgressCard collapsed={collapsed} />
+      </div>
+
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
+      <div className={`flex-1 overflow-y-auto ${collapsed ? 'p-1.5' : 'p-3'} flex flex-col gap-4 transition-all duration-300`}>
 
         {/* Level selection */}
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] px-1 mb-2"
-            style={{ color: 'var(--text-muted)' }}>Cấp độ</div>
+          {!collapsed && (
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] px-1 mb-2"
+              style={{ color: 'var(--text-muted)' }}>Cấp độ</div>
+          )}
           <ul className="flex flex-col gap-1">
             {levels.map(lv => {
               const active = selectedLevel === lv.code;
@@ -83,8 +96,8 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                 <li key={lv.code}>
                   <button
                     onClick={() => setSelectedLevel(lv.code)}
-                    title={lv.tooltip || lv.desc}
-                    className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all focus:outline-none focus-visible:ring-2"
+                    title={collapsed ? `${lv.label}${lv.desc ? ' — ' + lv.desc : ''}` : (lv.tooltip || lv.desc)}
+                    className={`w-full text-left ${collapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2.5'} rounded-xl flex items-center gap-3 transition-all focus:outline-none focus-visible:ring-2`}
                     style={active
                       ? {
                           background: 'color-mix(in srgb, var(--primary) 12%, transparent)',
@@ -97,7 +110,7 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                   >
                     {/* Level badge */}
                     <span
-                      className="inline-flex items-center justify-center w-9 h-6 rounded-lg text-[11px] font-bold shrink-0"
+                      className={`inline-flex items-center justify-center ${collapsed ? 'w-full' : 'w-9'} h-6 rounded-lg text-[11px] font-bold shrink-0`}
                       style={active
                         ? { background: 'var(--primary)', color: '#fff' }
                         : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }
@@ -106,18 +119,20 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                       {lv.label}
                     </span>
 
-                    {/* Desc */}
-                    <span className="flex-1 flex flex-col min-w-0">
-                      {lv.desc && (
-                        <span className="text-[11px] font-normal leading-tight truncate"
-                          style={{ color: active ? 'var(--primary)' : 'var(--text-muted)' }}>
-                          {lv.desc}
-                        </span>
-                      )}
-                    </span>
+                    {/* Desc - hidden when collapsed */}
+                    {!collapsed && (
+                      <span className="flex-1 flex flex-col min-w-0">
+                        {lv.desc && (
+                          <span className="text-[11px] font-normal leading-tight truncate"
+                            style={{ color: active ? 'var(--primary)' : 'var(--text-muted)' }}>
+                            {lv.desc}
+                          </span>
+                        )}
+                      </span>
+                    )}
 
-                    {/* Mini progress */}
-                    {lv.percent !== undefined && (
+                    {/* Mini progress - hidden when collapsed */}
+                    {!collapsed && lv.percent !== undefined && (
                       <span className="flex flex-col items-end gap-0.5 shrink-0">
                         <span className="w-10 h-1.5 rounded-full overflow-hidden"
                           style={{ background: 'var(--bg-muted)' }}>
@@ -143,8 +158,10 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
         {/* Skill selection */}
         {selectedLevel && skills.length > 0 && (
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] px-1 mb-2"
-              style={{ color: 'var(--text-muted)' }}>Kỹ năng</div>
+            {!collapsed && (
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] px-1 mb-2"
+                style={{ color: 'var(--text-muted)' }}>Kỹ năng</div>
+            )}
             <ul className="flex flex-col gap-1">
               {skills.map(skill => {
                 const active = selectedSkill === skill.key;
@@ -152,7 +169,8 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                   <li key={skill.key}>
                     <button
                       onClick={() => setSelectedSkill(skill.key)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all focus:outline-none focus-visible:ring-2"
+                      title={collapsed ? skill.label : undefined}
+                      className={`w-full text-left ${collapsed ? 'px-0 justify-center' : 'px-3'} py-2.5 rounded-xl flex items-center gap-3 transition-all focus:outline-none focus-visible:ring-2`}
                       style={active
                         ? {
                             background: 'color-mix(in srgb, var(--accent, #7C3AED) 12%, transparent)',
@@ -172,7 +190,9 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
                       >
                         {skill.icon}
                       </span>
-                      <span className="flex-1 text-[13px] font-semibold">{skill.label}</span>
+                      <span className={`flex-1 text-[13px] font-semibold transition-all duration-300 ${
+                        collapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'
+                      }`}>{skill.label}</span>
                     </button>
                   </li>
                 );
@@ -181,6 +201,26 @@ export const LearnSidebar: React.FC<LearnSidebarProps> = ({
           </div>
         )}
       </div>
+
+      {/* Collapse/Expand toggle */}
+      {onToggleCollapse && (
+        <div className="shrink-0 p-1.5" style={{ borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+            className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-2 px-3'} py-2 rounded-xl text-[12px] font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
+            style={{ color: 'var(--text-muted)', background: 'var(--bg-muted)' }}
+          >
+            {collapsed
+              ? <FaChevronRight size={12} className="transition-transform duration-300" />
+              : <FaChevronLeft size={12} className="transition-transform duration-300" />
+            }
+            <span className={`transition-all duration-300 ${
+              collapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'
+            }`}>Thu gọn</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 };
