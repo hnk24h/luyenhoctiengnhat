@@ -1,855 +1,476 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import AdminPageHeader from '../_components/AdminPageHeader';
 import {
-  FaUsers, FaArrowLeft, FaMagnifyingGlass, FaTrash, FaPencil,
-  FaCheck, FaXmark, FaChevronLeft, FaChevronRight, FaShield,
-  FaUser, FaEye, FaCircleExclamation, FaArrowsRotate, FaUserPlus, FaLock,
+  FaCheck, FaShield, FaUser, FaStar, FaGem, FaFacebook,
+  FaGoogle, FaGithub, FaApple, FaCrown, FaCircleCheck,
+  FaHouse, FaChevronRight, FaUserPlus,
 } from 'react-icons/fa6';
+import { useUsers } from '@/hooks/admin/useUsers';
+import type { UserRow } from '@/types/admin/user';
+import {
+  AdminTable, AdminToolbar, ConfirmDialog,
+  type ColumnDef,
+} from '@/components/admin/ui';
+import { UserDetailDrawer }  from './_components/UserDetailDrawer';
+import UserCreateModal        from './_components/UserCreateModal';
+import UserEditModal          from './_components/UserEditModal';
+import UserAccessModal        from './_components/UserAccessModal';
+import { deleteUser as apiDeleteUser } from '@/services/admin/userService';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Small cell helpers ────────────────────────────────────────────────────────
 
-interface UserRow {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
-  _count: { sessions: number; progress: number; savedWords: number; flashcardDecks: number };
+function UserAvatar({ user }: { user: UserRow }) {
+  if (user.image) {
+    return (
+      <img
+        src={user.image}
+        alt=""
+        className="w-7 h-7 rounded-full object-cover flex-shrink-0 ring-1 ring-[var(--border)]"
+      />
+    );
+  }
+  const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+  return (
+    <span className="w-7 h-7 rounded-full bg-[var(--primary-light)] text-[var(--primary)] flex items-center justify-center text-[10px] font-bold flex-shrink-0 select-none ring-1 ring-[var(--border)]">
+      {initials}
+    </span>
+  );
 }
 
-interface UserDetail extends UserRow {
-  _count: { sessions: number; progress: number; savedWords: number; flashcardDecks: number; lessonProgress: number };
-  sessions: {
-    id: string; score: number | null; totalQ: number; correctQ: number;
-    startedAt: string; finishedAt: string | null;
-    examSet: { title: string; skill: string; level: { code: string } };
-  }[];
+function TierBadge({ tier }: { tier: string }) {
+  const map: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
+    free:    { label: 'Miễn phí', icon: <FaUser    size={9} />, cls: 'bg-gray-100 text-gray-600' },
+    basic:   { label: 'Cơ bản',   icon: <FaStar    size={9} />, cls: 'bg-blue-100 text-blue-700' },
+    premium: { label: 'Premium',  icon: <FaCrown   size={9} />, cls: 'bg-amber-100 text-amber-700' },
+  };
+  const { label, icon, cls } = map[tier] ?? { label: tier, icon: null, cls: 'bg-gray-100 text-gray-600' };
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${cls}`}>
+      {icon}{label}
+    </span>
+  );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function SSOPills({ accounts }: { accounts: { id: string; provider: string }[] }) {
+  if (!accounts.length) {
+    return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>;
+  }
+
+  const PROVIDER_ICON: Record<string, React.ReactNode> = {
+    google:   <FaGoogle   size={10} />,
+    github:   <FaGithub  size={10} />,
+    facebook: <FaFacebook size={10} />,
+    apple:    <FaApple   size={10} />,
+  };
+  const PROVIDER_STYLE: Record<string, { bg: string; color: string }> = {
+    google:   { bg: '#FEE2E2', color: '#DC2626' },
+    github:   { bg: '#1F2937', color: '#FFFFFF' },
+    facebook: { bg: '#1D4ED8', color: '#FFFFFF' },
+    apple:    { bg: '#111827', color: '#FFFFFF' },
+  };
+
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {accounts.map(a => {
+        const style = PROVIDER_STYLE[a.provider] ?? { bg: '#E5E7EB', color: '#374151' };
+        return (
+          <span
+            key={a.id}
+            title={a.provider}
+            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[9px] font-bold"
+            style={{ background: style.bg, color: style.color }}
+          >
+            {PROVIDER_ICON[a.provider] ?? a.provider.slice(0, 2).toUpperCase()}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 function RoleBadge({ role }: { role: string }) {
-  const isAdmin = role === 'admin' || role === 'ADMIN';
+  const isAdmin = role === 'admin';
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={isAdmin
-        ? { background: 'rgba(29,78,216,0.12)', color: '#1d4ed8' }
-        : { background: 'var(--primary-light)', color: 'var(--primary)' }}>
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+      style={{
+        background: isAdmin ? 'var(--primary-light)' : 'var(--bg-muted)',
+        color:      isAdmin ? 'var(--primary)' : 'var(--text-muted)',
+        border:     `1px solid ${isAdmin ? 'color-mix(in srgb, var(--primary) 25%, transparent)' : 'var(--border)'}`,
+      }}
+    >
       {isAdmin ? <FaShield size={9} /> : <FaUser size={9} />}
       {isAdmin ? 'Admin' : 'User'}
     </span>
   );
 }
 
-function fmt(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
-function fmtDatetime(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+// ─── Row action links (shown in UserCell on hover via CSS group) ──────────────
+
+function RowActions({
+  user, isSelf, onEdit, onDelete, onAccess,
+}: {
+  user: UserRow; isSelf: boolean;
+  onEdit: () => void; onDelete: () => void; onAccess: () => void;
+}) {
+  return (
+    <div className="hidden group-hover:flex items-center gap-1 mt-0.5 text-[11px]">
+      <button onClick={e => { e.stopPropagation(); onEdit(); }} className="hover:underline" style={{ color: 'var(--primary)' }}>
+        Sửa
+      </button>
+      <span style={{ color: 'var(--text-muted)' }}>·</span>
+      <button
+        onClick={e => { e.stopPropagation(); onDelete(); }}
+        disabled={isSelf}
+        className="hover:underline text-red-600 disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        Xóa
+      </button>
+      <span style={{ color: 'var(--text-muted)' }}>·</span>
+      <button onClick={e => { e.stopPropagation(); onAccess(); }} className="hover:underline" style={{ color: 'var(--text-muted)' }}>
+        Truy cập
+      </button>
+    </div>
+  );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Filter tabs ──────────────────────────────────────────────────────────────
 
-export default function AdminUsersPage() {
-      const [lessonSearch, setLessonSearch] = useState('');
-    // State cho popup cấp quyền bài học
-    interface LessonRow {
-      id: string;
-      title: string;
-      description?: string;
-      type?: string;
-      selected?: boolean;
-      selectedTier?: string;
-      granting?: boolean;
-    }
-    const [accessUser, setAccessUser] = useState<UserRow | null>(null);
-    const [levelList, setLevelList] = useState([]);
-    const [accessLevel, setAccessLevel] = useState('');
-    const [accessSkill, setAccessSkill] = useState('');
-    const [lessonList, setLessonList] = useState<LessonRow[]>([]);
-    // Khi chọn skill, lấy danh sách bài học theo cấp độ và skill
-    const handleSkillChange = async (skill: string) => {
-      setAccessSkill(skill);
-      setAccessLesson('');
-      setAccessLoading(true);
-      if (!accessLevel) { setLessonList([]); setAccessLoading(false); return; }
-      // Lấy danh sách category theo cấp độ và skill
-      const catRes = await fetch(`/api/learning/categories?levelId=${accessLevel}&skill=${skill}`);
-      const categories = catRes.ok ? await catRes.json() : [];
-      let allLessons: any[] = [];
-      for (const cat of categories) {
-        const lesRes = await fetch(`/api/learning/lessons?categoryId=${cat.id}`);
-        const lessons = lesRes.ok ? await lesRes.json() : [];
-        allLessons = allLessons.concat(lessons);
-      }
-      setLessonList(allLessons.map((l: any) => ({
-        ...l,
-        selected: false,
-        selectedTier: l.requiredTier || 'free',
-        granting: false,
-      })));
-      setAccessLoading(false);
-    };
-    const [accessLesson, setAccessLesson] = useState('');
-    const [accessNote, setAccessNote] = useState('');
-    const [accessTier, setAccessTier] = useState('');
-    const [accessList, setAccessList] = useState([]);
-    const [accessLoading, setAccessLoading] = useState(false);
+type Summary = { byRole: Record<string, number>; byTier: Record<string, number>; total: number };
 
-    // Mở popup cấp quyền
-    const openAccessPopup = async (user: UserRow) => {
-      setAccessUser(user);
-      setAccessLevel('');
-      setAccessLesson('');
-      setAccessNote('');
-      setAccessLoading(true);
-      // Lấy danh sách cấp độ
-      const res = await fetch('/api/admin/levels');
-      const levels = res.ok ? await res.json() : [];
-      setLevelList(levels);
-      setLessonList([]);
-      // Lấy danh sách quyền đã cấp
-      const res2 = await fetch(`/api/learning/user-access?userId=${user.id}`);
-      const accesses = res2.ok ? await res2.json() : [];
-      setAccessList(accesses);
-      setAccessLoading(false);
-    };
+interface FilterTabsProps {
+  summary: Summary;
+  roleFilter: string;
+  tierFilter: string;
+  onRole: (r: string) => void;
+  onTier: (t: string) => void;
+}
 
-    // Khi chọn cấp độ, lấy danh sách bài học theo cấp độ và skill
-    const handleLevelChange = async (levelId: string) => {
-      setAccessLevel(levelId);
-      setAccessLesson('');
-      setAccessLoading(true);
-      // Lấy danh sách category theo cấp độ và skill
-      const catRes = await fetch(`/api/learning/categories?levelId=${levelId}${accessSkill ? `&skill=${accessSkill}` : ''}`);
-      const categories = catRes.ok ? await catRes.json() : [];
-      let allLessons: any[] = [];
-      for (const cat of categories) {
-        const lesRes = await fetch(`/api/learning/lessons?categoryId=${cat.id}`);
-        const lessons = lesRes.ok ? await lesRes.json() : [];
-        allLessons = allLessons.concat(lessons);
-      }
-      setLessonList(allLessons.map((l: any) => ({
-        ...l,
-        selected: false,
-        selectedTier: l.requiredTier || 'free',
-        granting: false,
-      })));
-      setAccessLoading(false);
-    };
-
-    // Cấp quyền
-    const grantAccess = async () => {
-      if (!accessUser || !accessLesson) return alert('Chọn bài học');
-      if (!accessTier) return alert('Chọn gói quyền');
-      setAccessLoading(true);
-      await fetch('/api/learning/user-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: accessUser.id, lessonId: accessLesson, note: accessNote, tier: accessTier }),
-      });
-      setAccessLesson(''); setAccessNote(''); setAccessTier('');
-      // Refresh danh sách quyền
-      const res2 = await fetch(`/api/learning/user-access?userId=${accessUser.id}`);
-      const accesses = res2.ok ? await res2.json() : [];
-      setAccessList(accesses);
-      setAccessLoading(false);
-    };
-
-    // Thu hồi quyền
-    const revokeAccess = async (lessonId: string) => {
-      if (!accessUser) return;
-      setAccessLoading(true);
-      await fetch(`/api/learning/user-access?userId=${accessUser.id}&lessonId=${lessonId}`, { method: 'DELETE' });
-      const res2 = await fetch(`/api/learning/user-access?userId=${accessUser.id}`);
-      const accesses = res2.ok ? await res2.json() : [];
-      setAccessList(accesses);
-      setAccessLoading(false);
-    };
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  // ── List state ──
-  const [users, setUsers]         = useState<UserRow[]>([]);
-  const [total, setTotal]         = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage]           = useState(1);
-  const [loading, setLoading]     = useState(false);
-  const [search, setSearch]       = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
-
-  // ── Detail drawer ──
-  const [detail, setDetail]       = useState<UserDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-
-  // ── Edit modal ──
-  const [editUser, setEditUser]   = useState<UserRow | null>(null);
-  const [editName, setEditName]   = useState('');
-  const [editRole, setEditRole]   = useState('');
-  const [saving, setSaving]       = useState(false);
-  const [editErr, setEditErr]     = useState('');
-
-  // ── Create modal ──
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'user' });
-  const [createErr, setCreateErr]   = useState('');
-  const [creating, setCreating]     = useState(false);
-
-  // ── Delete confirm ──
-  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
-  const [deleting, setDeleting]   = useState(false);
-
-  // ── Auth guard ──
-  useEffect(() => {
-    if (status === 'unauthenticated') router.push('/auth/login');
-    if (status === 'authenticated') {
-      const role = session?.user?.role;
-      if (role !== 'admin' && role !== 'ADMIN') router.push('/');
-    }
-  }, [status, session, router]);
-
-  // ── Load users ──
-  const loadUsers = useCallback(async (p = page) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(p), limit: '20' });
-      if (search) params.set('search', search);
-      if (roleFilter) params.set('role', roleFilter);
-      const res = await fetch(`/api/admin/users?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
-      }
-    } finally { setLoading(false); }
-  }, [page, search, roleFilter]);
-
-  useEffect(() => { loadUsers(); }, [loadUsers]);
-
-  // ── Search debounce ──
-  const handleSearch = (v: string) => {
-    setSearch(v); setPage(1);
-    clearTimeout(searchTimer.current);
-  };
-
-  // ── Load detail ──
-  const openDetail = async (user: UserRow) => {
-    setDetail(null); setDetailLoading(true);
-    const res = await fetch(`/api/admin/users/${user.id}`);
-    if (res.ok) setDetail(await res.json());
-    setDetailLoading(false);
-  };
-
-  // ── Save edit ──
-  const saveEdit = async () => {
-    if (!editUser) return;
-    setSaving(true); setEditErr('');
-    const res = await fetch(`/api/admin/users/${editUser.id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editName, role: editRole }),
-    });
-    if (!res.ok) {
-      const e = await res.json(); setEditErr(e.error?.message ?? 'Lỗi'); setSaving(false); return;
-    }
-    setSaving(false); setEditUser(null);
-    loadUsers();
-  };
-
-  // ── Create ──
-  const saveCreate = async () => {
-    if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password.trim()) {
-      setCreateErr('Vui lòng điền đầy đủ thông tin'); return;
-    }
-    setCreating(true); setCreateErr('');
-    const res = await fetch('/api/admin/users', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(createForm),
-    });
-    if (!res.ok) {
-      const e = await res.json(); setCreateErr(e.error?.message ?? 'Lỗi'); setCreating(false); return;
-    }
-    setCreating(false); setCreateOpen(false);
-    setCreateForm({ name: '', email: '', password: '', role: 'user' });
-    setPage(1); loadUsers(1);
-  };
-
-  // ── Delete ──
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: 'DELETE' });
-    setDeleting(false); setDeleteTarget(null);
-    if (res.ok) {
-      if (detail?.id === deleteTarget.id) setDetail(null);
-      loadUsers();
-    }
-  };
-
-  const selfId = session?.user?.id;
-
-  // ─────────────────────────────────────────────────────────────────────────────
+function FilterTabs({ summary, roleFilter, tierFilter, onRole, onTier }: FilterTabsProps) {
+  const tabs: { label: string; count: number; active: boolean; onClick: () => void }[] = [
+    { label: 'Tất cả',    count: summary.total,                   active: !roleFilter && !tierFilter, onClick: () => { onRole(''); onTier(''); } },
+    { label: 'Admin',     count: summary.byRole['admin'] ?? 0,    active: roleFilter === 'admin',     onClick: () => onRole('admin') },
+    { label: 'Người dùng',count: summary.byRole['user']  ?? 0,    active: roleFilter === 'user',      onClick: () => onRole('user') },
+    { label: 'Miễn phí',  count: summary.byTier['free']    ?? 0,  active: tierFilter === 'free',      onClick: () => onTier('free') },
+    { label: 'Cơ bản',    count: summary.byTier['basic']   ?? 0,  active: tierFilter === 'basic',     onClick: () => onTier('basic') },
+    { label: 'Premium',   count: summary.byTier['premium'] ?? 0,  active: tierFilter === 'premium',   onClick: () => onTier('premium') },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <AdminPageHeader
-        icon={<FaUsers size={18} />}
-        title="Người dùng"
-        breadcrumb="Quản lý người dùng"
-        badge={`${total} tài khoản`}
-        actions={
-          <button onClick={() => { setCreateOpen(true); setCreateErr(''); setCreateForm({ name: '', email: '', password: '', role: 'user' }); }}
-            className="btn-primary flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-semibold">
-            <FaUserPlus size={13} /> Thêm người dùng
+    <div className="flex items-center gap-0.5 flex-wrap text-sm overflow-x-auto">
+      {tabs.map((t, i) => (
+        <React.Fragment key={t.label}>
+          {i === 3 && (
+            <span className="mx-1.5 h-4 w-px bg-[var(--border)] inline-block self-center" aria-hidden />
+          )}
+          <button
+            onClick={t.onClick}
+            className={[
+              'px-2.5 py-1.5 rounded transition-colors whitespace-nowrap',
+              t.active
+                ? 'font-semibold bg-[var(--primary-light)] text-[var(--primary)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)]',
+            ].join(' ')}
+          >
+            {t.label}
+            {' '}
+            <span className={`text-[11px] font-mono ${t.active ? 'opacity-80' : 'opacity-60'}`}>({t.count})</span>
           </button>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
+
+export default function AdminUsersPage() {
+  const { data: session } = useSession();
+  const hook = useUsers();
+
+  /* Bulk selection */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction]   = useState('');
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkConfirm, setBulkConfirm]   = useState(false);
+
+  const handleBulkApply = () => {
+    if (bulkAction === 'delete' && selectedIds.size > 0) setBulkConfirm(true);
+  };
+
+  const handleBulkDelete = useCallback(async () => {
+    setBulkDeleting(true);
+    setBulkConfirm(false);
+    try {
+      await Promise.all([...selectedIds].map(id => apiDeleteUser(id)));
+      setSelectedIds(new Set());
+      await hook.loadUsers();
+    } finally {
+      setBulkDeleting(false);
+    }
+  }, [selectedIds, hook]);
+
+  /* Column definitions — memoized to avoid re-creating on every render */
+  const columns = useMemo<ColumnDef<UserRow>[]>(() => [
+    {
+      key: 'user',
+      header: 'Người dùng',
+      render: (user) => (
+        <div className="flex items-center gap-2 min-w-0">
+          <UserAvatar user={user} />
+          <div className="min-w-0">
+            <button
+              onClick={e => { e.stopPropagation(); hook.openDetail(user); }}
+              className="font-medium text-sm leading-tight hover:text-[var(--primary)] truncate max-w-[200px] block text-left"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {user.name}
+              {session?.user?.email === user.email && (
+                <span className="ml-1 font-normal text-[10px]" style={{ color: 'var(--text-muted)' }}>— Bạn</span>
+              )}
+            </button>
+            <div className="text-[11px] truncate max-w-[200px]" style={{ color: 'var(--text-muted)' }}>
+              {user.email}
+            </div>
+            <RowActions
+              user={user}
+              isSelf={session?.user?.email === user.email}
+              onEdit={() => hook.openEdit(user)}
+              onDelete={() => hook.setDeleteTarget(user)}
+              onAccess={() => hook.setAccessUser(user)}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      header: 'Quyền',
+      width: '90px',
+      render: (user) => <RoleBadge role={user.role} />,
+    },
+    {
+      key: 'tier',
+      header: 'Gói',
+      width: '100px',
+      render: (user) => <TierBadge tier={user.subscriptionTier} />,
+    },
+    {
+      key: 'sso',
+      header: 'SSO',
+      width: '80px',
+      render: (user) => <SSOPills accounts={user.accounts} />,
+    },
+    {
+      key: 'sessions',
+      header: 'Thi',
+      width: '52px',
+      align: 'center',
+      render: (user) => (
+        <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
+          {user._count?.sessions ?? 0}
+        </span>
+      ),
+    },
+    {
+      key: 'joined',
+      header: 'Tham gia',
+      width: '84px',
+      render: (user) => (
+        <span className="text-xs whitespace-nowrap tabular-nums" style={{ color: 'var(--text-muted)' }}>
+          {formatDate(user.createdAt)}
+        </span>
+      ),
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [session?.user?.email]);
+
+  return (
+    <div className="flex flex-col gap-2" style={{ background: 'var(--bg-muted)', minHeight: '100%' }}>
+
+      {/* ── Breadcrumb ──────────────────────────────────────────────── */}
+      <nav className="flex items-center gap-1.5 text-xs px-1" style={{ color: 'var(--text-muted)' }} aria-label="Breadcrumb">
+        <FaHouse size={10} />
+        <FaChevronRight size={8} />
+        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Người dùng</span>
+      </nav>
+
+      {/* ── Filters + toolbar card ──────────────────────────────────── */}
+      <div className="admin-card p-0 overflow-hidden">
+
+        {/* Filter tabs + Add button */}
+        <div className="px-4 py-2.5 flex items-center justify-between gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+          <FilterTabs
+            summary={hook.summary}
+            roleFilter={hook.roleFilter}
+            tierFilter={hook.tierFilter}
+            onRole={hook.handleRoleFilter}
+            onTier={hook.handleTierFilter}
+          />
+          <button
+            onClick={hook.openCreate}
+            className="admin-btn admin-btn--primary text-xs px-3 py-1.5 gap-1.5 whitespace-nowrap shrink-0"
+          >
+            <FaUserPlus size={11} />
+            Thêm người dùng
+          </button>
+        </div>
+
+        {/* Toolbar: bulk actions + error + search */}
+        <div className="px-4 py-2 flex items-center gap-3 flex-wrap">
+          {/* Bulk actions */}
+          <div className="flex items-center gap-1.5">
+            <select
+              value={bulkAction}
+              onChange={e => setBulkAction(e.target.value)}
+              disabled={selectedIds.size === 0}
+              className="input text-xs disabled:opacity-40"
+              style={{ minWidth: 170, paddingTop: '0.3rem', paddingBottom: '0.3rem' }}
+            >
+              <option value="">Hành động hàng loạt</option>
+              <option value="delete">Xóa</option>
+            </select>
+            <button
+              onClick={handleBulkApply}
+              disabled={!bulkAction || selectedIds.size === 0 || bulkDeleting}
+              className="admin-btn admin-btn--primary text-xs px-3 gap-1.5 whitespace-nowrap disabled:opacity-40"
+              style={{ paddingTop: '0.3rem', paddingBottom: '0.3rem' }}
+            >
+              <FaCircleCheck size={11} />
+              {bulkDeleting ? 'Đang xóa…' : 'Áp dụng'}
+            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-xs tabular-nums whitespace-nowrap" style={{ color: 'var(--primary)' }}>
+                {selectedIds.size}/{hook.total} đã chọn
+              </span>
+            )}
+          </div>
+
+          {hook.listError && (
+            <span className="text-xs text-red-600">⚠ {hook.listError}</span>
+          )}
+
+          <div className="flex-1" />
+
+          <AdminToolbar
+            search={hook.search}
+            onSearchChange={hook.handleSearch}
+            searchPlaceholder="Tìm tên hoặc email…"
+            className="m-0 p-0"
+          />
+        </div>
+      </div>
+
+      {/* ── Table ────────────────────────────────────────────────────── */}
+      <AdminTable<UserRow>
+          columns={columns}
+          data={hook.users}
+          rowKey={u => u.id}
+          loading={hook.listLoading}
+          skeletonRows={8}
+          selectable
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          onRowClick={hook.openDetail}
+          activeRowId={hook.detail?.id}
+          serverPagination={{
+            page: hook.page,
+            totalPages: hook.totalPages,
+            total: hook.total,
+            onPageChange: hook.setPage,
+          }}
+          pageSize={10}
+          emptyTitle="Không có người dùng"
+          emptyDescription={hook.search ? `Không tìm thấy kết quả cho "${hook.search}"` : 'Chưa có người dùng nào trong hệ thống.'}
+          emptyAction={
+            hook.search ? (
+              <button onClick={() => hook.handleSearch('')} className="admin-btn admin-btn--secondary text-sm px-4 py-1.5">
+                Xóa tìm kiếm
+              </button>
+            ) : (
+              <button onClick={hook.openCreate} className="admin-btn admin-btn--primary text-sm px-4 py-1.5">
+                + Thêm người dùng
+              </button>
+            )
+          }
+        />
+
+      {/* ── Drawer ───────────────────────────────────────────────────── */}
+      <UserDetailDrawer
+        detail={hook.detail}
+        loading={hook.detailLoading}
+        onClose={hook.closeDetail}
+        onEdit={() =>
+          hook.detail &&
+          hook.openEdit({
+            ...hook.detail,
+            accounts: hook.detail.accounts.map(a => ({ id: a.id, provider: a.provider })),
+          })
+        }
+        onRefresh={() =>
+          hook.detail && hook.openDetail(hook.detail as unknown as UserRow)
         }
       />
 
-      <div style={{ paddingBottom: 40 }}>
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <FaMagnifyingGlass size={12} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-          <input className="input w-full pl-8 text-sm" placeholder="Tìm theo tên hoặc email..."
-            value={search} onChange={e => handleSearch(e.target.value)} />
-        </div>
-        <div className="flex gap-2">
-          {(['', 'user', 'admin'] as const).map(r => (
-            <button key={r} onClick={() => { setRoleFilter(r); setPage(1); }}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border"
-              style={roleFilter === r
-                ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }
-                : { background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-              {r === '' ? 'Tất cả' : r === 'admin' ? 'Admin' : 'User'}
-            </button>
-          ))}
-          <button onClick={() => loadUsers()} className="btn-ghost p-2 rounded-xl" title="Làm mới">
-            <FaArrowsRotate size={13} style={{ color: 'var(--text-muted)' }} />
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="card overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
-                <th className="px-4 py-3 text-left font-semibold" style={{ color: 'var(--text-muted)' }}>Người dùng</th>
-                <th className="px-4 py-3 text-left font-semibold" style={{ color: 'var(--text-muted)' }}>Quyền</th>
-                <th className="px-4 py-3 text-center font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Lượt thi</th>
-                <th className="px-4 py-3 text-center font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>Đã lưu</th>
-                <th className="px-4 py-3 text-left font-semibold hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>Ngày tạo</th>
-                <th className="px-4 py-3 text-right font-semibold" style={{ color: 'var(--text-muted)' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
-                  <span className="inline-block w-6 h-6 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                </td></tr>
-              ) : users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-16" style={{ color: 'var(--text-muted)' }}>
-                  Không tìm thấy người dùng nào
-                </td></tr>
-              ) : users.map(u => (
-                <tr key={u.id} className="border-t transition-colors group"
-                  style={{ borderColor: 'var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
-
-                  {/* User info */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm"
-                        style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                        {u.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold truncate max-w-[160px]" style={{ color: 'var(--text-base)' }}>{u.name}</div>
-                        <div className="text-xs truncate max-w-[160px]" style={{ color: 'var(--text-muted)' }}>{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-
-                  <td className="px-4 py-3 text-center hidden md:table-cell">
-                    <span className="font-semibold" style={{ color: 'var(--text-base)' }}>{u._count.sessions}</span>
-                  </td>
-
-                  <td className="px-4 py-3 text-center hidden md:table-cell">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{u._count.savedWords} từ</span>
-                  </td>
-
-                  <td className="px-4 py-3 hidden lg:table-cell" style={{ color: 'var(--text-muted)' }}>
-                    {fmt(u.createdAt)}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openDetail(u)} title="Xem chi tiết"
-                        className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                        <FaEye size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                      <button onClick={() => { setEditUser(u); setEditName(u.name); setEditRole(u.role); setEditErr(''); }}
-                        title="Chỉnh sửa"
-                        className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                        <FaPencil size={13} style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                      <button onClick={() => openAccessPopup(u)} title="Cấp quyền bài học"
-                        className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                        <FaLock size={13} style={{ color: '#F59E0B' }} />
-                      </button>
-                      <button
-                        disabled={u.id === selfId}
-                        onClick={() => setDeleteTarget(u)}
-      
-      
-      
-      
-
-                        title={u.id === selfId ? 'Không thể xóa chính mình' : 'Xóa'}
-                        className="btn-ghost p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ opacity: u.id === selfId ? 0.3 : undefined }}>
-                        <FaTrash size={13} style={{ color: '#EF4444' }} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Trang {page} / {totalPages} — {total} người dùng
-            </span>
-            <div className="flex gap-1">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                className="btn-ghost p-1.5 rounded-lg disabled:opacity-30">
-                <FaChevronLeft size={12} />
-              </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pg = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
-                return (
-                  <button key={pg} onClick={() => setPage(pg)}
-                    className="min-w-[28px] h-7 rounded-lg text-xs font-semibold transition-all"
-                    style={pg === page
-                      ? { background: 'var(--primary)', color: 'white' }
-                      : { color: 'var(--text-muted)' }}>
-                    {pg}
-                  </button>
-                );
-              })}
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                className="btn-ghost p-1.5 rounded-lg disabled:opacity-30">
-                <FaChevronRight size={12} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      </div>{/* end main content */}
-
-      {/* ── Create Modal ──────────────────────────────────────────────────────── */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setCreateOpen(false)}>
-          <div className="card w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed' }}>
-                  <FaUserPlus size={15} />
-                </div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>Thêm người dùng mới</h2>
-              </div>
-              <button onClick={() => setCreateOpen(false)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
-            </div>
-
-            {createErr && (
-              <div className="mb-4 px-3 py-2 rounded-lg text-sm flex items-center gap-2"
-                style={{ background: '#FEE2E2', color: '#DC2626' }}>
-                <FaCircleExclamation size={13} />{createErr}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Tên hiển thị *</label>
-                <input className="input w-full" placeholder="Nguyễn Văn A"
-                  value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Email *</label>
-                <input className="input w-full" type="email" placeholder="user@example.com"
-                  value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div>
-                <label className="flex items-center gap-1 text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>
-                  <FaLock size={10} /> Mật khẩu *
-                </label>
-                <input className="input w-full" type="password" placeholder="Tối thiểu 6 ký tự"
-                  value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Quyền hạn</label>
-                <div className="flex gap-2">
-                  {['user', 'admin'].map(r => (
-                    <button key={r} onClick={() => setCreateForm(f => ({ ...f, role: r }))}
-                      className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all flex items-center justify-center gap-2"
-                      style={createForm.role === r
-                        ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }
-                        : { borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                      {r === 'admin' ? <FaShield size={12} /> : <FaUser size={12} />}
-                      {r === 'admin' ? 'Admin' : 'User'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setCreateOpen(false)} className="btn-secondary flex-1">Hủy</button>
-              <button onClick={saveCreate} disabled={creating}
-                className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {creating
-                  ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  : <FaCheck size={12} />}
-                Tạo tài khoản
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── Modals ───────────────────────────────────────────────────── */}
+      {hook.createOpen && (
+        <UserCreateModal
+          form={hook.createForm}
+          setForm={hook.setCreateForm}
+          error={hook.createErr}
+          loading={hook.creating}
+          onSave={hook.saveCreate}
+          onClose={hook.closeCreate}
+        />
       )}
 
-      {/* ── Edit Modal ─────────────────────────────────────────────────────────── */}
-      {editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setEditUser(null)}>
-          <div className="card w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>Chỉnh sửa tài khoản</h2>
-              <button onClick={() => setEditUser(null)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
-            </div>
-            <div className="flex items-center gap-3 mb-5 px-3 py-3 rounded-xl" style={{ background: 'var(--bg-muted)' }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
-                style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                {editUser.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div className="font-semibold" style={{ color: 'var(--text-base)' }}>{editUser.name}</div>
-                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{editUser.email}</div>
-              </div>
-            </div>
-
-            {editErr && (
-              <div className="mb-4 px-3 py-2 rounded-lg text-sm flex items-center gap-2"
-                style={{ background: '#FEE2E2', color: '#DC2626' }}>
-                <FaCircleExclamation size={13} />{editErr}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Tên hiển thị</label>
-                <input className="input w-full" value={editName} onChange={e => setEditName(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Quyền hạn</label>
-                {editUser.id === selfId ? (
-                  <div className="px-3 py-2 rounded-xl text-sm" style={{ background: '#FEF3C7', color: '#92400E' }}>
-                    Không thể thay đổi quyền của chính mình
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    {['user', 'admin'].map(r => (
-                      <button key={r} onClick={() => setEditRole(r)}
-                        className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all flex items-center justify-center gap-2"
-                        style={editRole === r
-                          ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' }
-                          : { borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                        {r === 'admin' ? <FaShield size={12} /> : <FaUser size={12} />}
-                        {r === 'admin' ? 'Admin' : 'User'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setEditUser(null)} className="btn-secondary flex-1">Hủy</button>
-              <button onClick={saveEdit} disabled={saving}
-                className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {saving
-                  ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  : <FaCheck size={12} />}
-                Lưu
-              </button>
-            </div>
-          </div>
-        </div>
+      {hook.editUser && (
+        <UserEditModal
+          user={hook.editUser}
+          form={hook.editForm}
+          setForm={hook.setEditForm}
+          error={hook.editErr}
+          loading={hook.saving}
+          onSave={hook.saveEdit}
+          onClose={hook.closeEdit}
+        />
       )}
 
-      {/* ── Delete Confirm Modal ───────────────────────────────────────────────── */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setDeleteTarget(null)}>
-          <div className="card w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ background: '#FEE2E2' }}>
-              <FaTrash size={22} style={{ color: '#DC2626' }} />
-            </div>
-            <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-base)' }}>Xóa tài khoản?</h2>
-            <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-              Tài khoản <strong>{deleteTarget.name}</strong> sẽ bị xóa vĩnh viễn.
-            </p>
-            <p className="text-xs mb-5" style={{ color: '#DC2626' }}>
-              Toàn bộ lịch sử thi, tiến độ học và từ đã lưu sẽ mất.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="btn-secondary flex-1">Hủy</button>
-              <button onClick={confirmDelete} disabled={deleting}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: '#DC2626' }}>
-                {deleting
-                  ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  : <FaTrash size={12} />}
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>
+      {hook.accessUser && (
+        <UserAccessModal
+          user={hook.accessUser}
+          onClose={() => hook.setAccessUser(null)}
+        />
       )}
 
-      {/* ── Detail Drawer ─────────────────────────────────────────────────────── */}
-      {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-40 flex justify-end"
-          style={{ background: 'rgba(0,0,0,0.3)' }} onClick={() => { setDetail(null); }}>
-          <div className="h-full w-full max-w-md overflow-y-auto card rounded-none shadow-2xl"
-            style={{ borderRadius: 0 }} onClick={e => e.stopPropagation()}>
+      {/* ── Confirms ─────────────────────────────────────────────────── */}
+      <ConfirmDialog
+        open={!!hook.deleteTarget}
+        title="Xóa người dùng"
+        message={`Bạn có chắc muốn xóa "${hook.deleteTarget?.name ?? hook.deleteTarget?.email}"? Hành động này không thể hoàn tác.`}
+        confirmLabel="Xóa"
+        variant="danger"
+        loading={hook.deleting}
+        onConfirm={hook.confirmDelete}
+        onCancel={() => hook.setDeleteTarget(null)}
+      />
 
-            <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b z-10"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h2 className="font-bold" style={{ color: 'var(--text-base)' }}>Chi tiết người dùng</h2>
-              <button onClick={() => setDetail(null)} className="btn-ghost p-1.5">< FaXmark size={14} /></button>
-            </div>
-
-            {detailLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <span className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
-              </div>
-            ) : detail && (
-              <div className="p-5 space-y-5">
-                {/* Profile */}
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold"
-                    style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-                    {detail.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-bold text-lg" style={{ color: 'var(--text-base)' }}>{detail.name}</div>
-                    <div className="text-sm" style={{ color: 'var(--text-muted)' }}>{detail.email}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <RoleBadge role={detail.role} />
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Tham gia {fmt(detail.createdAt)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Lượt thi', value: detail._count.sessions },
-                    { label: 'Từ đã lưu', value: detail._count.savedWords },
-                    { label: 'Bài học', value: detail._count.lessonProgress },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: 'var(--bg-muted)' }}>
-                      <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{s.value}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Quick actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setDetail(null); setEditUser(detail); setEditName(detail.name); setEditRole(detail.role); setEditErr(''); }}
-                    className="btn-secondary flex-1 flex items-center justify-center gap-2 text-sm">
-                    <FaPencil size={12} /> Chỉnh sửa
-                  </button>
-                  {detail.id !== selfId && (
-                    <button
-                      onClick={() => { setDetail(null); setDeleteTarget(detail); }}
-                      className="flex-1 flex items-center justify-center gap-2 text-sm px-3 py-2 rounded-xl font-semibold"
-                      style={{ background: '#FEE2E2', color: '#DC2626' }}>
-                      <FaTrash size={12} /> Xóa
-                    </button>
-                  )}
-                </div>
-
-                {/* Recent sessions */}
-                {detail.sessions.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2" style={{ color: 'var(--text-base)' }}>
-                      Lịch sử thi gần đây
-                    </h3>
-                    <div className="space-y-2">
-                      {detail.sessions.map(s => (
-                        <div key={s.id} className="rounded-xl px-3 py-2.5 border" style={{ borderColor: 'var(--border)' }}>
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate" style={{ color: 'var(--text-base)' }}>
-                                [{s.examSet.level.code}] {s.examSet.title}
-                              </div>
-                              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                {fmtDatetime(s.startedAt)}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="font-bold text-sm" style={{ color: s.score !== null && s.score >= 70 ? '#16a34a' : '#DC2626' }}>
-                                {s.score !== null ? `${Math.round(s.score)}%` : '—'}
-                              </div>
-                              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                {s.correctQ}/{s.totalQ}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal cấp quyền bài học */}
-      {accessUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setAccessUser(null)}>
-          <div className="card w-full max-w-4xl p-6 md:p-8 flex gap-8" style={{ minWidth: 600 }} onClick={e => e.stopPropagation()}>
-            {/* Sidebar trái: cấp độ + skill */}
-            <div className="w-64 shrink-0 border-r pr-6 flex flex-col gap-6">
-              <div>
-                <h3 className="font-bold mb-2 text-base" style={{ color: '#1e293b' }}>Cấp độ</h3>
-                <select
-                  className="input w-full text-base py-2 px-3"
-                  value={accessLevel || ''}
-                  onChange={e => {
-                    setAccessLevel(e.target.value);
-                    handleLevelChange(e.target.value);
-                  }}>
-                  <option value="">-- Chọn cấp độ --</option>
-                  {levelList.map((lv: any) => (
-                    <option key={lv.id} value={lv.id}>{lv.code} - {lv.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <h3 className="font-bold mb-2 text-base" style={{ color: '#1e293b' }}>Skill</h3>
-                <select
-                  className="input w-full text-base py-2 px-3"
-                  value={accessSkill || ''}
-                  onChange={e => {
-                    setAccessSkill(e.target.value);
-                    handleSkillChange(e.target.value);
-                  }}>
-                  <option value="">-- Chọn skill --</option>
-                  <option value="doc">Đọc</option>
-                  <option value="nghe">Nghe</option>
-                  <option value="ngu_phap">Ngữ pháp</option>
-                  <option value="tu_vung">Từ vựng</option>
-                  <option value="viet">Viết</option>
-                  <option value="noi">Nói</option>
-                </select>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <select className="input w-32" value={accessTier} onChange={e => setAccessTier(e.target.value)}>
-                  <option value="">-- Chọn tier --</option>
-                  <option value="free">Free</option>
-                  <option value="basic">Basic</option>
-                  <option value="premium">Premium</option>
-                </select>
-                <button
-                  className="btn-primary px-4 py-1.5 rounded font-semibold text-sm"
-                  disabled={!accessTier || lessonList.filter(l => l.selected).length === 0}
-                  onClick={async () => {
-                    for (let idx = 0; idx < lessonList.length; idx++) {
-                      if (lessonList[idx].selected) {
-                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, granting: true, selectedTier: accessTier } : item));
-                        setAccessLesson(lessonList[idx].id);
-                        setAccessTier(accessTier);
-                        await grantAccess();
-                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, granting: false } : item));
-                      }
-                    }
-                  }}>
-                  Save
-                </button>
-              </div>
-              <div className="mt-2">
-                <input
-                  className="input w-full text-base py-2 px-3"
-                  type="text"
-                  placeholder="Tìm bài học..."
-                  value={lessonSearch || ''}
-                  onChange={e => setLessonSearch(e.target.value)}
-                />
-              </div>
-            </div>
-            {/* Main content phải */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold" style={{ color: 'var(--text-base)' }}>
-                  Cấp quyền truy cập bài học cho <span className="text-primary">{accessUser.name}</span>
-                </h2>
-                <button onClick={() => setAccessUser(null)} className="btn-ghost p-2"><FaXmark size={16} /></button>
-              </div>
-              <div>
-                <h3 className="font-bold mb-3 text-base" style={{ color: '#1e293b' }}>Danh sách bài học theo cấp độ và skill</h3>
-                {/* Đã xóa select tier, button Save, input search khỏi main content, chỉ còn ở sidebar */}
-                <ul className="max-h-96 overflow-y-auto border rounded bg-white shadow-sm divide-y">
-                  {lessonList.filter(l => !lessonSearch || l.title.toLowerCase().includes(lessonSearch.toLowerCase())).length === 0 && <li className="text-xs text-muted p-3">Không có bài học nào.</li>}
-                  {lessonList.filter(l => !lessonSearch || l.title.toLowerCase().includes(lessonSearch.toLowerCase())).map((l: LessonRow, idx: number) => (
-                    <li key={l.id} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition">
-                      <input type="checkbox" className="form-checkbox h-4 w-4 text-primary" checked={!!l.selected} onChange={e => {
-                        setLessonList(lessonList.map((item, i) => i === idx ? { ...item, selected: e.target.checked } : item));
-                      }} />
-                      <div className="flex-1 min-w-0">
-                        <span className="font-semibold truncate block" title={l.title}>{l.title}</span>
-                        {l.description && (
-                          <span className="text-xs block mt-0.5 truncate" style={{ color: '#94a3b8' }}>{l.description}</span>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted">{l.type === 'doc' ? 'Đọc' : l.type === 'nghe' ? 'Nghe' : 'Khác'}</span>
-                      <span className="text-xs font-semibold">{l.selectedTier || 'free'}</span>
-                      {l.granting && <span className="ml-2 w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin inline-block align-middle" />}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {/* Đã ẩn danh sách quyền đã cấp, chỉ show danh sách bài học với tier */}
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={bulkConfirm}
+        title="Xóa hàng loạt"
+        message={`Xóa ${selectedIds.size} người dùng đã chọn? Hành động này không thể hoàn tác.`}
+        confirmLabel="Xóa tất cả"
+        variant="danger"
+        loading={bulkDeleting}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkConfirm(false)}
+      />
     </div>
   );
 }

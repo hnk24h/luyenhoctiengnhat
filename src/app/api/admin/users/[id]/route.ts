@@ -18,7 +18,12 @@ export async function GET(req: Request, { params: rawParams }: { params: Promise
     const user = await prisma.user.findUnique({
       where: { id: params.id },
       select: {
-        id: true, name: true, email: true, role: true, createdAt: true,
+        id: true, name: true, email: true, role: true,
+        subscriptionTier: true, image: true,
+        createdAt: true, updatedAt: true,
+        accounts: {
+          select: { id: true, provider: true, providerAccountId: true },
+        },
         _count: {
           select: { sessions: true, progress: true, savedWords: true, flashcardDecks: true, lessonProgress: true },
         },
@@ -41,32 +46,49 @@ export async function GET(req: Request, { params: rawParams }: { params: Promise
   }
 }
 
-// PUT /api/admin/users/[id] — update name, role
+// PUT /api/admin/users/[id] — update name, role, subscriptionTier
 export async function PUT(req: Request, { params: rawParams }: { params: Promise<{ id: string }> }) {
   const params = await rawParams;
   const session = await getServerSession(authOptions);
   if (adminOnly(session)) return NextResponse.json({ error: 'Không có quyền' }, { status: 403 });
 
-  // Prevent self-demotion
-  if (session!.user.id === params.id) {
-    return NextResponse.json({ error: 'Không thể thay đổi quyền của chính mình' }, { status: 400 });
-  }
-
   try {
     const body = await req.json();
-    const data: { name?: string; role?: import('@prisma/client').UserRole } = {};
-    if (body.name  !== undefined) data.name  = body.name;
-    if (body.role  !== undefined) {
+    const data: {
+      name?: string;
+      role?: import('@prisma/client').UserRole;
+      subscriptionTier?: import('@prisma/client').SubscriptionTier;
+    } = {};
+
+    if (body.name !== undefined) data.name = body.name;
+
+    if (body.role !== undefined) {
+      // Prevent self-demotion
+      if (session!.user.id === params.id) {
+        return NextResponse.json({ error: 'Không thể thay đổi quyền của chính mình' }, { status: 400 });
+      }
       if (!['user', 'admin'].includes(body.role)) {
         return NextResponse.json({ error: 'Role không hợp lệ' }, { status: 400 });
       }
       data.role = body.role as import('@prisma/client').UserRole;
     }
 
+    if (body.subscriptionTier !== undefined) {
+      if (!['free', 'basic', 'premium'].includes(body.subscriptionTier)) {
+        return NextResponse.json({ error: 'Gói đăng ký không hợp lệ' }, { status: 400 });
+      }
+      data.subscriptionTier = body.subscriptionTier as import('@prisma/client').SubscriptionTier;
+    }
+
     const updated = await prisma.user.update({
       where: { id: params.id },
       data,
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: {
+        id: true, name: true, email: true, role: true,
+        subscriptionTier: true, image: true, createdAt: true,
+        accounts: { select: { id: true, provider: true } },
+        _count: { select: { sessions: true, progress: true, savedWords: true, flashcardDecks: true } },
+      },
     });
     return NextResponse.json(updated);
   } catch {

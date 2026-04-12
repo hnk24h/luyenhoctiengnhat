@@ -9,6 +9,7 @@ import { FaChevronRight } from 'react-icons/fa6';
 const SUBJECTS = [
   { key: 'JLPT', flag: '🇯🇵' },
   { key: 'HSK',  flag: '🇨🇳' },
+  { key: 'BJT',  flag: '💼' },
   { key: 'PMP',  flag: '📋' },
 ] as const;
 

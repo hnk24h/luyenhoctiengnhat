@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { FaXmark, FaCheck } from 'react-icons/fa6';
+import { FaCheck } from 'react-icons/fa6';
+import { AdminModal, AdminFormField, AdminButton } from '@/components/admin/ui';
 
 // Định nghĩa lại type Modal cho đúng với page.tsx
 type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
@@ -35,14 +36,20 @@ interface LessonModalProps {
 export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LESSON_TYPES, saving, saveLes }: LessonModalProps) {
   if (modal !== 'les-create' && modal !== 'les-edit') return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setModal(null)}>
-      <div className="card w-full max-w-lg" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>
-            {modal === 'les-create' ? 'Thêm bài học mới' : 'Sửa bài học'}
-          </h2>
-          <button onClick={() => setModal(null)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+    <AdminModal
+      open
+      onClose={() => setModal(null)}
+      title={modal === 'les-create' ? 'Thêm bài học mới' : 'Sửa bài học'}
+      size="md"
+      footer={
+        <div className="flex gap-3">
+          <AdminButton variant="secondary" className="flex-1" onClick={() => setModal(null)}>Hủy</AdminButton>
+          <AdminButton variant="primary" className="flex-1" onClick={saveLes} disabled={saving} loading={saving} icon={<FaCheck size={12} />}>
+            Lưu
+          </AdminButton>
         </div>
+      }
+    >
         {modalErr && (
           <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#DC2626' }}>
             {modalErr}
@@ -50,31 +57,26 @@ export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LE
         )}
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Tên bài học *</label>
+            <AdminFormField label="Tên bài học" required>
               <input className="input w-full" placeholder="VD: Bài 1 - Gia đình" value={lesForm.title} onChange={e => setLesForm(f => ({ ...f, title: e.target.value }))} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Loại</label>
+            </AdminFormField>
+            <AdminFormField label="Loại">
               <select className="input w-full text-sm" value={lesForm.type} onChange={e => setLesForm(f => ({ ...f, type: e.target.value }))}>
                 {LESSON_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Gói yêu cầu</label>
+            </AdminFormField>
+            <AdminFormField label="Gói yêu cầu">
               <select className="input w-full text-sm" value={lesForm.requiredTier} onChange={e => setLesForm(f => ({ ...f, requiredTier: e.target.value }))}>
                 <option value="free">Miễn phí</option>
                 <option value="basic">Cơ bản</option>
                 <option value="premium">Nâng cao</option>
               </select>
-            </div>
+            </AdminFormField>
           </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Mô tả</label>
+          <AdminFormField label="Mô tả">
             <input className="input w-full" placeholder="Mô tả ngắn về bài học..." value={lesForm.description} onChange={e => setLesForm(f => ({ ...f, description: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>File audio (mp3, wav, ogg) hoặc URL</label>
+          </AdminFormField>
+          <AdminFormField label="File audio (mp3, wav, ogg) hoặc URL">
             <div className="flex gap-2">
               <input
                 type="file"
@@ -102,20 +104,11 @@ export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LE
             {lesForm.audioFile && (
               <audio src={URL.createObjectURL(lesForm.audioFile)} controls className="mt-2 w-full" />
             )}
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Thứ tự</label>
+          </AdminFormField>
+          <AdminFormField label="Thứ tự">
             <input type="number" className="input w-24" min={0} value={lesForm.order} onChange={e => setLesForm(f => ({ ...f, order: Number(e.target.value) }))} />
-          </div>
+          </AdminFormField>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={() => setModal(null)} className="btn-secondary flex-1">Hủy</button>
-          <button onClick={saveLes} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-            {saving ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <FaCheck size={12} />}
-            Lưu
-          </button>
-        </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

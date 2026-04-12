@@ -10,7 +10,7 @@ import { NavMenu } from './NavMenu';
 import { ThemeToggle } from './ThemeToggle';
 import { ProfileDropdown } from './ProfileDropdown';
 import { useSession, signOut } from 'next-auth/react';
-import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle, FaFont, FaStar, FaBolt, FaRegLightbulb } from 'react-icons/fa6';
+import { FaBookOpen, FaPencil, FaChartBar, FaGear, FaLayerGroup, FaNewspaper, FaBookmark, FaBars, FaXmark, FaDesktop, FaMoon, FaSun, FaCompass, FaChevronDown, FaArrowRight, FaUser, FaHeadphones, FaGraduationCap, FaComments, FaShuffle, FaFont, FaStar, FaBolt, FaRegLightbulb, FaPenNib } from 'react-icons/fa6';
 // ── Reusable MenuItem component ─────────────────────────────────────────────
 type MenuItemProps = {
   href: string;
@@ -47,10 +47,13 @@ type NavLink = { href: string; label: string; icon: IconType; authRequired?: boo
 const JLPT_NAV_LINKS: NavLink[] = [
   { href: '/ja/learn',     label: 'learn',       icon: FaBookOpen },
   { href: '/ja/vocab',     label: 'vocab',      icon: FaBookmark },
+  { href: '/ja/kanji',     label: 'kanji',      icon: FaPenNib },
   { href: '/ja/listening', label: 'listening',   icon: FaHeadphones },
   { href: '/ja/grammar',   label: 'grammar',     icon: FaCompass },
   { href: '/ja/practice',  label: 'practice',  icon: FaLayerGroup },
   { href: '/ja/reading',   label: 'reading',   icon: FaNewspaper },
+  { href: '/ja/mock-exam', label: 'mock_exam',   icon: FaGraduationCap },
+  { href: '/ja/bjt',       label: 'bjt',         icon: FaStar },
   { href: '/dashboard',    label: 'dashboard', icon: FaChartBar },
   { href: '/ja/levels',    label: 'exam',    icon: FaPencil },
 ];
@@ -58,6 +61,7 @@ const JLPT_NAV_LINKS: NavLink[] = [
 const CHINESE_NAV_LINKS: NavLink[] = [
   { href: '/zh/alphabet',  label: 'alphabet', icon: FaFont },
   { href: '/zh/learn',     label: 'learn',    icon: FaBookOpen },
+  { href: '/zh/kanji',     label: 'hanzi',    icon: FaPenNib },
   { href: '/zh/levels',    label: 'exam',  icon: FaPencil },
   { href: '/zh/listening', label: 'listening', icon: FaHeadphones },
   { href: '/zh/vocab',     label: 'vocab',    icon: FaBookmark },

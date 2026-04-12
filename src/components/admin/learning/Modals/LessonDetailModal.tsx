@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { FaTimes, FaEdit, FaTrash, FaPlus, FaSearch, FaClone } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaClone } from 'react-icons/fa';
+import { AdminModal, AdminButton, AdminSearchInput, AdminFormField, AdminEmptyState, ConfirmDialog } from '@/components/admin/ui';
 
 // Schema: Lesson gồm các trường: id, title, description, type, requiredTier, _count.items
 // CRUD: Sửa, Xóa, Thêm mục con (item), Search, Pagination
-import { useTranslations } from 'next-intl';
 
 import type { Lesson, LearningItem, ContentMeaning, ContentExample } from '@/types/lesson';
 
@@ -28,7 +28,6 @@ interface AddEditData {
 export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, items = [], onAddItem, onEditItem, onDeleteItem }: LessonDetailModalProps) {
   const [addingRow, setAddingRow] = useState(false);
   const [addData, setAddData] = useState<AddEditData>({ term: '', pronunciation: '', meanings: '', type: '' });
-  const t = useTranslations();
   // Clone row logic
   const handleCloneRow = (item: LearningItem) => {
     setAddingRow(true);
@@ -89,7 +88,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       setEditingHeader(false);
       setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
-      alert(t('lessonDetail.saveFailed'));
+      alert('Lưu thất bại');
     }
   };
 
@@ -154,12 +153,15 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       setEditingHeader(false);
       setHeaderData({ term: '', type: '', requiredTier: '', meaning: '' });
     } catch (err) {
-      alert(t('lessonDetail.saveFailed'));
+      alert('Lưu thất bại');
     }
   };
   // Xóa item khỏi DB và reload lại danh sách
+  const [deleteTarget, setDeleteTarget] = useState<LearningItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const handleDeleteItem = async (item: LearningItem) => {
-    if (!window.confirm('Bạn có chắc muốn xóa mục này?')) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/learning/items/${item.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Xóa thất bại');
@@ -180,6 +182,9 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
       }
     } catch (err) {
       alert('Xóa mục thất bại!');
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -245,33 +250,19 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
 
   React.useEffect(() => { setPage(1); }, [search, items]);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div
-        className="bg-white rounded-xl shadow-2xl p-6 min-w-[340px] max-w-[98vw] w-full sm:w-[500px] md:w-[600px] lg:w-[00px] xl:w-[800px] 2xl:w-[1200px] relative animate-fade-in"
-        style={{ maxWidth: '98vw' }}
-      >
-        <button
-          className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 text-gray-500"
-          onClick={onClose}
-          title={t('lessonDetail.cancel')}
-        >
-          <FaTimes size={18} />
-        </button>
-        <div className="flex items-center gap-2">
-          <h3 className="font-bold text-lg flex items-center gap-2">{t('lessonDetail.title')}</h3>
-        </div>
+    <AdminModal open onClose={onClose} title="Chi tiết bài học" size="xl">
         <div className="card mb-2">
           <div className="flex items-center justify-end mb-2">
             <div className="flex gap-2">
               {editingHeader ? (
                 <>
-                  <button className="p-2 rounded bg-green-100 text-green-700 hover:bg-green-200" onClick={handleHeaderSave} title="Lưu">Lưu</button>
-                  <button className="p-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={handleHeaderCancel} title="Hủy">Hủy</button>
+                  <AdminButton variant="primary" size="sm" onClick={handleHeaderSave}>Lưu</AdminButton>
+                  <AdminButton variant="secondary" size="sm" onClick={handleHeaderCancel}>Hủy</AdminButton>
                 </>
               ) : (
                 <>
-                  <button className="p-2 rounded hover:bg-blue-50 text-blue-600" onClick={handleHeaderEditClick} title="Sửa bài học"><FaEdit /></button>
-                  <button className="p-2 rounded hover:bg-red-50 text-red-600" onClick={onDelete} title="Xóa bài học"><FaTrash /></button>
+                  <AdminButton variant="ghost" size="sm" icon={<FaEdit />} onClick={handleHeaderEditClick}>Sửa</AdminButton>
+                  <AdminButton variant="danger" size="sm" icon={<FaTrash />} onClick={onDelete}>Xóa</AdminButton>
                 </>
               )}
             </div>
@@ -280,44 +271,48 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
             {editingHeader ? (
               <>
                 <div className="col-span-2">
-                  <span className="font-semibold">Tên (term):</span>
-                  <textarea
-                    className="ml-2 px-2 py-1 border rounded text-sm w-full resize-y min-h-[32px] max-h-40"
-                    value={headerData.term}
-                    onChange={e => handleHeaderChange('term', e.target.value)}
-                    rows={2}
-                    placeholder="Nhập tên bài học (term)"
-                  />
+                  <AdminFormField label="Tên (term)" required>
+                    <textarea
+                      className="input w-full resize-y min-h-[32px] max-h-40 text-sm"
+                      value={headerData.term}
+                      onChange={e => handleHeaderChange('term', e.target.value)}
+                      rows={2}
+                      placeholder="Nhập tên bài học (term)"
+                    />
+                  </AdminFormField>
                 </div>
                 <div className="col-span-2">
-                  <span className="font-semibold">Nghĩa (meaning):</span>
-                  <textarea
-                    className="ml-2 px-2 py-1 border rounded text-sm w-full resize-y min-h-[32px] max-h-40"
-                    value={headerData.meaning}
-                    onChange={e => handleHeaderChange('meaning', e.target.value)}
-                    rows={2}
-                    placeholder="Nghĩa bài học (meaning)"
-                  />
+                  <AdminFormField label="Nghĩa (meaning)" required>
+                    <textarea
+                      className="input w-full resize-y min-h-[32px] max-h-40 text-sm"
+                      value={headerData.meaning}
+                      onChange={e => handleHeaderChange('meaning', e.target.value)}
+                      rows={2}
+                      placeholder="Nghĩa bài học (meaning)"
+                    />
+                  </AdminFormField>
                 </div>
                 <div>
-                  <span className="font-semibold">Loại (type):</span>
-                  <input
-                    className="ml-2 px-2 py-1 border rounded text-sm w-32"
-                    value={headerData.type}
-                    onChange={e => handleHeaderChange('type', e.target.value)}
-                  />
+                  <AdminFormField label="Loại (type)">
+                    <input
+                      className="input text-sm w-32"
+                      value={headerData.type}
+                      onChange={e => handleHeaderChange('type', e.target.value)}
+                    />
+                  </AdminFormField>
                 </div>
                 <div>
-                  <span className="font-semibold">Gói:</span>
-                  <select
-                    className="ml-2 px-2 py-1 border rounded text-sm w-32"
-                    value={headerData.requiredTier}
-                    onChange={e => handleHeaderChange('requiredTier', e.target.value)}
-                  >
-                    <option value="free">Miễn phí</option>
-                    <option value="basic">Cơ bản</option>
-                    <option value="premium">Nâng cao</option>
-                  </select>
+                  <AdminFormField label="Gói">
+                    <select
+                      className="input text-sm w-32"
+                      value={headerData.requiredTier}
+                      onChange={e => handleHeaderChange('requiredTier', e.target.value)}
+                    >
+                      <option value="free">Miễn phí</option>
+                      <option value="basic">Cơ bản</option>
+                      <option value="premium">Nâng cao</option>
+                    </select>
+                  </AdminFormField>
                 </div>
               </>
             ) : (
@@ -332,15 +327,15 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
           </div>
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <input
-            className="input w-64 text-sm py-1.5"
-            placeholder="Tìm mục từ, nghĩa..."
+          <AdminSearchInput
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={setSearch}
+            placeholder="Tìm mục từ, nghĩa..."
+            className="w-64"
           />
-          <button className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold btn-primary text-xs" onClick={handleAddRow} disabled={addingRow}>
-            <FaPlus size={10} /> Thêm mục
-          </button>
+          <AdminButton variant="primary" size="sm" icon={<FaPlus size={10} />} className="ml-auto" onClick={handleAddRow} disabled={addingRow}>
+            Thêm mục
+          </AdminButton>
         </div>
         <div className="overflow-x-auto rounded border">
           <div className="grid grid-cols-5 bg-gray-50 font-semibold text-xs border-b">
@@ -378,13 +373,13 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
                 placeholder="Loại"
               />
               <div className="flex gap-2 justify-center">
-                <button className="p-1 rounded bg-green-100 text-green-700 hover:bg-green-200" onClick={handleAddSave} title="Lưu">Lưu</button>
-                <button className="p-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={handleAddCancel} title="Hủy">Hủy</button>
+                <AdminButton variant="primary" size="sm" onClick={handleAddSave}>Lưu</AdminButton>
+                <AdminButton variant="secondary" size="sm" onClick={handleAddCancel}>Hủy</AdminButton>
               </div>
             </div>
           )}
           {pagedItems.length === 0 && !addingRow ? (
-            <div className="py-4 text-center text-muted">Không có mục nào</div>
+            <AdminEmptyState title="Không có mục nào" />
           ) : pagedItems.map(item => (
             <div key={item.id} className="grid grid-cols-5 items-center border-b hover:bg-blue-50 transition text-sm">
               {editingId === item.id ? (
@@ -411,8 +406,8 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
                     onChange={e => handleEditChange('type', e.target.value)}
                   />
                   <div className="flex gap-2 justify-center">
-                    <button className="p-1 rounded bg-green-100 text-green-700 hover:bg-green-200" onClick={() => handleEditSave(item)} title="Lưu">Lưu</button>
-                    <button className="p-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200" onClick={handleEditCancel} title="Hủy">Hủy</button>
+                    <AdminButton variant="primary" size="sm" onClick={() => handleEditSave(item)}>Lưu</AdminButton>
+                    <AdminButton variant="secondary" size="sm" onClick={handleEditCancel}>Hủy</AdminButton>
                   </div>
                 </>
               ) : (
@@ -422,9 +417,9 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
                   <div className="px-2 py-2 truncate" title={item.meanings?.map(m => m.meaning).join(', ')}>{item.meanings?.map(m => m.meaning).join(', ')}</div>
                   <div className="px-2 py-2">{item.type}</div>
                   <div className="px-2 py-2 flex gap-2 justify-center">
-                    <button className="p-1 rounded hover:bg-blue-100 text-blue-600" onClick={() => handleEditClick(item)} title="Sửa"><FaEdit size={13} /></button>
-                    <button className="p-1 rounded hover:bg-green-100 text-green-700" onClick={() => handleCloneRow(item)} title="Clone"><FaClone size={13} /></button>
-                    <button className="p-1 rounded hover:bg-red-100 text-red-600" onClick={() => handleDeleteItem(item)} title="Xóa"><FaTrash size={13} /></button>
+                    <AdminButton variant="ghost" size="sm" icon={<FaEdit size={13} />} onClick={() => handleEditClick(item)} />
+                    <AdminButton variant="ghost" size="sm" icon={<FaClone size={13} />} onClick={() => handleCloneRow(item)} />
+                    <AdminButton variant="danger" size="sm" icon={<FaTrash size={13} />} onClick={() => setDeleteTarget(item)} />
                   </div>
                 </>
               )}
@@ -434,12 +429,21 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
         {/* Pagination */}
         {pagedItems.length > 0 && filteredItems.length > pageSize && (
           <div className="flex justify-center items-center gap-2 py-3">
-            <button onClick={handlePrev} disabled={page === 1} className="p-1 rounded border bg-white disabled:opacity-50">Trước</button>
+            <AdminButton variant="secondary" size="sm" onClick={handlePrev} disabled={page === 1}>Trước</AdminButton>
             <span className="text-sm">{page} / {totalPages}</span>
-            <button onClick={handleNext} disabled={page === totalPages} className="p-1 rounded border bg-white disabled:opacity-50">Sau</button>
+            <AdminButton variant="secondary" size="sm" onClick={handleNext} disabled={page === totalPages}>Sau</AdminButton>
           </div>
         )}
-      </div>
-    </div>
+
+        <ConfirmDialog
+          open={!!deleteTarget}
+          title="Xóa mục"
+          message={`Bạn có chắc muốn xóa mục "${deleteTarget?.term}"?`}
+          onConfirm={() => deleteTarget && handleDeleteItem(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+          danger
+          loading={deleting}
+        />
+    </AdminModal>
   );
 }

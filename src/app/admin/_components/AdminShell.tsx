@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   FaGauge, FaBullseye, FaBook, FaBookOpen, FaNewspaper,
   FaHeadphones, FaUsers, FaUpload, FaBars, FaXmark, FaChevronDown,
-  FaSeedling, FaPalette, FaWrench,
+  FaSeedling, FaPalette, FaWrench, FaClipboardList, FaBriefcase,
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,12 +29,13 @@ const NAV: NavNode[] = [
       {
         t: 'group', key: 'JLPT', flag: '🇯🇵', label: 'JLPT', desc: 'N5 → N1',
         items: [
-          { t: 'leaf', href: '/admin/levels?subject=JLPT',    icon: FaBullseye,   label: 'Cấp độ' },
-          { t: 'leaf', href: '/admin/examsets?subject=JLPT',  icon: FaBook,       label: 'Bộ đề' },
-          { t: 'leaf', href: '/admin/learning?subject=JLPT',  icon: FaBookOpen,   label: 'Bài học' },
-          { t: 'leaf', href: '/admin/reading?subject=JLPT',   icon: FaNewspaper,  label: 'Bài đọc' },
-          { t: 'leaf', href: '/admin/listening?subject=JLPT', icon: FaHeadphones, label: 'Bài nghe' },
-          { t: 'leaf', href: '/admin/import?subject=JLPT',    icon: FaUpload,     label: 'Import' },
+          { t: 'leaf', href: '/admin/levels?subject=JLPT',      icon: FaBullseye,      label: 'Cấp độ' },
+          { t: 'leaf', href: '/admin/examsets?subject=JLPT',    icon: FaBook,          label: 'Bộ đề' },
+          { t: 'leaf', href: '/admin/mock-exam?subject=JLPT',   icon: FaClipboardList, label: 'Đề thi thử' },
+          { t: 'leaf', href: '/admin/learning?subject=JLPT',    icon: FaBookOpen,      label: 'Bài học' },
+          { t: 'leaf', href: '/admin/reading?subject=JLPT',     icon: FaNewspaper,     label: 'Bài đọc' },
+          { t: 'leaf', href: '/admin/listening?subject=JLPT',   icon: FaHeadphones,    label: 'Bài nghe' },
+          { t: 'leaf', href: '/admin/import?subject=JLPT',      icon: FaUpload,        label: 'Import' },
         ],
       },
       {
@@ -45,6 +46,14 @@ const NAV: NavNode[] = [
           { t: 'leaf', href: '/admin/learning?subject=HSK',  icon: FaBookOpen,  label: 'Bài học' },
           { t: 'leaf', href: '/admin/reading?subject=HSK',   icon: FaNewspaper, label: 'Bài đọc' },
           { t: 'leaf', href: '/admin/import?subject=HSK',    icon: FaUpload,    label: 'Import' },
+        ],
+      },
+      {
+        t: 'group', key: 'BJT', flag: '💼', label: 'BJT', desc: 'J1+ → J5',
+        items: [
+          { t: 'leaf', href: '/admin/mock-exam?subject=BJT', icon: FaClipboardList, label: 'Đề thi thử' },
+          { t: 'leaf', href: '/admin/learning?subject=BJT',  icon: FaBookOpen,      label: 'Bài học' },
+          { t: 'leaf', href: '/admin/import?subject=BJT',    icon: FaUpload,        label: 'Import' },
         ],
       },
       {

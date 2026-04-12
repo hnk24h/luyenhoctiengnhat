@@ -1,127 +1,177 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { FaPlus, FaPen, FaLayerGroup } from 'react-icons/fa6';
+import { FaPlus, FaLayerGroup } from 'react-icons/fa6';
+import {
+  AdminButton, AdminTable, AdminToolbar, AdminModal,
+  AdminFormField, AdminBadge, AdminEmptyState, ConfirmDialog,
+} from '@/components/admin/ui';
+import type { ColumnDef } from '@/components/admin/ui/AdminTable';
 
 interface Level { id: string; code: string; name: string; description: string | null; order: number }
 
 const BLANK = { code: '', name: '', desc: '', order: 0 };
 
-function SLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 12 }}>
-      {children}
-    </div>
-  );
-}
-
 export default function AdminLevelsClient({ levels: initial, subject }: { levels: Level[]; subject: string }) {
-  const [levels, setLevels]     = useState<Level[]>(initial);
-  const [form, setForm]         = useState(BLANK);
-  const [editing, setEditing]   = useState<Level | null>(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
-  const [saved, setSaved]       = useState(false);
-  const [selectedId, setSelectedId] = useState('');
+  const [levels, setLevels]   = useState<Level[]>(initial);
+  const [form, setForm]       = useState(BLANK);
+  const [editing, setEditing] = useState<Level | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [search, setSearch]   = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Level | null>(null);
 
-  const isAdding = !editing;
-  const fl = (t: string) => <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{t}</label>;
-
-  function startEdit(l: Level) {
-    setEditing(l);
-    setForm({ code: l.code, name: l.name, desc: l.description ?? '', order: l.order });
-    setSaved(false); setError('');
+  /* ── Open modal ── */
+  function openCreate() {
+    setEditing(null); setForm(BLANK); setError(''); setModalOpen(true);
   }
-  function startAdd() { setEditing(null); setForm(BLANK); setSaved(false); setError(''); }
+  function openEdit(l: Level) {
+    setEditing(l); setForm({ code: l.code, name: l.name, desc: l.description ?? '', order: l.order });
+    setError(''); setModalOpen(true);
+  }
 
+  /* ── Submit ── */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
     const body = { code: form.code.toUpperCase(), name: form.name, description: form.desc, order: form.order, subject };
-    if (editing) {
-      const res = await fetch(`/api/admin/levels/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) {
-        setLevels(prev => prev.map(l => l.id === editing.id ? { ...l, ...body } : l));
-        setSaved(true);
-      } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
-    } else {
-      const res = await fetch('/api/admin/levels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) {
-        const created: Level = await res.json();
-        setLevels(prev => [...prev, created].sort((a, b) => a.order - b.order));
-        setForm(BLANK); setSaved(true);
-      } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
-    }
-    setLoading(false);
+    try {
+      if (editing) {
+        const res = await fetch(`/api/admin/levels/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+          setLevels(prev => prev.map(l => l.id === editing.id ? { ...l, ...body } : l));
+          setModalOpen(false);
+        } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
+      } else {
+        const res = await fetch('/api/admin/levels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+          const created: Level = await res.json();
+          setLevels(prev => [...prev, created].sort((a, b) => a.order - b.order));
+          setModalOpen(false);
+        } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
+      }
+    } finally { setLoading(false); }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Xóa cấp độ này?')) return;
-    await fetch(`/api/admin/levels/${id}`, { method: 'DELETE' });
-    setLevels(prev => prev.filter(l => l.id !== id));
-    if (editing?.id === id) { setEditing(null); setForm(BLANK); }
+  /* ── Delete ── */
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await fetch(`/api/admin/levels/${deleteTarget.id}`, { method: 'DELETE' });
+    setLevels(prev => prev.filter(l => l.id !== deleteTarget.id));
+    setDeleteTarget(null);
   }
 
-  const displayed = selectedId ? levels.filter(l => l.id === selectedId) : levels;
+  /* ── Filter ── */
+  const filtered = search
+    ? levels.filter(l => l.code.toLowerCase().includes(search.toLowerCase()) || l.name.toLowerCase().includes(search.toLowerCase()))
+    : levels;
+
+  /* ── Columns ── */
+  const columns: ColumnDef<Level>[] = [
+    {
+      key: 'code', header: 'Mã', width: '64px',
+      render: l => (
+        <AdminBadge variant="danger">{l.code}</AdminBadge>
+      ),
+    },
+    {
+      key: 'name', header: 'Tên cấp độ', width: '1.5fr',
+      render: l => (
+        <div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{l.name}</div>
+          {l.description && <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{l.description}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'order', header: 'Thứ tự', width: '60px',
+      headerClassName: 'text-center', cellClassName: 'text-center',
+      render: l => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{l.order}</span>,
+    },
+    {
+      key: 'actions', header: '', width: '140px',
+      cellClassName: 'text-right',
+      render: l => (
+        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <AdminButton variant="secondary" size="sm" onClick={e => { e.stopPropagation(); openEdit(l); }}>Sửa</AdminButton>
+          <Link href={`/admin/examsets?subject=${subject}&level=${l.code}`}>
+            <AdminButton variant="secondary" size="sm">Xem đề</AdminButton>
+          </Link>
+          <AdminButton variant="danger" size="sm" onClick={e => { e.stopPropagation(); setDeleteTarget(l); }}>Xóa</AdminButton>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div style={{ paddingBottom: 40 }}>
+    <div className="pb-10">
+      <AdminToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Tìm cấp độ..."
+        actions={
+          <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>
+        }
+      />
 
-      {/* ── Main ── */}
-      <div style={{ minWidth: 0 }}>
+      <AdminTable
+        columns={columns}
+        data={filtered}
+        rowKey={l => l.id}
+        onRowClick={openEdit}
+        emptyIcon={<FaLayerGroup />}
+        emptyTitle="Chưa có cấp độ nào"
+        emptyDescription="Tạo cấp độ đầu tiên để bắt đầu."
+        emptyAction={<AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>}
+        pageSize={0}
+      />
 
-        {/* Form card */}
-        <div style={{ background: 'var(--bg-surface)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,.08)', overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '14px 20px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
-              {isAdding ? <FaPlus size={14} /> : <FaPen size={14} />}
-              {isAdding ? 'Thêm cấp độ mới' : `Chỉnh sửa: ${editing?.code}`}
-            </div>
-            {!isAdding && (
-              <button onClick={startAdd} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <FaPlus size={10} /> Cấp độ mới
-              </button>
-            )}
+      {/* ── Create/Edit Modal ── */}
+      <AdminModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? `Chỉnh sửa: ${editing.code}` : 'Thêm cấp độ mới'}
+        icon={<FaLayerGroup size={14} />}
+        size="sm"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={() => setModalOpen(false)}>Hủy</AdminButton>
+            <AdminButton loading={loading} onClick={handleSubmit}>
+              {editing ? 'Lưu thay đổi' : 'Thêm cấp độ'}
+            </AdminButton>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-[1fr_1fr_80px] gap-3">
+            <AdminFormField label="Mã cấp độ" required>
+              <input className="input w-full" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="N5" required />
+            </AdminFormField>
+            <AdminFormField label="Tên cấp độ" required>
+              <input className="input w-full" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Sơ cấp" required />
+            </AdminFormField>
+            <AdminFormField label="Thứ tự">
+              <input className="input w-full" type="number" value={form.order} onChange={e => setForm(f => ({ ...f, order: Number(e.target.value) }))} />
+            </AdminFormField>
           </div>
-          <form onSubmit={handleSubmit} style={{ padding: 20 }}>
-            <div style={{ background: 'var(--bg-muted)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-              <SLabel>Thông tin</SLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: 12, marginBottom: 12 }}>
-                <div>{fl('Mã cấp độ')}<input className="input" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="N5" required /></div>
-                <div>{fl('Tên cấp độ')}<input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Sơ cấp" required /></div>
-                <div>{fl('Thứ tự')}<input className="input" type="number" value={form.order} onChange={e => setForm(f => ({ ...f, order: Number(e.target.value) }))} /></div>
-              </div>
-              <div>{fl('Mô tả')}<input className="input" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} placeholder="Mô tả ngắn..." /></div>
-            </div>
-            {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
-            {saved && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 10 }}>✓ Đã lưu</p>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Đang lưu...' : isAdding ? '+ Thêm cấp độ' : '✓ Lưu thay đổi'}</button>
-              {!isAdding && <button type="button" onClick={startAdd} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer' }}>Hủy</button>}
-            </div>
-          </form>
-        </div>
+          <AdminFormField label="Mô tả">
+            <input className="input w-full" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} placeholder="Mô tả ngắn..." />
+          </AdminFormField>
+          {error && <p className="admin-field-error">{error}</p>}
+        </form>
+      </AdminModal>
 
-        {/* List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {displayed.map(l => (
-            <div key={l.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', border: editing?.id === l.id ? '2px solid #dc2626' : '2px solid transparent', transition: 'border-color 0.15s' }} onClick={() => startEdit(l)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, color: '#dc2626', flexShrink: 0 }}>{l.code}</div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{l.name}</div>
-                  {l.description && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{l.description}</div>}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                <Link href={`/admin/examsets?subject=${subject}&level=${l.code}`} className="btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}>Xem đề</Link>
-                <button onClick={() => handleDelete(l.id)} style={{ fontSize: 12, color: '#ef4444', padding: '4px 8px', background: 'none', border: 'none', cursor: 'pointer' }}>Xóa</button>
-              </div>
-            </div>
-          ))}
-          {displayed.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px 0' }}>Chưa có cấp độ nào.</div>}
-        </div>
-      </div>
+      {/* ── Delete confirm ── */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={`Xóa cấp độ "${deleteTarget?.code}"?`}
+        description="Hành động này không thể hoàn tác."
+        confirmLabel="Xóa"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

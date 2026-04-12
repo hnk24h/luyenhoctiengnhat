@@ -6,19 +6,17 @@ import {
   FaDownload,
   FaFileImport,
   FaHeadphones,
-  FaMagnifyingGlass,
   FaPenToSquare,
   FaPlus,
   FaRotateLeft,
   FaTrashCan,
   FaUpload,
   FaVolumeHigh,
-  FaXmark,
 } from 'react-icons/fa6';
-import Link from 'next/link';
 import AdminPageHeader from '../_components/AdminPageHeader';
 import { LISTENING_PRACTICES, type ListeningMondai, type ListeningPractice } from '@/modules/listeningContent';
 import { MediaUploadField } from '@/components/MediaUploadField';
+import { AdminButton, AdminModal, AdminFormField, AdminSearchInput, AdminSpinner, ConfirmDialog } from '@/components/admin/ui';
 
 type AdminListeningItem = ListeningPractice & {
   lessonId: string;
@@ -119,6 +117,8 @@ export default function AdminListeningClient() {
   const [error, setError] = useState<string | null>(null);
   // Track uploading state from MediaUploadField
   const [audioUploading, setAudioUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function loadItems() {
     setLoading(true);
@@ -267,18 +267,25 @@ export default function AdminListeningClient() {
   }
 
   async function deleteItem(id: string) {
-    if (!confirm('Xóa bài nghe này?')) return;
-
+    setDeleting(true);
     const res = await fetch(`/api/admin/listening/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok) {
       setError(data.message ?? 'Không xóa được bài nghe.');
+      setDeleting(false);
+      setDeleteTarget(null);
       return;
     }
 
     if (form.id === id) closeDialog();
     setMessage('Đã xóa bài nghe.');
+    setDeleteTarget(null);
+    setDeleting(false);
     await loadItems();
+  }
+
+  function confirmDelete(item: AdminListeningItem) {
+    setDeleteTarget({ id: item.lessonId, title: item.title });
   }
 
   async function importItems() {
@@ -317,18 +324,19 @@ export default function AdminListeningClient() {
         breadcrumb="Quản lý bài nghe"
         badge={`${items.length} bài nghe`}
         actions={<>
-          <Link href="/ja/listening"
-            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaHeadphones size={13} /> Xem page
-          </Link>
-          <a href="/samples/jlpt-listening-sample.json" download
-            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaDownload size={13} /> JSON mẫu
+          <AdminButton variant="secondary" size="md" icon={<FaHeadphones size={13} />}
+            onClick={() => window.open('/ja/listening', '_blank')}>
+            Xem page
+          </AdminButton>
+          <a href="/samples/jlpt-listening-sample.json" download>
+            <AdminButton variant="secondary" size="md" icon={<FaDownload size={13} />}>
+              JSON mẫu
+            </AdminButton>
           </a>
-          <button onClick={openCreateDialog}
-            className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaPlus size={13} /> Bài nghe mới
-          </button>
+          <AdminButton variant="primary" size="md" icon={<FaPlus size={13} />}
+            onClick={openCreateDialog}>
+            Bài nghe mới
+          </AdminButton>
         </>}
       />
 
@@ -352,14 +360,11 @@ export default function AdminListeningClient() {
           </div>
 
           <div className="grid lg:grid-cols-[1.6fr,1fr,1fr,1fr,auto] gap-3 mb-5">
-            <div className="relative">
-              <input
-                className="input pl-9"
-                placeholder="Search tiêu đề, câu hỏi, transcript..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </div>
+            <AdminSearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search tiêu đề, câu hỏi, transcript..."
+            />
             <select className="input" value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
               <option value="ALL">Tất cả category</option>
               {categoryOptions.map((category) => (
@@ -374,13 +379,13 @@ export default function AdminListeningClient() {
               <option value="ALL">Tất cả mondai</option>
               {MONDAI.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
-            <button onClick={resetFilters} className="btn-secondary whitespace-nowrap">
-              <FaRotateLeft size={12} /> Reset
-            </button>
+            <AdminButton variant="secondary" icon={<FaRotateLeft size={12} />} onClick={resetFilters}>
+              Reset
+            </AdminButton>
           </div>
 
           {loading ? (
-            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Đang tải dữ liệu...</div>
+            <AdminSpinner label="Đang tải dữ liệu..." />
           ) : (
             <div className="space-y-5">
               {grouped.map((group) => (
@@ -411,12 +416,14 @@ export default function AdminListeningClient() {
                               <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>{item.question}</div>
                             </div>
                             <div className="flex gap-2 shrink-0">
-                              <button onClick={() => openEditDialog(item)} className="btn-secondary text-xs py-2 px-3">
-                                <FaPenToSquare size={12} /> Sửa
-                              </button>
-                              <button onClick={() => deleteItem(item.lessonId)} className="btn-secondary text-xs py-2 px-3">
-                                <FaTrashCan size={12} /> Xóa
-                              </button>
+                              <AdminButton variant="secondary" size="sm" icon={<FaPenToSquare size={12} />}
+                                onClick={() => openEditDialog(item)}>
+                                Sửa
+                              </AdminButton>
+                              <AdminButton variant="danger" size="sm" icon={<FaTrashCan size={12} />}
+                                onClick={() => confirmDelete(item)}>
+                                Xóa
+                              </AdminButton>
                             </div>
                           </div>
                         </div>
@@ -433,12 +440,14 @@ export default function AdminListeningClient() {
           <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Import JSON</h2>
             <div className="flex gap-2">
-              <button onClick={() => setImportJson(sampleImportJson())} className="btn-secondary text-xs py-2 px-3">
-                <FaDownload size={12} /> Nạp mẫu
-              </button>
-              <button onClick={importItems} disabled={importing || !importJson.trim()} className="btn-primary text-xs py-2 px-3">
-                <FaFileImport size={12} /> {importing ? 'Đang import...' : 'Import'}
-              </button>
+              <AdminButton variant="secondary" size="sm" icon={<FaDownload size={12} />}
+                onClick={() => setImportJson(sampleImportJson())}>
+                Nạp mẫu
+              </AdminButton>
+              <AdminButton variant="primary" size="sm" icon={<FaFileImport size={12} />}
+                onClick={importItems} disabled={importing || !importJson.trim()} loading={importing}>
+                {importing ? 'Đang import...' : 'Import'}
+              </AdminButton>
             </div>
           </div>
           <textarea
@@ -455,110 +464,102 @@ export default function AdminListeningClient() {
         </div>{/* end content */}
       </div>{/* end wrapper */}
 
-      {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center px-4 py-8 sm:py-10">
-          <div className="absolute inset-0 bg-black/40" onClick={closeDialog} />
-          <div className="relative w-full max-w-4xl max-h-[calc(100vh-3rem)] overflow-hidden rounded-[28px] border flex flex-col"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)', boxShadow: 'var(--shadow-lg)' }}>
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 px-6 py-5 sm:px-7 border-b"
-              style={{ borderColor: 'var(--border)', background: 'color-mix(in srgb, var(--bg-surface) 94%, transparent)' }}>
-              <div>
-                <h2 className="font-semibold text-xl" style={{ color: 'var(--text-primary)' }}>
-                  {form.id ? 'Cập nhật bài nghe' : 'Tạo bài nghe mới'}
-                </h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  Nhập nội dung bài nghe, transcript và audio URL nếu có.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={saveItem} disabled={saving || audioUploading} className="btn-primary">
-                  <FaUpload size={12} /> {saving ? 'Đang lưu...' : form.id ? 'Cập nhật' : 'Tạo mới'}
-                </button>
-                <button onClick={closeDialog} className="btn-secondary">
-                  Hủy
-                </button>
-              </div>
-            </div>
+      {/* Create/Edit Modal */}
+      <AdminModal
+        open={dialogOpen}
+        onClose={closeDialog}
+        title={form.id ? 'Cập nhật bài nghe' : 'Tạo bài nghe mới'}
+        description="Nhập nội dung bài nghe, transcript và audio URL nếu có."
+        size="xl"
+        footer={
+          <div className="flex items-center gap-2 justify-end">
+            <AdminButton variant="secondary" onClick={closeDialog}>Hủy</AdminButton>
+            <AdminButton variant="primary" icon={<FaUpload size={12} />}
+              onClick={saveItem} disabled={saving || audioUploading} loading={saving}>
+              {form.id ? 'Cập nhật' : 'Tạo mới'}
+            </AdminButton>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <AdminFormField label="Level">
+              <select className="input" value={form.levelCode} onChange={(event) => updateField('levelCode', event.target.value)}>
+                {LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+              </select>
+            </AdminFormField>
+            <AdminFormField label="Mondai">
+              <select className="input" value={form.mondai} onChange={(event) => updateField('mondai', event.target.value as ListeningMondai)}>
+                {MONDAI.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </AdminFormField>
+          </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5 sm:px-7">
-            <div className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Level</label>
-                  <select className="input" value={form.levelCode} onChange={(event) => updateField('levelCode', event.target.value)}>
-                    {LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Mondai</label>
-                  <select className="input" value={form.mondai} onChange={(event) => updateField('mondai', event.target.value as ListeningMondai)}>
-                    {MONDAI.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </select>
-                </div>
-              </div>
+          <AdminFormField label="Tiêu đề">
+            <input className="input" value={form.title} onChange={(event) => updateField('title', event.target.value)} />
+          </AdminFormField>
 
-              <div>
-                <label className="label">Tiêu đề</label>
-                <input className="input" value={form.title} onChange={(event) => updateField('title', event.target.value)} />
-              </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <AdminFormField label="Tóm tắt">
+              <input className="input" value={form.summary} onChange={(event) => updateField('summary', event.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Tình huống">
+              <input className="input" value={form.situation} onChange={(event) => updateField('situation', event.target.value)} />
+            </AdminFormField>
+          </div>
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Tóm tắt</label>
-                  <input className="input" value={form.summary} onChange={(event) => updateField('summary', event.target.value)} />
-                </div>
-                <div>
-                  <label className="label">Tình huống</label>
-                  <input className="input" value={form.situation} onChange={(event) => updateField('situation', event.target.value)} />
-                </div>
-              </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <AdminFormField label="Thời lượng (giây)">
+              <input className="input" type="number" min="10" value={form.durationSec} onChange={(event) => updateField('durationSec', event.target.value)} />
+            </AdminFormField>
+          </div>
+          <MediaUploadField
+            type="audio"
+            value={form.audioUrl}
+            onChange={url => updateField('audioUrl', url)}
+            label="🎧 Audio"
+            onUploading={setAudioUploading}
+          />
 
-              <div className="grid sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="label">Thời lượng (giây)</label>
-                  <input className="input" type="number" min="10" value={form.durationSec} onChange={(event) => updateField('durationSec', event.target.value)} />
-                </div>
-              </div>
-              <MediaUploadField
-                type="audio"
-                value={form.audioUrl}
-                onChange={url => updateField('audioUrl', url)}
-                label="🎧 Audio"
-                onUploading={setAudioUploading}
-              />
+          <AdminFormField label="Trọng tâm">
+            <input className="input" value={form.focus} onChange={(event) => updateField('focus', event.target.value)} />
+          </AdminFormField>
 
-              <div>
-                <label className="label">Trọng tâm</label>
-                <input className="input" value={form.focus} onChange={(event) => updateField('focus', event.target.value)} />
-              </div>
+          <AdminFormField label="Câu hỏi">
+            <textarea className="input min-h-[90px]" value={form.question} onChange={(event) => updateField('question', event.target.value)} />
+          </AdminFormField>
 
-              <div>
-                <label className="label">Câu hỏi</label>
-                <textarea className="input min-h-[90px]" value={form.question} onChange={(event) => updateField('question', event.target.value)} />
-              </div>
-
-              <div className="grid lg:grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Options, mỗi dòng một đáp án</label>
-                  <textarea className="input min-h-[140px]" value={form.optionsText} onChange={(event) => updateField('optionsText', event.target.value)} />
-                </div>
-                <div>
-                  <label className="label">Đáp án đúng</label>
-                  <input className="input mb-3" value={form.answer} onChange={(event) => updateField('answer', event.target.value)} />
-                  <label className="label">Giải thích</label>
-                  <textarea className="input min-h-[100px]" value={form.explanation} onChange={(event) => updateField('explanation', event.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <label className="label">Transcript, mỗi dòng theo dạng `Speaker: nội dung`</label>
-                <textarea className="input min-h-[220px] font-jp" value={form.transcriptText} onChange={(event) => updateField('transcriptText', event.target.value)} />
-              </div>
-            </div>
+          <div className="grid lg:grid-cols-2 gap-3">
+            <AdminFormField label="Options, mỗi dòng một đáp án">
+              <textarea className="input min-h-[140px]" value={form.optionsText} onChange={(event) => updateField('optionsText', event.target.value)} />
+            </AdminFormField>
+            <div className="space-y-3">
+              <AdminFormField label="Đáp án đúng">
+                <input className="input" value={form.answer} onChange={(event) => updateField('answer', event.target.value)} />
+              </AdminFormField>
+              <AdminFormField label="Giải thích">
+                <textarea className="input min-h-[100px]" value={form.explanation} onChange={(event) => updateField('explanation', event.target.value)} />
+              </AdminFormField>
             </div>
           </div>
+
+          <AdminFormField label="Transcript, mỗi dòng theo dạng Speaker: nội dung">
+            <textarea className="input min-h-[220px] font-jp" value={form.transcriptText} onChange={(event) => updateField('transcriptText', event.target.value)} />
+          </AdminFormField>
         </div>
-      )}
+      </AdminModal>
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Xóa bài nghe?"
+        description={`Bạn có chắc muốn xóa "${deleteTarget?.title ?? ''}"?`}
+        confirmLabel="Xóa"
+        danger
+        loading={deleting}
+        onConfirm={() => deleteTarget && deleteItem(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

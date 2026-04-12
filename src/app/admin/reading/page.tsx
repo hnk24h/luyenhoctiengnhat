@@ -5,11 +5,16 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AdminPageHeader from '../_components/AdminPageHeader';
 import {
-  FaPlus, FaTrash, FaPencil, FaNewspaper, FaCheck, FaXmark,
-  FaMagnifyingGlass, FaEye, FaEyeSlash, FaFileImport, FaFileExport,
+  FaPlus, FaTrash, FaPencil, FaNewspaper, FaCheck,
+  FaEye, FaEyeSlash, FaFileImport, FaFileExport,
   FaPrint, FaCircleCheck, FaCircleXmark, FaDownload, FaUpload,
   FaClipboard, FaFile,
 } from 'react-icons/fa6';
+import {
+  AdminButton, AdminTable, AdminToolbar, AdminModal,
+  AdminFormField, AdminBadge, AdminPageLoader, ConfirmDialog,
+} from '@/components/admin/ui';
+import type { ColumnDef } from '@/components/admin/ui/AdminTable';
 
 interface Passage {
   id: string; title: string; titleVi: string | null; level: string;
@@ -65,6 +70,7 @@ export default function AdminReadingPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult,  setImportResult]  = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [parseError,    setParseError]    = useState('');
+  const [deleteTarget,  setDeleteTarget]  = useState<Passage | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Auth guard
@@ -117,10 +123,11 @@ export default function AdminReadingPage() {
     else        { setFormError('Lỗi lưu dữ liệu.'); }
     setSaving(false);
   }
-  async function remove(id: string) {
-    if (!confirm('Xóa bài đọc này?')) return;
-    await fetch(`/api/reading/${id}`, { method: 'DELETE' });
-    setPassages(prev => prev.filter(p => p.id !== id));
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await fetch(`/api/reading/${deleteTarget.id}`, { method: 'DELETE' });
+    setPassages(prev => prev.filter(p => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
   }
   async function togglePublish(p: Passage) {
     await fetch(`/api/reading/${p.id}`, {
@@ -190,6 +197,63 @@ export default function AdminReadingPage() {
   const LEVEL_COLOR: Record<string, string> = { N5: '#15803D', N4: '#1D4ED8', N3: '#92400E', N2: '#C2410C', N1: '#BE123C' };
   function set(k: keyof typeof BLANK, v: any) { setForm(prev => ({ ...prev, [k]: v })); }
 
+  /* ── Table columns ── */
+  const TYPES: Record<string, string> = { news: 'Tin tức', long: 'Bài dài', short: 'Đoạn ngắn' };
+  const columns: ColumnDef<Passage>[] = [
+    {
+      key: 'title', header: 'Tiêu đề', width: '2fr',
+      render: p => (
+        <div>
+          <div className="font-semibold truncate text-sm" style={{ color: 'var(--text-primary)', fontFamily: '"Noto Sans JP", serif' }}>{p.title}</div>
+          {p.titleVi && <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{p.titleVi}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'level', header: 'Cấp', width: '56px',
+      render: p => <AdminBadge variant="danger">{p.level}</AdminBadge>,
+    },
+    {
+      key: 'type', header: 'Loại', width: '80px',
+      render: p => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{TYPES[p.type] ?? p.type}</span>,
+    },
+    {
+      key: 'chars', header: 'Ký tự', width: '60px',
+      headerClassName: 'text-center', cellClassName: 'text-center',
+      render: p => <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>{p.charCount}</span>,
+    },
+    {
+      key: 'status', header: 'Trạng thái', width: '90px',
+      render: p => (
+        <button onClick={e => { e.stopPropagation(); togglePublish(p); }}
+          className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full transition-all"
+          style={p.published
+            ? { background: 'rgba(22,163,74,0.12)', color: '#15803d' }
+            : { background: 'var(--border)', color: 'var(--text-muted)' }}>
+          {p.published ? <FaEye size={10} /> : <FaEyeSlash size={10} />}
+          {p.published ? 'Công khai' : 'Ẩn'}
+        </button>
+      ),
+    },
+    {
+      key: 'actions', header: '', width: '90px',
+      cellClassName: 'text-right',
+      render: p => (
+        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <AdminButton variant="ghost" size="sm" onClick={e => { e.stopPropagation(); window.open(`/reading/${p.id}/print`, '_blank'); }} title="In bài đọc">
+            <FaPrint size={12} />
+          </AdminButton>
+          <AdminButton variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(p.id); }} title="Sửa">
+            <FaPencil size={12} />
+          </AdminButton>
+          <AdminButton variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setDeleteTarget(p); }} title="Xóa">
+            <FaTrash size={12} style={{ color: '#EF4444' }} />
+          </AdminButton>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       <AdminPageHeader
@@ -198,321 +262,209 @@ export default function AdminReadingPage() {
         breadcrumb="Quản lý bài đọc"
         badge={`${passages.length} bài đọc`}
         actions={<>
-          <button onClick={() => setShowImport(true)}
-            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaFileImport size={13} /> Import
-          </button>
-          <button onClick={handleExport} disabled={exporting || passages.length === 0}
-            className="btn-secondary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaFileExport size={13} /> Export
-          </button>
-          <button onClick={openCreate}
-            className="btn-primary text-sm py-1.5 px-3 flex items-center gap-1.5">
-            <FaPlus size={13} /> Thêm mới
-          </button>
+          <AdminButton variant="secondary" size="sm" icon={<FaFileImport size={12} />} onClick={() => setShowImport(true)}>Import</AdminButton>
+          <AdminButton variant="secondary" size="sm" icon={<FaFileExport size={12} />} onClick={handleExport} loading={exporting} disabled={passages.length === 0}>Export</AdminButton>
+          <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm mới</AdminButton>
         </>}
       />
 
-      <div style={{ paddingBottom: 40 }}>
-
-      {/* ── Search + filter ── */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative">
-          <FaMagnifyingGlass size={13} className="absolute left-3 top-1/2 -translate-y-1/2"
-            style={{ color: 'var(--text-muted)' }} />
-          <input className="input sm:w-64 pl-9" placeholder="Tìm bài đọc..."
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-        <select className="input" style={{ width: 'auto' }} value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
-          <option value="">Tất cả cấp</option>
-          {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-        </select>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{filtered.length} bài</span>
-      </div>
-
-      {/* ── Table ── */}
-      {loading ? (
-        <div className="card animate-pulse" style={{ height: 200 }} />
-      ) : filtered.length === 0 ? (
-        <div className="card text-center py-14">
-          <div className="opacity-30 mb-3"><FaNewspaper size={52} style={{ color: 'var(--text-muted)', margin: '0 auto' }}/></div>
-          <p style={{ color: 'var(--text-muted)' }}>Chưa có bài đọc nào.</p>
-          <div className="flex gap-2 justify-center mt-4">
-            <button onClick={openCreate} className="btn-primary text-sm flex items-center gap-1.5">
-              <FaPlus size={11} /> Tạo thủ công
-            </button>
-            <button onClick={() => setShowImport(true)} className="btn-secondary text-sm flex items-center gap-1.5">
-              <FaFileImport size={11} /> Import JSON
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="card overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                {['Tiêu đề', 'Cấp', 'Loại', 'Ký tự', 'Trạng thái', ''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase"
-                    style={{ color: 'var(--text-muted)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(p => (
-                <tr key={p.id} className="border-b hover:bg-white/40 transition-colors"
-                  style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-4 py-3 max-w-xs">
-                    <div className="font-semibold truncate"
-                      style={{ color: 'var(--text-base)', fontFamily: '"Noto Sans JP", serif' }}>{p.title}</div>
-                    {p.titleVi && <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{p.titleVi}</div>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: `${LEVEL_COLOR[p.level]}20`, color: LEVEL_COLOR[p.level] }}>{p.level}</span>
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {p.type === 'news' ? 'Tin tức' : p.type === 'long' ? 'Bài dài' : 'Đoạn ngắn'}
-                  </td>
-                  <td className="px-4 py-3 text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>{p.charCount}</td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => togglePublish(p)}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full transition-all"
-                      style={p.published
-                        ? { background: 'rgba(22,163,74,0.12)', color: '#15803d' }
-                        : { background: 'var(--border)', color: 'var(--text-muted)' }}>
-                      {p.published ? <FaEye size={10} /> : <FaEyeSlash size={10} />}
-                      {p.published ? 'Công khai' : 'Ẩn'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => window.open(`/reading/${p.id}/print`, '_blank')}
-                        className="btn-ghost p-1.5" title="In bài đọc"
-                        style={{ color: 'var(--text-muted)' }}>
-                        <FaPrint size={13} />
-                      </button>
-                      <button onClick={() => openEdit(p.id)} className="btn-ghost p-1.5" title="Sửa"
-                        style={{ color: 'var(--primary)' }}>
-                        <FaPencil size={13} />
-                      </button>
-                      <button onClick={() => remove(p.id)} className="btn-ghost p-1.5" title="Xóa"
-                        style={{ color: 'var(--danger, #EF4444)' }}>
-                        <FaTrash size={13} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ══════════════════════════
-          IMPORT MODAL
-      ══════════════════════════ */}
-      {showImport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10"
-          style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="card w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-base)' }}>
-                <FaFileImport size={16} style={{ color: 'var(--primary)' }} /> Import bài đọc từ JSON
-              </h2>
-              <button onClick={closeImport} className="btn-ghost p-1.5"><FaXmark size={16} /></button>
-            </div>
-
-            {/* Format guide */}
-            <div className="rounded-lg p-3 mb-4 text-xs" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-              <strong>Định dạng:</strong> Mảng JSON — mỗi object cần{' '}
-              <code className="font-mono bg-white/60 px-1 rounded">title</code>,{' '}
-              <code className="font-mono bg-white/60 px-1 rounded">content</code>,{' '}
-              <code className="font-mono bg-white/60 px-1 rounded">level</code> (N5–N1).{' '}
-              Tùy chọn: <code className="font-mono bg-white/60 px-1 rounded">titleVi, summary, type, source, sourceUrl, tags[], published</code>
-            </div>
-
-            {/* Toolbar */}
-            <div className="flex gap-2 mb-3 flex-wrap">
-              <button onClick={() => fileRef.current?.click()}
-                className="btn-secondary text-xs flex items-center gap-1.5">
-                <FaFile size={11} /> Chọn file .json
-              </button>
-              <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={loadFile} />
-              <button onClick={loadSample}
-                className="btn-secondary text-xs flex items-center gap-1.5">
-                <FaClipboard size={11} /> Dán dữ liệu mẫu
-              </button>
-              <button onClick={downloadSample}
-                className="btn-secondary text-xs flex items-center gap-1.5">
-                <FaDownload size={11} /> Tải file mẫu
-              </button>
-            </div>
-
-            {/* Textarea */}
-            <textarea
-              className="input w-full font-mono text-xs"
-              style={{ height: 220, resize: 'vertical' }}
-              placeholder={'[\n  {\n    "title": "日本語タイトル",\n    "content": "本文...",\n    "level": "N5",\n    "type": "short"\n  }\n]'}
-              value={importJson}
-              onChange={e => { setImportJson(e.target.value); setParseError(''); setImportResult(null); }}
+      <div className="pb-10">
+        {loading ? <AdminPageLoader label="Đang tải bài đọc..." /> : (
+          <>
+            <AdminToolbar
+              search={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Tìm bài đọc..."
+              filters={
+                <select className="input text-sm py-1.5" style={{ width: 'auto' }} value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
+                  <option value="">Tất cả cấp</option>
+                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              }
+              actions={
+                <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm mới</AdminButton>
+              }
             />
 
-            {/* Validation status */}
-            <div className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-              {importJson.trim() ? (
-                jsonValid
-                  ? <span className="flex items-center gap-1" style={{ color: '#15803D' }}>
-                      <FaCircleCheck size={11} /> JSON hợp lệ — {parsedCount} bài đọc
-                    </span>
-                  : <span className="flex items-center gap-1 text-red-500">
-                      <FaCircleXmark size={11} /> JSON không hợp lệ
-                    </span>
-              ) : 'Nhập JSON hoặc chọn file...'}
-            </div>
-
-            {parseError && (
-              <div className="mt-2 text-xs p-2 rounded" style={{ background: '#FEE2E2', color: '#991B1B' }}>{parseError}</div>
-            )}
-
-            {/* Result */}
-            {importResult && (
-              <div className="mt-3 rounded-lg p-3 text-sm"
-                style={{ background: importResult.imported > 0 ? '#DCFCE7' : '#FEE2E2',
-                         color:      importResult.imported > 0 ? '#15803D' : '#991B1B' }}>
-                <div className="flex items-center gap-2 font-semibold mb-1">
-                  {importResult.imported > 0 ? <FaCircleCheck /> : <FaCircleXmark />}
-                  Đã import <strong>{importResult.imported}</strong> bài
-                  {importResult.skipped > 0 && <> — bỏ qua <strong>{importResult.skipped}</strong></>}
+            <AdminTable
+              columns={columns}
+              data={filtered}
+              rowKey={p => p.id}
+              onRowClick={p => openEdit(p.id)}
+              emptyIcon={<FaNewspaper />}
+              emptyTitle="Chưa có bài đọc nào"
+              emptyDescription="Tạo bài đọc đầu tiên hoặc import từ JSON."
+              emptyAction={
+                <div className="flex gap-2">
+                  <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Tạo thủ công</AdminButton>
+                  <AdminButton variant="secondary" icon={<FaFileImport size={11} />} onClick={() => setShowImport(true)}>Import JSON</AdminButton>
                 </div>
-                {importResult.errors.length > 0 && (
-                  <ul className="text-xs space-y-0.5 mt-1 font-mono" style={{ color: '#991B1B' }}>
-                    {importResult.errors.map((e, i) => <li key={i}>• {e}</li>)}
-                  </ul>
-                )}
-              </div>
-            )}
+              }
+            />
+          </>
+        )}
+      </div>
 
-            <div className="flex justify-end gap-2 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <button onClick={closeImport} className="btn-secondary">Đóng</button>
-              <button onClick={handleImport} disabled={!jsonValid || importLoading}
-                className="btn-primary flex items-center gap-2"
-                style={{ opacity: !jsonValid ? 0.5 : 1 }}>
-                {importLoading
-                  ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Đang import...</>
-                  : <><FaUpload size={12} /> Import{parsedCount > 0 ? ` ${parsedCount} bài` : ''}</>}
-              </button>
-            </div>
-          </div>
+      {/* ── Import Modal ── */}
+      <AdminModal
+        open={showImport}
+        onClose={closeImport}
+        title="Import bài đọc từ JSON"
+        icon={<FaFileImport size={14} />}
+        size="lg"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={closeImport}>Đóng</AdminButton>
+            <AdminButton onClick={handleImport} disabled={!jsonValid} loading={importLoading}
+              icon={<FaUpload size={12} />}>
+              Import{parsedCount > 0 ? ` ${parsedCount} bài` : ''}
+            </AdminButton>
+          </>
+        }
+      >
+        {/* Format guide */}
+        <div className="rounded-lg p-3 mb-4 text-xs" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+          <strong>Định dạng:</strong> Mảng JSON — mỗi object cần{' '}
+          <code className="font-mono bg-white/60 px-1 rounded">title</code>,{' '}
+          <code className="font-mono bg-white/60 px-1 rounded">content</code>,{' '}
+          <code className="font-mono bg-white/60 px-1 rounded">level</code> (N5–N1).{' '}
+          Tùy chọn: <code className="font-mono bg-white/60 px-1 rounded">titleVi, summary, type, source, sourceUrl, tags[], published</code>
         </div>
-      )}
 
-      {/* ══════════════════════════
-          CREATE / EDIT MODAL
-      ══════════════════════════ */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10"
-          style={{ background: 'rgba(0,0,0,0.5)' }}>
-          <div className="card w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>
-                {editId ? 'Sửa bài đọc' : 'Thêm bài đọc mới'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="btn-ghost p-1.5"><FaXmark size={16} /></button>
-            </div>
-
-            {formError && (
-              <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#991B1B' }}>{formError}</div>
-            )}
-
-            <div className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Tiêu đề (Nhật) *</label>
-                  <input className="input w-full" style={{ fontFamily: '"Noto Sans JP", serif' }}
-                    placeholder="日本語タイトル" value={form.title} onChange={e => set('title', e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Tiêu đề (Việt)</label>
-                  <input className="input w-full" placeholder="Tiêu đề tiếng Việt"
-                    value={form.titleVi} onChange={e => set('titleVi', e.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Nội dung (Nhật) * — <span className="font-normal">{form.content.length} ký tự</span>
-                </label>
-                <textarea rows={10} className="input w-full text-base"
-                  style={{ fontFamily: '"Noto Sans JP", serif', lineHeight: 2, resize: 'vertical' }}
-                  placeholder="日本語の本文..."
-                  value={form.content} onChange={e => set('content', e.target.value)} />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Tóm tắt (Việt)</label>
-                <textarea rows={2} className="input w-full" placeholder="Mô tả ngắn bằng tiếng Việt..."
-                  value={form.summary} onChange={e => set('summary', e.target.value)} />
-              </div>
-
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Cấp độ</label>
-                  <select className="input w-full" value={form.level} onChange={e => set('level', e.target.value)}>
-                    {LEVELS.map(lv => <option key={lv}>{lv}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Loại</label>
-                  <select className="input w-full" value={form.type} onChange={e => set('type', e.target.value)}>
-                    <option value="short">Đoạn ngắn</option>
-                    <option value="long">Bài dài</option>
-                    <option value="news">Tin tức</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Trạng thái</label>
-                  <select className="input w-full" value={form.published ? 'true' : 'false'}
-                    onChange={e => set('published', e.target.value === 'true')}>
-                    <option value="true">Công khai</option>
-                    <option value="false">Ẩn</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Nguồn</label>
-                  <input className="input w-full" placeholder="VD: NHK Web Easy"
-                    value={form.source} onChange={e => set('source', e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>URL nguồn</label>
-                  <input className="input w-full" placeholder="https://..."
-                    value={form.sourceUrl} onChange={e => set('sourceUrl', e.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Tags <span className="font-normal">(cách nhau bởi dấu phẩy)</span>
-                </label>
-                <input className="input w-full" placeholder="VD: gia đình, thức ăn, giao thông"
-                  value={form.tags} onChange={e => set('tags', e.target.value)} />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <button onClick={() => setShowModal(false)} className="btn-secondary">Hủy</button>
-              <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
-                {saving
-                  ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Đang lưu...</>
-                  : <><FaCheck size={12} /> {editId ? 'Cập nhật' : 'Tạo bài'}</>}
-              </button>
-            </div>
-          </div>
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <AdminButton variant="secondary" size="sm" icon={<FaFile size={10} />} onClick={() => fileRef.current?.click()}>Chọn file .json</AdminButton>
+          <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={loadFile} />
+          <AdminButton variant="secondary" size="sm" icon={<FaClipboard size={10} />} onClick={loadSample}>Dán dữ liệu mẫu</AdminButton>
+          <AdminButton variant="secondary" size="sm" icon={<FaDownload size={10} />} onClick={downloadSample}>Tải file mẫu</AdminButton>
         </div>
-      )}
-      </div>{/* end wrapper */}
+
+        <textarea
+          className="input w-full font-mono text-xs"
+          style={{ height: 220, resize: 'vertical' }}
+          placeholder={'[\n  {\n    "title": "日本語タイトル",\n    "content": "本文...",\n    "level": "N5",\n    "type": "short"\n  }\n]'}
+          value={importJson}
+          onChange={e => { setImportJson(e.target.value); setParseError(''); setImportResult(null); }}
+        />
+
+        <div className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+          {importJson.trim() ? (
+            jsonValid
+              ? <span className="flex items-center gap-1" style={{ color: '#15803D' }}><FaCircleCheck size={11} /> JSON hợp lệ — {parsedCount} bài đọc</span>
+              : <span className="flex items-center gap-1 text-red-500"><FaCircleXmark size={11} /> JSON không hợp lệ</span>
+          ) : 'Nhập JSON hoặc chọn file...'}
+        </div>
+
+        {parseError && <div className="mt-2 text-xs p-2 rounded" style={{ background: '#FEE2E2', color: '#991B1B' }}>{parseError}</div>}
+
+        {importResult && (
+          <div className="mt-3 rounded-lg p-3 text-sm"
+            style={{ background: importResult.imported > 0 ? '#DCFCE7' : '#FEE2E2', color: importResult.imported > 0 ? '#15803D' : '#991B1B' }}>
+            <div className="flex items-center gap-2 font-semibold mb-1">
+              {importResult.imported > 0 ? <FaCircleCheck /> : <FaCircleXmark />}
+              Đã import <strong>{importResult.imported}</strong> bài
+              {importResult.skipped > 0 && <> — bỏ qua <strong>{importResult.skipped}</strong></>}
+            </div>
+            {importResult.errors.length > 0 && (
+              <ul className="text-xs space-y-0.5 mt-1 font-mono" style={{ color: '#991B1B' }}>
+                {importResult.errors.map((e, i) => <li key={i}>• {e}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+      </AdminModal>
+
+      {/* ── Create / Edit Modal ── */}
+      <AdminModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editId ? 'Sửa bài đọc' : 'Thêm bài đọc mới'}
+        icon={<FaNewspaper size={14} />}
+        size="lg"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={() => setShowModal(false)}>Hủy</AdminButton>
+            <AdminButton loading={saving} onClick={save} icon={<FaCheck size={12} />}>
+              {editId ? 'Cập nhật' : 'Tạo bài'}
+            </AdminButton>
+          </>
+        }
+      >
+        {formError && <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#991B1B' }}>{formError}</div>}
+
+        <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <AdminFormField label="Tiêu đề (Nhật)" required>
+              <input className="input w-full" style={{ fontFamily: '"Noto Sans JP", serif' }}
+                placeholder="日本語タイトル" value={form.title} onChange={e => set('title', e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Tiêu đề (Việt)">
+              <input className="input w-full" placeholder="Tiêu đề tiếng Việt"
+                value={form.titleVi} onChange={e => set('titleVi', e.target.value)} />
+            </AdminFormField>
+          </div>
+
+          <AdminFormField label={`Nội dung (Nhật) — ${form.content.length} ký tự`} required>
+            <textarea rows={10} className="input w-full text-base"
+              style={{ fontFamily: '"Noto Sans JP", serif', lineHeight: 2, resize: 'vertical' }}
+              placeholder="日本語の本文..."
+              value={form.content} onChange={e => set('content', e.target.value)} />
+          </AdminFormField>
+
+          <AdminFormField label="Tóm tắt (Việt)">
+            <textarea rows={2} className="input w-full" placeholder="Mô tả ngắn bằng tiếng Việt..."
+              value={form.summary} onChange={e => set('summary', e.target.value)} />
+          </AdminFormField>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            <AdminFormField label="Cấp độ">
+              <select className="input w-full" value={form.level} onChange={e => set('level', e.target.value)}>
+                {LEVELS.map(lv => <option key={lv}>{lv}</option>)}
+              </select>
+            </AdminFormField>
+            <AdminFormField label="Loại">
+              <select className="input w-full" value={form.type} onChange={e => set('type', e.target.value)}>
+                <option value="short">Đoạn ngắn</option>
+                <option value="long">Bài dài</option>
+                <option value="news">Tin tức</option>
+              </select>
+            </AdminFormField>
+            <AdminFormField label="Trạng thái">
+              <select className="input w-full" value={form.published ? 'true' : 'false'}
+                onChange={e => set('published', e.target.value === 'true')}>
+                <option value="true">Công khai</option>
+                <option value="false">Ẩn</option>
+              </select>
+            </AdminFormField>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <AdminFormField label="Nguồn">
+              <input className="input w-full" placeholder="VD: NHK Web Easy"
+                value={form.source} onChange={e => set('source', e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="URL nguồn">
+              <input className="input w-full" placeholder="https://..."
+                value={form.sourceUrl} onChange={e => set('sourceUrl', e.target.value)} />
+            </AdminFormField>
+          </div>
+
+          <AdminFormField label="Tags (cách nhau bởi dấu phẩy)">
+            <input className="input w-full" placeholder="VD: gia đình, thức ăn, giao thông"
+              value={form.tags} onChange={e => set('tags', e.target.value)} />
+          </AdminFormField>
+        </div>
+      </AdminModal>
+
+      {/* ── Delete confirm ── */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={`Xóa bài đọc "${deleteTarget?.title}"?`}
+        description="Bài đọc sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác."
+        confirmLabel="Xóa"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

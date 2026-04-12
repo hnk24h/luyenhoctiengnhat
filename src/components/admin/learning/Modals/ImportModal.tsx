@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaXmark, FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { AdminModal, AdminFormField, AdminButton } from '@/components/admin/ui';
 
 interface Lesson {
   id: string;
@@ -24,28 +25,33 @@ interface ImportModalProps {
 export function ImportModal({ importOpen, setImportOpen, importFmt, setImportFmt, importText, setImportText, importResult, importErr, importing, runImport, lessons, activeLesId }: ImportModalProps) {
   if (!importOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setImportOpen(false)}>
-      <div className="card w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7', color: '#15803d' }}>
-              <FaFileArrowUp size={15} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>Import từ vựng / ngữ pháp</h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Bài học: <strong>{lessons.find(l => l.id === activeLesId)?.title}</strong>
-              </p>
-            </div>
-          </div>
-          <button onClick={() => setImportOpen(false)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+    <AdminModal
+      open
+      onClose={() => setImportOpen(false)}
+      title="Import từ vựng / ngữ pháp"
+      description={`Bài học: ${lessons.find(l => l.id === activeLesId)?.title ?? ''}`}
+      icon={<FaFileArrowUp size={15} />}
+      size="lg"
+      footer={
+        <div className="flex gap-3">
+          <AdminButton variant="secondary" className="flex-1" onClick={() => setImportOpen(false)}>
+            {importResult ? 'Đóng' : 'Hủy'}
+          </AdminButton>
+          {!importResult && (
+            <AdminButton variant="primary" className="flex-1" onClick={runImport} disabled={importing} loading={importing} icon={<FaFileArrowUp size={12} />}>
+              Import {importFmt.toUpperCase()}
+            </AdminButton>
+          )}
         </div>
+      }
+    >
         {/* Format tabs */}
         <div className="flex gap-2 mb-3 shrink-0">
           {(['csv', 'json'] as const).map(f => (
-            <button key={f} onClick={() => { setImportFmt(f); setImportText(''); }} className="px-4 py-1.5 rounded-xl text-sm font-semibold border transition-all" style={importFmt === f ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' } : { borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+            <AdminButton key={f} variant={importFmt === f ? 'primary' : 'secondary'} size="sm"
+              onClick={() => { setImportFmt(f); setImportText(''); }}>
               {f.toUpperCase()}
-            </button>
+            </AdminButton>
           ))}
         </div>
         {/* Format hint */}
@@ -70,23 +76,23 @@ export function ImportModal({ importOpen, setImportOpen, importFmt, setImportFmt
         </div>
         {/* Template download */}
         <div className="mb-3 shrink-0">
-          <button onClick={() => {
+          <AdminButton variant="ghost" size="sm" icon={<FaDownload size={10} />}
+            onClick={() => {
             const content = importFmt === 'csv'
               ? 'term,pronunciation,meaning,type,example,exampleReading,exampleMeaning\n食べる,たべる,ăn,vocab,毎日食べます,まいにちたべます,Tôi ăn mỗi ngày\n家族,かぞく,gia đình,vocab,,,'
               : JSON.stringify([{ term: '食べる', pronunciation: 'たべる', meaning: 'ăn', type: 'vocab', example: '毎日食べます', exampleReading: 'まいにちたべます', exampleMeaning: 'Tôi ăn mỗi ngày' }], null, 2);
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = `template.${importFmt}`; a.click();
-          }} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-            <FaDownload size={10} /> Tải template {importFmt.toUpperCase()}
-          </button>
+          }}>
+            Tải template {importFmt.toUpperCase()}
+          </AdminButton>
         </div>
         {/* Textarea */}
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <label className="block text-xs font-semibold mb-1 shrink-0" style={{ color: 'var(--text-base)' }}>
-            Dán dữ liệu {importFmt.toUpperCase()} vào đây *
-          </label>
+          <AdminFormField label={`Dán dữ liệu ${importFmt.toUpperCase()} vào đây`} required>
           <textarea className="input flex-1 resize-none font-mono text-xs w-full min-h-[160px]" placeholder={importFmt === 'csv' ? 'term,pronunciation,meaning,type,...\n食べる,たべる,ăn,vocab,...' : '[{"term":"食べる","pronunciation":"たべる","meaning":"ăn","type":"vocab"}]'} value={importText} onChange={e => setImportText(e.target.value)} />
+          </AdminFormField>
         </div>
         {/* Error */}
         {importErr && (
@@ -107,18 +113,6 @@ export function ImportModal({ importOpen, setImportOpen, importFmt, setImportFmt
           </div>
         )}
         {/* Actions */}
-        <div className="flex gap-3 mt-4 shrink-0">
-          <button onClick={() => setImportOpen(false)} className="btn-secondary flex-1">
-            {importResult ? 'Đóng' : 'Hủy'}
-          </button>
-          {!importResult && (
-            <button onClick={runImport} disabled={importing} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              {importing ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <FaFileArrowUp size={12} />}
-              Import {importFmt.toUpperCase()}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

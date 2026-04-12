@@ -13,6 +13,9 @@ import {
   FaLayerGroup, FaPlus, FaXmark, FaCheck, FaBolt,
   FaCircleCheck, FaClockRotateLeft, FaTrash, FaArrowLeft,
   FaRotate, FaChevronLeft, FaChevronRight, FaBookOpen, FaLock,
+  FaClock, FaHeadphones, FaGraduationCap,
+  FaShareNodes, FaGlobe, FaUserGroup, FaLockOpen, FaUsers,
+  FaEnvelope, FaMagnifyingGlass, FaChevronDown,
 } from 'react-icons/fa6';
 
 // ─── Per-language config ──────────────────────────────────────────────────────
@@ -49,9 +52,26 @@ interface Deck {
   title: string;
   description: string | null;
   color: string;
+  shareMode: 'private' | 'public' | 'specific';
   _count: { cards: number };
   dueCount: number;
   updatedAt: string;
+}
+
+interface SharedDeck {
+  id: string;
+  title: string;
+  description: string | null;
+  color: string;
+  shareMode: string;
+  user: { id: string; name: string | null; image: string | null };
+  _count: { cards: number };
+}
+
+interface ShareTarget {
+  id: string;
+  target: { id: string; name: string | null; email: string; image: string | null };
+  createdAt: string;
 }
 
 type QuickCard = { id: string; front: string; back: string; pronunciation: string };
@@ -70,6 +90,283 @@ const PRESET_COLORS = [
   '#D97706', '#059669', '#0891B2', '#374151',
 ];
 
+// ─── Right Panel: Flashcard Deck List ─────────────────────────────────────────
+
+function FlashcardListPanel({
+  decks,
+  loading,
+  selectedSkill,
+  status,
+  lang,
+}: {
+  decks: Deck[];
+  loading: boolean;
+  selectedSkill: string;
+  status: string;
+  lang: string;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = decks.filter(d =>
+    d.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div className="sticky top-4 rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+      {/* Header */}
+      <div className="px-4 py-3" style={{ background: 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 80%, #8B5CF6))' }}>
+        <div className="flex items-center gap-2 mb-2">
+          <FaLayerGroup size={13} className="text-white/80" />
+          <span className="text-[13px] font-bold text-white">Bộ thẻ của bạn</span>
+        </div>
+        {selectedSkill === 'srs' && status === 'authenticated' && (
+          <div className="relative">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tìm bộ thẻ..."
+              className="w-full text-xs py-1.5 pl-3 pr-8 rounded-lg bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-1 focus:ring-white/30"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="max-h-[calc(100vh-240px)] overflow-y-auto scrollbar-thin p-3 space-y-2">
+        {selectedSkill !== 'srs' ? (
+          <div className="text-center py-6">
+            <FaBookOpen size={20} className="mx-auto mb-2 opacity-40" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Chọn &quot;SRS&quot; để xem bộ thẻ</p>
+          </div>
+        ) : status !== 'authenticated' ? (
+          <div className="text-center py-6">
+            <FaLock size={16} className="mx-auto mb-2 opacity-40" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Đăng nhập để xem bộ thẻ</p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: 'var(--bg-muted)' }} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {search ? 'Không tìm thấy bộ thẻ' : 'Chưa có bộ thẻ nào'}
+            </p>
+          </div>
+        ) : (
+          filtered.map(deck => (
+            <Link
+              key={deck.id}
+              href={`/${lang}/flashcards/${deck.id}`}
+              className="flex items-center gap-2.5 p-2.5 rounded-xl transition-colors hover:scale-[1.01]"
+              style={{ background: 'var(--bg-muted)' }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: deck.color + '18', color: deck.color }}>
+                <FaLayerGroup size={12} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[12px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{deck.title}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{deck._count.cards} thẻ</span>
+                  {deck.dueCount > 0 && (
+                    <span className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: '#D97706' }}>
+                      <FaBolt size={8} /> {deck.dueCount}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Share Dialog ─────────────────────────────────────────────────────────────
+
+function ShareDialog({
+  deck,
+  onClose,
+  onUpdate,
+}: {
+  deck: Deck;
+  onClose: () => void;
+  onUpdate: (d: Deck) => void;
+}) {
+  const [mode, setMode] = useState<'private' | 'public' | 'specific'>(deck.shareMode);
+  const [shares, setShares] = useState<ShareTarget[]>([]);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  // Load current shares
+  useEffect(() => {
+    fetch(`/api/flashcards/${deck.id}/share`).then(r => r.json()).then(data => {
+      setShares(data.shares ?? []);
+      setMode(data.shareMode ?? 'private');
+    });
+  }, [deck.id]);
+
+  async function saveMode(newMode: 'private' | 'public' | 'specific') {
+    setLoading(true); setError('');
+    const res = await fetch(`/api/flashcards/${deck.id}/share`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shareMode: newMode }),
+    });
+    if (res.ok) {
+      setMode(newMode);
+      if (newMode === 'private') setShares([]);
+      onUpdate({ ...deck, shareMode: newMode });
+      setSaved(true); setTimeout(() => setSaved(false), 2000);
+    }
+    setLoading(false);
+  }
+
+  async function addShare() {
+    if (!email.trim()) return;
+    setLoading(true); setError('');
+    const res = await fetch(`/api/flashcards/${deck.id}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emails: email.split(',').map(e => e.trim()).filter(Boolean) }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setShares(data.shares ?? []);
+      setMode(data.shareMode ?? mode);
+      onUpdate({ ...deck, shareMode: data.shareMode ?? mode });
+      setEmail(''); setSaved(true); setTimeout(() => setSaved(false), 2000);
+    } else {
+      const d = await res.json();
+      setError(d.message || 'Không tìm thấy user');
+    }
+    setLoading(false);
+  }
+
+  async function removeShare(shareId: string) {
+    await fetch(`/api/flashcards/${deck.id}/share`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shareIds: [shareId] }),
+    });
+    setShares(s => s.filter(x => x.id !== shareId));
+  }
+
+  const MODES = [
+    { key: 'private' as const, icon: <FaLock size={13} />, label: 'Riêng tư', desc: 'Chỉ bạn xem được' },
+    { key: 'public' as const, icon: <FaGlobe size={13} />, label: 'Công khai', desc: 'Tất cả user đều thấy' },
+    { key: 'specific' as const, icon: <FaUserGroup size={13} />, label: 'Chỉ định', desc: 'Chia sẻ cho user cụ thể' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div className="card w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FaShareNodes size={16} style={{ color: 'var(--primary)' }} />
+            <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+              Chia sẻ: {deck.title}
+            </h2>
+          </div>
+          <button onClick={onClose} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+        </div>
+
+        {/* Mode selector */}
+        <div className="flex gap-2 mb-4">
+          {MODES.map(m => (
+            <button key={m.key} onClick={() => saveMode(m.key)} disabled={loading}
+              className="flex-1 p-3 rounded-xl text-left transition-all"
+              style={{
+                background: mode === m.key ? 'var(--primary-light)' : 'var(--bg-muted)',
+                border: mode === m.key ? '2px solid var(--primary)' : '2px solid transparent',
+              }}>
+              <div className="flex items-center gap-2 mb-1"
+                style={{ color: mode === m.key ? 'var(--primary)' : 'var(--text-secondary)' }}>
+                {m.icon}
+                <span className="text-xs font-bold">{m.label}</span>
+              </div>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Add user (for specific mode) */}
+        {(mode === 'specific' || mode === 'public') && (
+          <>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Thêm user bằng email
+              </label>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <FaEnvelope size={11} className="absolute left-3 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--text-muted)' }} />
+                  <input className="input w-full pl-8" type="email"
+                    placeholder="user@email.com (phân cách bằng dấu phẩy)"
+                    value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addShare())} />
+                </div>
+                <button onClick={addShare} disabled={loading || !email.trim()}
+                  className="btn-primary px-4 text-xs flex items-center gap-1.5">
+                  <FaPlus size={10} /> Thêm
+                </button>
+              </div>
+              {error && <p className="text-xs mt-1.5" style={{ color: '#ef4444' }}>{error}</p>}
+              {saved && <p className="text-xs mt-1.5" style={{ color: '#16a34a' }}>✓ Đã lưu</p>}
+            </div>
+
+            {/* Shared users list */}
+            {shares.length > 0 && (
+              <div>
+                <div className="text-[11px] font-bold uppercase mb-2" style={{ color: 'var(--text-muted)', letterSpacing: 1 }}>
+                  Đang chia sẻ với ({shares.length})
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {shares.map(s => (
+                    <div key={s.id} className="flex items-center justify-between p-2 rounded-lg"
+                      style={{ background: 'var(--bg-muted)' }}>
+                      <div className="flex items-center gap-2.5">
+                        {s.target.image ? (
+                          <img src={s.target.image} alt="" className="w-7 h-7 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold"
+                            style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                            {(s.target.name ?? s.target.email)?.[0]?.toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                            {s.target.name || s.target.email}
+                          </div>
+                          {s.target.name && (
+                            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{s.target.email}</div>
+                          )}
+                        </div>
+                      </div>
+                      <button onClick={() => removeShare(s.id)}
+                        className="p-1.5 rounded-md transition-colors hover:bg-red-50"
+                        style={{ color: '#ef4444' }}>
+                        <FaXmark size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Unified component ────────────────────────────────────────────────────────
 
 function FlashcardsContent() {
@@ -82,16 +379,19 @@ function FlashcardsContent() {
   );
 
   // Sidebar đồng nhất: levels, skills, selectedLevel, selectedSkill
+  const JA_DESCS: Record<string, string> = { N5: 'Sơ cấp', N4: 'Sơ trung cấp', N3: 'Trung cấp', N2: 'Trung cao cấp', N1: 'Cao cấp' };
+  const ZH_DESCS: Record<string, string> = { HSK1: 'Nhập môn', HSK2: 'Sơ cấp', HSK3: 'Trung cấp', HSK4: 'Trên trung cấp', HSK5: 'Cao cấp', HSK6: 'Thành thạo' };
+  const descMap = lang === 'zh' ? ZH_DESCS : JA_DESCS;
   const levels = langCfg.levels.map(lvl => ({
     code: lvl,
     label: lvl,
-    desc: '',
+    desc: descMap[lvl] ?? '',
     percent: undefined,
     status: undefined,
   }));
   const skills = [
-    { key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={18} /> },
-    { key: 'quick', label: 'Luyện ghi nhớ thường', icon: <FaBookOpen size={18} /> },
+    { key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={14} /> },
+    { key: 'quick', label: 'Luyện ghi nhớ thường', icon: <FaBookOpen size={14} /> },
   ];
   const [selectedLevel, setSelectedLevel] = useState(levels[0]?.code || '');
   const [selectedSkill, setSelectedSkill] = useState<'srs' | 'quick'>('srs');
@@ -105,6 +405,10 @@ function FlashcardsContent() {
   const [newColor, setNewColor] = useState('#4F46E5');
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [sharingDeck, setSharingDeck] = useState<Deck | null>(null);
+  const [sharedDecks, setSharedDecks] = useState<SharedDeck[]>([]);
+  const [sharedLoading, setSharedLoading] = useState(false);
+  const [showShared, setShowShared] = useState(false);
 
   // ── Quick-study state ─────────────────────────────────────────────────────
   const [quickLevel,    setQuickLevel]    = useState(() => langCfg.defaultLevel);
@@ -124,9 +428,19 @@ function FlashcardsContent() {
     setLoading(false);
   }, []);
 
+  const loadSharedDecks = useCallback(async () => {
+    setSharedLoading(true);
+    const res = await fetch('/api/flashcards/shared');
+    if (res.ok) setSharedDecks(await res.json());
+    setSharedLoading(false);
+  }, []);
+
   useEffect(() => {
-    if (status === 'authenticated') loadDecks();
-  }, [status, loadDecks]);
+    if (status === 'authenticated') {
+      loadDecks();
+      loadSharedDecks();
+    }
+  }, [status, loadDecks, loadSharedDecks]);
 
   // ── Load quick-study vocab ────────────────────────────────────────────────
   const loadQuick = useCallback(async (level: string) => {
@@ -224,23 +538,49 @@ function FlashcardsContent() {
           skills,
           title: 'Luyện Flashcard',
         }}
-        bottomBarProps={{}}
+        bottomBarProps={{
+          levels,
+          selectedLevel,
+          setSelectedLevel,
+          skills,
+          selectedSkill,
+          setSelectedSkill,
+        }}
+        rightPanel={
+          <FlashcardListPanel
+            decks={decks}
+            loading={loading}
+            selectedSkill={selectedSkill}
+            status={status}
+            lang={lang}
+          />
+        }
       >
-        {/* Header lớn, động lực */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-indigo-500 to-blue-400 shadow-lg">
-            <FaLayerGroup size={28} className="text-white" />
+        {/* Hero section (matching reading/listening pages) */}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative"
+                style={{ background: 'var(--primary)', boxShadow: '0 4px 14px color-mix(in srgb, var(--primary) 30%, transparent)' }}>
+                <FaLayerGroup size={20} style={{ color: '#fff' }} />
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                  style={{ background: '#FBBF24', color: '#78350F' }}>
+                  <FaBolt size={8} />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Luyện tập Flashcard</h1>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Học từ vựng hiệu quả với SRS & luyện ghi nhớ thường
+                </p>
+              </div>
+            </div>
+            {selectedSkill === 'srs' && status === 'authenticated' && (
+              <button onClick={() => setShowNew(true)} className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold shadow-md">
+                <FaPlus size={12} /> Tạo bộ thẻ
+              </button>
+            )}
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight mb-1">Luyện tập Flashcard</h1>
-            <p className="text-base text-gray-500">Học từ vựng hiệu quả với lặp lại ngắt quãng (SRS) & luyện ghi nhớ thường.</p>
-          </div>
-          <div className="flex-1" />
-          {selectedSkill === 'srs' && status === 'authenticated' && (
-            <button onClick={() => setShowNew(true)} className="btn-primary flex items-center gap-2 px-5 py-2 rounded-xl text-base font-semibold shadow-md">
-              <FaPlus size={16} /> Tạo bộ thẻ
-            </button>
-          )}
         </div>
         {/* Nội dung theo skill */}
         {selectedSkill === 'srs' && (
@@ -251,38 +591,38 @@ function FlashcardsContent() {
                 style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
             </div>
           ) : status === 'unauthenticated' ? (
-            <div className="card text-center py-16 max-w-md mx-auto">
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            <div className="card text-center py-12 max-w-md mx-auto">
+              <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center"
                 style={{ background: 'var(--primary-light)' }}>
-                <FaLock size={22} style={{ color: 'var(--primary)' }} />
+                <FaLock size={18} style={{ color: 'var(--primary)' }} />
               </div>
-              <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text-base)' }}>
+              <h2 className="text-base font-bold mb-2" style={{ color: 'var(--text-base)' }}>
                 Đăng nhập để dùng SRS
               </h2>
-              <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
                 Tạo và quản lý bộ thẻ cá nhân, theo dõi tiến độ học tập theo phương pháp Spaced Repetition.
               </p>
-              <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2">
+              <Link href="/auth/login" className="btn-primary inline-flex items-center gap-2 text-sm">
                 Đăng nhập ngay
               </Link>
             </div>
           ) : (
             <>
               {decks.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
                   {[
-                    { label: 'Bộ thẻ',   value: decks.length, icon: <FaLayerGroup  size={14} />, color: 'var(--primary)' },
-                    { label: 'Tổng thẻ', value: totalCards,   icon: <FaCircleCheck size={14} />, color: '#059669' },
-                    { label: 'Cần ôn',   value: totalDue,     icon: <FaBolt        size={14} />, color: '#D97706' },
+                    { label: 'Bộ thẻ',   value: decks.length, icon: <FaLayerGroup  size={12} />, color: 'var(--primary)' },
+                    { label: 'Tổng thẻ', value: totalCards,   icon: <FaCircleCheck size={12} />, color: '#059669' },
+                    { label: 'Cần ôn',   value: totalDue,     icon: <FaBolt        size={12} />, color: '#D97706' },
                   ].map(s => (
-                    <div key={s.label} className="card flex flex-col sm:flex-row items-center gap-1 sm:gap-3 p-3 sm:p-4 text-center sm:text-left">
-                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0"
+                    <div key={s.label} className="card flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2.5 sm:p-3 text-center sm:text-left">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: s.color + '15', color: s.color }}>
                         {s.icon}
                       </div>
                       <div>
-                        <div className="text-lg sm:text-xl font-bold leading-none" style={{ color: 'var(--text-base)' }}>{s.value}</div>
-                        <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
+                        <div className="text-base font-bold leading-none" style={{ color: 'var(--text-base)' }}>{s.value}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
                       </div>
                     </div>
                   ))}
@@ -350,54 +690,81 @@ function FlashcardsContent() {
                 </div>
               )}
               {decks.length === 0 ? (
-                <div className="text-center py-20 rounded-3xl border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-inner">
-                  <div className="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center bg-gradient-to-br from-indigo-400 to-blue-400 shadow-lg">
-                    <FaLayerGroup size={36} className="text-white" />
+                <div className="text-center py-14 rounded-2xl border-2 border-dashed" style={{ borderColor: 'var(--border)', background: 'var(--bg-muted)' }}>
+                  <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, var(--primary-light), color-mix(in srgb, var(--primary) 12%, var(--bg-surface)))' }}>
+                    <FaLayerGroup size={24} style={{ color: 'var(--primary)' }} />
                   </div>
-                  <h2 className="text-2xl font-extrabold mb-2 text-gray-800">Chưa có bộ thẻ nào</h2>
-                  <p className="text-base mb-7 text-gray-500">Tạo bộ thẻ đầu tiên để bắt đầu học hiệu quả với SRS.</p>
-                  <button onClick={() => setShowNew(true)} className="btn-primary inline-flex items-center gap-2 px-6 py-2 rounded-xl text-lg font-semibold shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-150">
-                    <FaPlus size={18} /> Tạo bộ thẻ
+                  <h2 className="text-base font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>Chưa có bộ thẻ nào</h2>
+                  <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>Tạo bộ thẻ đầu tiên để bắt đầu học hiệu quả với SRS.</p>
+                  <button onClick={() => setShowNew(true)} className="btn-primary inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-150">
+                    <FaPlus size={12} /> Tạo bộ thẻ
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {decks.map(deck => (
-                    <div key={deck.id} className="group relative rounded-3xl border-2 border-blue-100 bg-white shadow-lg hover:scale-[1.025] hover:shadow-2xl transition-transform duration-200" style={{ borderTop: `4px solid ${deck.color}` }}>
-                      <button onClick={() => deleteDeck(deck.id)} disabled={deleting === deck.id} className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity btn-ghost p-2 bg-white rounded-full shadow-md hover:scale-110" style={{ color: '#EF4444' }}>
-                        <FaTrash size={14} />
-                      </button>
-                      <Link href={`/flashcards/${deck.id}`} className="block p-6">
-                        <div className="flex items-start gap-4 mb-4">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '22', color: deck.color }}>
-                            <FaLayerGroup size={20} />
+                    <div key={deck.id} className="group relative rounded-2xl overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99]"
+                      style={{ border: '1.5px solid var(--border)', background: 'var(--bg-surface)', boxShadow: `inset 0 3px 0 0 ${deck.color}` }}>
+                      <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => setSharingDeck(deck)} title="Chia sẻ"
+                          className="p-1.5 rounded-lg"
+                          style={{ background: 'var(--bg-muted)', color: 'var(--primary)' }}>
+                          <FaShareNodes size={10} />
+                        </button>
+                        <button onClick={() => deleteDeck(deck.id)} disabled={deleting === deck.id}
+                          className="p-1.5 rounded-lg"
+                          style={{ background: 'var(--bg-muted)', color: '#EF4444' }}>
+                          <FaTrash size={10} />
+                        </button>
+                      </div>
+                      <Link href={`/flashcards/${deck.id}`} className="block p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '18', color: deck.color }}>
+                            <FaLayerGroup size={14} />
                           </div>
-                          <div className="min-w-0 flex-1 pr-6">
-                            <h3 className="font-bold text-lg truncate text-gray-900">{deck.title}</h3>
+                          <div className="min-w-0 flex-1 pr-12">
+                            <h3 className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                              {deck.title}
+                              {deck.shareMode === 'public' && (
+                                <span className="ml-1.5 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full align-middle"
+                                  style={{ background: 'rgba(34,197,94,.12)', color: '#16a34a' }}>
+                                  <FaGlobe size={7} /> Public
+                                </span>
+                              )}
+                              {deck.shareMode === 'specific' && (
+                                <span className="ml-1.5 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full align-middle"
+                                  style={{ background: 'rgba(59,130,246,.12)', color: '#2563eb' }}>
+                                  <FaUsers size={7} /> Shared
+                                </span>
+                              )}
+                            </h3>
                             {deck.description && (
-                              <p className="text-sm mt-1 truncate text-gray-500">{deck.description}</p>
+                              <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{deck.description}</p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex gap-4 text-sm">
-                            <span className="text-gray-400">
-                              <span className="font-semibold text-gray-900">{deck._count.cards}</span> thẻ
+                          <div className="flex gap-3 text-xs">
+                            <span style={{ color: 'var(--text-muted)' }}>
+                              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{deck._count.cards}</span> thẻ
                             </span>
                             {deck.dueCount > 0 && (
-                              <span className="flex items-center gap-1 text-yellow-600 font-semibold">
-                                <FaBolt size={12} /> {deck.dueCount} cần ôn
+                              <span className="flex items-center gap-1 font-semibold" style={{ color: '#D97706' }}>
+                                <FaBolt size={10} /> {deck.dueCount} cần ôn
                               </span>
                             )}
                             {deck.dueCount === 0 && deck._count.cards > 0 && (
-                              <span className="flex items-center gap-1 text-green-600 font-semibold">
-                                <FaCircleCheck size={12} /> Đã ôn xong
+                              <span className="flex items-center gap-1 font-semibold" style={{ color: '#059669' }}>
+                                <FaCircleCheck size={10} /> Đã ôn xong
                               </span>
                             )}
                           </div>
                           {deck._count.cards > 0 && (
-                            <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()} className="btn-primary text-sm px-4 py-2 flex items-center gap-2 rounded-lg shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-150" style={{ background: deck.color }}>
-                              <FaBolt size={12} /> Ôn tập
+                            <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()}
+                              className="text-[11px] px-3 py-1.5 flex items-center gap-1.5 rounded-lg font-semibold transition-all hover:scale-105"
+                              style={{ background: deck.color, color: '#fff' }}>
+                              <FaBolt size={9} /> Ôn tập
                             </Link>
                           )}
                         </div>
@@ -406,20 +773,118 @@ function FlashcardsContent() {
                   ))}
                 </div>
               )}
-              <div className="card mt-8" style={{ background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
-                <div className="flex items-start gap-3">
-                  <FaClockRotateLeft size={16} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
+              <div className="rounded-xl mt-6 p-3" style={{ background: 'var(--primary-light)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)' }}>
+                <div className="flex items-start gap-2.5">
+                  <FaClockRotateLeft size={12} style={{ color: 'var(--primary)', marginTop: 2, flexShrink: 0 }} />
                   <div>
-                    <div className="text-sm font-semibold mb-1" style={{ color: 'var(--primary)' }}>
+                    <div className="text-xs font-semibold mb-0.5" style={{ color: 'var(--primary)' }}>
                       Phương pháp Spaced Repetition
                     </div>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--primary)' }}>
-                      Hệ thống sẽ tự động nhắc bạn ôn đúng lúc bạn sắp quên — thẻ khó xuất hiện thường xuyên hơn,
-                      thẻ dễ xuất hiện thưa hơn. Ôn đều đặn mỗi ngày để đạt hiệu quả tốt nhất.
+                    <p className="text-[10px] leading-relaxed" style={{ color: 'var(--primary)' }}>
+                      Hệ thống tự nhắc ôn đúng lúc sắp quên — thẻ khó xuất hiện thường hơn, thẻ dễ thưa hơn.
                     </p>
                   </div>
                 </div>
               </div>
+
+              {/* Shared decks section */}
+              <div className="mt-8">
+                <button onClick={() => setShowShared(!showShared)}
+                  className="flex items-center gap-2 mb-4 text-sm font-bold transition-colors"
+                  style={{ color: 'var(--text-primary)' }}>
+                  <FaUsers size={14} style={{ color: 'var(--primary)' }} />
+                  Bộ thẻ được chia sẻ
+                  {sharedDecks.length > 0 && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                      {sharedDecks.length}
+                    </span>
+                  )}
+                  <FaChevronDown size={10} className={`transition-transform ${showShared ? 'rotate-180' : ''}`}
+                    style={{ color: 'var(--text-muted)' }} />
+                </button>
+                {showShared && (
+                  sharedLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+                        style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+                    </div>
+                  ) : sharedDecks.length === 0 ? (
+                    <div className="text-center py-8 rounded-xl" style={{ background: 'var(--bg-muted)', border: '1px dashed var(--border)' }}>
+                      <FaGlobe size={20} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Chưa có bộ thẻ nào được chia sẻ với bạn</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {sharedDecks.map(deck => (
+                        <div key={deck.id} className="relative rounded-2xl overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99]"
+                          style={{ border: '1.5px solid var(--border)', background: 'var(--bg-surface)', boxShadow: `inset 0 3px 0 0 ${deck.color}` }}>
+                          <Link href={`/flashcards/${deck.id}`} className="block p-4">
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '18', color: deck.color }}>
+                                <FaLayerGroup size={14} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                                  {deck.title}
+                                  {deck.shareMode === 'public' ? (
+                                    <span className="ml-1.5 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full align-middle"
+                                      style={{ background: 'rgba(34,197,94,.12)', color: '#16a34a' }}>
+                                      <FaGlobe size={7} /> Public
+                                    </span>
+                                  ) : (
+                                    <span className="ml-1.5 inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full align-middle"
+                                      style={{ background: 'rgba(59,130,246,.12)', color: '#2563eb' }}>
+                                      <FaUsers size={7} /> Shared
+                                    </span>
+                                  )}
+                                </h3>
+                                {deck.description && (
+                                  <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{deck.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                  {deck.user.image ? (
+                                    <img src={deck.user.image} alt="" className="w-4 h-4 rounded-full" />
+                                  ) : (
+                                    <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                      style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                                      {deck.user.name?.[0] || '?'}
+                                    </div>
+                                  )}
+                                  <span className="truncate max-w-[80px]" style={{ color: 'var(--text-muted)' }}>{deck.user.name || 'User'}</span>
+                                </div>
+                                <span style={{ color: 'var(--text-muted)' }}>
+                                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{deck._count.cards}</span> thẻ
+                                </span>
+                              </div>
+                              {deck._count.cards > 0 && (
+                                <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()}
+                                  className="text-[11px] px-3 py-1.5 flex items-center gap-1.5 rounded-lg font-semibold transition-all hover:scale-105"
+                                  style={{ background: deck.color, color: '#fff' }}>
+                                  <FaBolt size={9} /> Học
+                                </Link>
+                              )}
+                            </div>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* ShareDialog */}
+              {sharingDeck && (
+                <ShareDialog
+                  deck={sharingDeck}
+                  onClose={() => setSharingDeck(null)}
+                  onUpdate={() => { loadDecks(); loadSharedDecks(); }}
+                />
+              )}
             </>
           )}
           </>

@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   danger?: boolean;
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -17,7 +18,7 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({
   open, title, description,
   confirmLabel = 'Xác nhận', cancelLabel = 'Huỷ',
-  danger = false,
+  danger = false, loading = false,
   onConfirm, onCancel,
 }: ConfirmDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -88,12 +89,14 @@ export function ConfirmDialog({
           <button
             ref={confirmRef}
             onClick={onConfirm}
+            disabled={loading}
             style={{
               padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
               background: danger ? '#dc2626' : 'var(--primary)',
-              color: '#fff', border: 'none', cursor: 'pointer', transition: 'opacity .15s',
+              color: '#fff', border: 'none', cursor: loading ? 'wait' : 'pointer',
+              transition: 'opacity .15s', opacity: loading ? 0.7 : 1,
             }}>
-            {confirmLabel}
+            {loading ? '...' : confirmLabel}
           </button>
         </div>
       </div>

@@ -18,6 +18,12 @@ enum SubscriptionTier {
   basic
   premium
 }
+
+enum ContentStatus {
+  draft
+  published
+  archived
+}
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -42,6 +48,7 @@ enum Language {
 enum Subject {
   JLPT
   HSK
+  BJT
   PMP
 }
 
@@ -117,6 +124,8 @@ model User {
   lessonProgress    LessonProgress[]
   flashcardDecks    FlashcardDeck[]
   flashcardProgress FlashcardProgress[]
+  deckSharesSent    DeckShare[]       @relation("DeckShareOwner")
+  deckSharesReceived DeckShare[]      @relation("DeckShareTarget")
   savedWords        SavedWord[]
   wordCollections   WordCollection[]
   examPlan          UserExamPlan?
@@ -125,6 +134,7 @@ model User {
   studyEvents       StudyEvent[]
   courseEnrollments CourseEnrollment[]
   pmpSessions       PMPExamSession[]
+  mockExamSessions  MockExamSession[]
   levelPosts        LevelPost[]
   userLessonAccesses UserLessonAccess[]
 }
@@ -321,6 +331,7 @@ model LearningLesson {
   description String?
   content     String?          // JSON blob for audio/text lessons (listening: ListeningContentPayload; text: markdown)
   type        LessonType       @default(text)
+  status      ContentStatus    @default(draft)
   order       Int              @default(0)
   items       Content[]
   progress    LessonProgress[]
@@ -330,6 +341,7 @@ model LearningLesson {
 
   @@index([categoryId, order])
   @@index([type])
+  @@index([status])
 }
 
 model Content {
@@ -342,6 +354,7 @@ model Content {
   pronunciation String?        @map("reading")
   audioUrl      String?
   imageUrl      String?
+  status        ContentStatus  @default(draft)
   order         Int            @default(0)
   meanings      ContentMeaning[]
   examples      ContentExample[]
@@ -351,6 +364,7 @@ model Content {
   @@index([lessonId, type])
   @@index([lessonId, language])
   @@index([term])              // words API: findFirst by term
+  @@index([status])
 }
 
 model ContentMeaning {
@@ -417,11 +431,35 @@ model FlashcardDeck {
   title       String
   description String?
   color       String      @default("#4F46E5") // accent color for the deck
+  shareMode   DeckShareMode @default(private)  // private | public | specific
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   cards       Flashcard[]
+  shares      DeckShare[]
 
   @@index([userId])
+  @@index([shareMode])
+}
+
+enum DeckShareMode {
+  private   // only owner
+  public    // visible to all users
+  specific  // shared with specific users
+}
+
+model DeckShare {
+  id        String   @id @default(cuid())
+  deckId    String
+  deck      FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     User     @relation("DeckShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  targetId  String
+  target    User     @relation("DeckShareTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([deckId, targetId])  // one share per user per deck
+  @@index([targetId])
+  @@index([deckId])
 }
 
 model Flashcard {
@@ -715,4 +753,127 @@ model CourseEnrollment {
   completedAt DateTime?
 
   @@unique([userId, courseId])
+}
+
+// ─── MOCK EXAM (Full JLPT / BJT) ────────────────────────────────────────────
+// A MockExam represents a complete exam paper with multiple timed sections.
+// Each section has its own question set, time limit, and skill focus.
+
+model MockExam {
+  id          String            @id @default(cuid())
+  title       String            // e.g. "JLPT N3 - Đề thi thử #1"
+  description String?
+  subject     Subject           @default(JLPT)
+  levelCode   String            // "N5" | "N1" | "J1" etc.
+  year        Int?              // exam year for reference
+  totalTime   Int               // total seconds
+  published   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  sections    MockExamSection[]
+  sessions    MockExamSession[]
+
+  @@index([subject, levelCode])
+  @@index([published])
+}
+
+model MockExamSection {
+  id          String              @id @default(cuid())
+  mockExamId  String
+  mockExam    MockExam            @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  title       String              // e.g. "言語知識（文字・語彙）"
+  titleVi     String?             // e.g. "Kiến thức ngôn ngữ (Chữ・Từ vựng)"
+  skill       String              // "vocab" | "grammar_reading" | "listening" | "reading" | "integrated"
+  timeLimit   Int                 // seconds for this section
+  order       Int                 @default(0)
+  questions   MockExamQuestion[]
+  answers     MockExamAnswer[]
+
+  @@index([mockExamId, order])
+}
+
+model MockExamQuestion {
+  id          String              @id @default(cuid())
+  sectionId   String
+  section     MockExamSection     @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  // Sub-grouping within a section (e.g. 問題1, 問題2, ...)
+  partLabel   String?             // e.g. "問題1", "問題2"
+  partTitle   String?             // e.g. "漢字読み" (reading of kanji)
+  // Passage/reading context (shared by multiple questions)
+  passageText String?             @db.Text // shared reading passage or listening transcript
+  passageAudio String?            // shared audio URL for listening questions
+  passageImage String?            // image for the passage
+  // Question itself
+  content     String              @db.Text // question content
+  options     Json?               // ["A option", "B option", "C option", "D option"]
+  answer      String              // correct answer
+  explain     String?             @db.Text
+  audioUrl    String?             // per-question audio
+  imageUrl    String?             // per-question image
+  order       Int                 @default(0)
+  answers     MockExamAnswer[]
+
+  @@index([sectionId, order])
+}
+
+model MockExamSession {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExamId  String
+  mockExam    MockExam          @relation(fields: [mockExamId], references: [id])
+  // Track per-section timing
+  sectionTimes Json?            // { sectionId: secondsUsed }
+  currentSection Int            @default(0) // index of current section
+  answers     MockExamAnswer[]
+  score       Float?
+  totalQ      Int               @default(0)
+  correctQ    Int               @default(0)
+  startedAt   DateTime          @default(now())
+  finishedAt  DateTime?
+
+  @@index([userId, startedAt])
+  @@index([mockExamId])
+}
+
+model MockExamAnswer {
+  id         String             @id @default(cuid())
+  sessionId  String
+  session    MockExamSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sectionId  String
+  section    MockExamSection    @relation(fields: [sectionId], references: [id])
+  questionId String
+  question   MockExamQuestion   @relation(fields: [questionId], references: [id])
+  answer     String
+  isCorrect  Boolean
+
+  @@index([sessionId])
+  @@index([questionId])
+}
+
+// ─── KANJI / HANZI ──────────────────────────────────────────────────────────
+model Kanji {
+  id            String   @id @default(cuid())
+  character     String           // 漢字 character, e.g. "日"
+  language      Language         // ja, zh, ko
+  level         String           // N5, N4, ... or HSK1, HSK2, ...
+  lesson        Int      @default(1)  // lesson number within level
+  order         Int      @default(0)  // display order within lesson
+  onyomi        String?          // on'yomi reading (ja)
+  kunyomi       String?          // kun'yomi reading (ja)
+  pinyin        String?          // pinyin reading (zh)
+  meaning       String           // Vietnamese meaning
+  strokeCount   Int      @default(0)
+  radical       String?          // bộ thủ / radical
+  radicalMeaning String?
+  jlptLevel     String?          // JLPT level for cross-ref
+  frequency     Int?             // usage frequency rank
+  examples      Json?            // [{word, reading, meaning}]
+  strokeOrder   Json?            // [{svg path data per stroke}]
+  svgContent    String?  @db.Text // full SVG for the character
+  createdAt     DateTime @default(now())
+
+  @@unique([character, language, level])
+  @@index([language, level, lesson, order])
+  @@index([language, level])
 }

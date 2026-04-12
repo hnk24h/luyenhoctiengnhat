@@ -14,6 +14,8 @@ export interface ContentExample {
   translationLanguage: string | null;
 }
 
+export type ContentStatus = 'draft' | 'published' | 'archived';
+
 export interface LearningItem {
   id: string;
   lessonId: string;
@@ -25,6 +27,7 @@ export interface LearningItem {
   examples: ContentExample[];
   audioUrl: string | null;
   imageUrl: string | null;
+  status?: ContentStatus;
   order: number;
 }
 
@@ -35,6 +38,7 @@ export interface Lesson {
   description: string | null;
   content: string | null;
   type: string;
+  status?: ContentStatus;
   order: number;
   requiredTier?: string;
   _count: { items: number };

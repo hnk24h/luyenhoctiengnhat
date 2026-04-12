@@ -77,7 +77,7 @@ export const UserProgressCard: React.FC<UserProgressCardProps> = ({ collapsed = 
           </div>
         </div>
         {/* Mini progress ring */}
-        <svg width="28" height="28" viewBox="0 0 28 28" className="shrink-0" title={`${progressPercent}%`}>
+        <svg width="28" height="28" viewBox="0 0 28 28" className="shrink-0" aria-label={`${progressPercent}%`}>
           <circle cx="14" cy="14" r="11" fill="none" stroke="var(--border)" strokeWidth="2.5" />
           <circle cx="14" cy="14" r="11" fill="none" stroke={growth.color} strokeWidth="2.5"
             strokeDasharray={`${(progressPercent / 100) * 69.1} 69.1`}

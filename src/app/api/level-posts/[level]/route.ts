@@ -12,8 +12,8 @@ const SELECT = {
   user: { select: { name: true } },
 } as const;
 
-function toDto(p: { id: string; content: string; createdAt: Date; user: { name: string } }) {
-  return { id: p.id, content: p.content, userName: p.user.name, createdAt: p.createdAt.toISOString() };
+function toDto(p: { id: string; content: string; createdAt: Date; user: { name: string | null } }) {
+  return { id: p.id, content: p.content, userName: p.user.name ?? '', createdAt: p.createdAt.toISOString() };
 }
 
 export async function GET(_: NextRequest, { params: rawParams }: Ctx) {

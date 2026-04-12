@@ -1,5 +1,6 @@
-import AdminShell from './_components/AdminShell';
+import './admin-colors.css';
+import AdminLayoutShell from './_components/AdminLayoutShell';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminLayoutShell>{children}</AdminLayoutShell>;
 }

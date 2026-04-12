@@ -10,21 +10,35 @@ async function getAuthorizedDeck(deckId: string, userId: string) {
   return deck ? { deck, userId } : null;
 }
 
-// GET /api/flashcards/[deckId] — deck + all cards with progress
+/** Check if user can read (view/study) this deck: owner, public, or specifically shared */
+async function canReadDeck(deckId: string, userId: string) {
+  const deck = await prisma.flashcardDeck.findUnique({ where: { id: deckId } });
+  if (!deck) return null;
+  if (deck.userId === userId) return { deck, isOwner: true };
+  if (deck.shareMode === 'public') return { deck, isOwner: false };
+  if (deck.shareMode === 'specific') {
+    const share = await prisma.deckShare.findUnique({ where: { deckId_targetId: { deckId, targetId: userId } } });
+    if (share) return { deck, isOwner: false };
+  }
+  return null;
+}
+
+// GET /api/flashcards/[deckId] — deck + all cards with progress (owner or shared)
 export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
   const params = await rawParams;
   const user = await getApiUser(req);
   if (!user) return apiError(ApiCode.UNAUTHORIZED, 'Unauthorized', 401);
 
-  const auth = await getAuthorizedDeck(params.deckId, user.id);
-  if (!auth) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
+  const access = await canReadDeck(params.deckId, user.id);
+  if (!access) return apiError(ApiCode.NOT_FOUND, 'Not found', 404);
 
   try {
     const deck = await prisma.flashcardDeck.findUnique({
       where: { id: params.deckId },
       include: {
+        user: { select: { id: true, name: true, image: true } },
         cards: {
-          include: { progress: { where: { userId: auth.userId } } },
+          include: { progress: { where: { userId: user.id } } },
           orderBy: { order: 'asc' },
         },
       },
@@ -33,6 +47,7 @@ export async function GET(req: NextRequest, { params: rawParams }: Ctx) {
     // Normalize: progress[] → progress (single, for this user) for backward compat
     const normalized = {
       ...deck,
+      isOwner: access.isOwner,
       cards: deck?.cards.map(c => ({ ...c, progress: c.progress[0] ?? null })) ?? [],
     };
     return NextResponse.json(normalized);

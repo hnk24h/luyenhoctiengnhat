@@ -4,8 +4,13 @@ import Link from 'next/link';
 import { SKILLS } from '@/lib/utils';
 import {
   FaHeadphones, FaMicrophone, FaBookOpen, FaPencil, FaFileLines,
-  FaClock, FaPlus, FaPen, FaListUl,
+  FaClock, FaPlus, FaBook,
 } from 'react-icons/fa6';
+import {
+  AdminButton, AdminTable, AdminToolbar, AdminModal,
+  AdminFormField, AdminBadge, SkillBadge, ConfirmDialog,
+} from '@/components/admin/ui';
+import type { ColumnDef } from '@/components/admin/ui/AdminTable';
 import type { ReactNode } from 'react';
 
 interface Level { id: string; code: string; name: string }
@@ -17,175 +22,218 @@ interface ExamSet {
 
 const BLANK_FORM = { levelId: '', skill: 'nghe', title: '', description: '', timeLimit: '' };
 
-const SKILL_STYLES: Record<string, React.CSSProperties> = {
-  nghe: { background: 'rgba(29,78,216,0.12)',   color: '#1d4ed8' },
-  noi:  { background: 'rgba(22,163,74,0.12)',    color: '#15803d' },
-  doc:  { background: 'rgba(202,138,4,0.12)',    color: '#a16207' },
-  viet: { background: 'rgba(109,40,217,0.12)',   color: '#6d28d9' },
-};
 const SKILL_ICONS: Record<string, ReactNode> = {
-  nghe: <FaHeadphones size={16} />,
-  noi:  <FaMicrophone size={16} />,
-  doc:  <FaBookOpen   size={16} />,
-  viet: <FaPencil     size={16} />,
+  nghe: <FaHeadphones size={13} />, noi: <FaMicrophone size={13} />,
+  doc: <FaBookOpen size={13} />, viet: <FaPencil size={13} />,
 };
-
-function SLabel({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 12 }}>
-      {children}
-    </div>
-  );
-}
 
 export default function AdminExamSetsClient({
   levels, examSets: initial, subject: _subject,
 }: {
   levels: Level[]; examSets: ExamSet[]; subject: string;
 }) {
-  const [examSets, setExamSets]             = useState<ExamSet[]>(initial);
-  const [form, setForm]                     = useState(BLANK_FORM);
-  const [editing, setEditing]               = useState<ExamSet | null>(null);
-  const [loading, setLoading]               = useState(false);
-  const [error, setError]                   = useState('');
-  const [saved, setSaved]                   = useState(false);
-  const [selectedLevelId, setSelectedLevelId] = useState('');
+  const [examSets, setExamSets] = useState<ExamSet[]>(initial);
+  const [form, setForm]         = useState(BLANK_FORM);
+  const [editing, setEditing]   = useState<ExamSet | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [search, setSearch]     = useState('');
+  const [filterLevel, setFilterLevel] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<ExamSet | null>(null);
 
   function setField(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
-  function startEdit(s: ExamSet) {
+  /* ── Open modal ── */
+  function openCreate() {
+    setEditing(null); setForm(BLANK_FORM); setError(''); setModalOpen(true);
+  }
+  function openEdit(s: ExamSet) {
     setEditing(s);
     setForm({ levelId: s.level.id, skill: s.skill, title: s.title, description: s.description ?? '', timeLimit: s.timeLimit ? String(s.timeLimit / 60) : '' });
-    setSaved(false); setError('');
+    setError(''); setModalOpen(true);
   }
-  function startAdd() { setEditing(null); setForm(BLANK_FORM); setSaved(false); setError(''); }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  /* ── Submit ── */
+  async function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     setLoading(true); setError('');
     const body = { ...form, timeLimit: form.timeLimit ? parseInt(form.timeLimit) * 60 : null };
-    if (editing) {
-      const res = await fetch(`/api/admin/examsets/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) {
-        const updated: ExamSet = await res.json();
-        const lvl = levels.find(l => l.id === updated.level?.id || l.id === form.levelId) ?? editing.level;
-        setExamSets(prev => prev.map(s => s.id === editing.id ? { ...updated, level: lvl } : s));
-        setSaved(true);
-      } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
-    } else {
-      const res = await fetch('/api/admin/examsets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) {
-        const created: ExamSet = await res.json();
-        const lvl = levels.find(l => l.id === form.levelId);
-        if (lvl) setExamSets(prev => [...prev, { ...created, level: lvl, _count: { questions: 0 } }]);
-        setForm(BLANK_FORM); setSaved(true);
-      } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
+    try {
+      if (editing) {
+        const res = await fetch(`/api/admin/examsets/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+          const updated: ExamSet = await res.json();
+          const lvl = levels.find(l => l.id === updated.level?.id || l.id === form.levelId) ?? editing.level;
+          setExamSets(prev => prev.map(s => s.id === editing.id ? { ...updated, level: lvl } : s));
+          setModalOpen(false);
+        } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
+      } else {
+        const res = await fetch('/api/admin/examsets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+          const created: ExamSet = await res.json();
+          const lvl = levels.find(l => l.id === form.levelId);
+          if (lvl) setExamSets(prev => [...prev, { ...created, level: lvl, _count: { questions: 0 } }]);
+          setModalOpen(false);
+        } else { const d = await res.json(); setError(d.message || 'Lỗi xảy ra'); }
+      }
+    } finally { setLoading(false); }
+  }
+
+  /* ── Delete ── */
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await fetch(`/api/admin/examsets/${deleteTarget.id}`, { method: 'DELETE' });
+    setExamSets(prev => prev.filter(s => s.id !== deleteTarget.id));
+    setDeleteTarget(null);
+  }
+
+  /* ── Filter ── */
+  const filtered = useMemo(() => {
+    let result = examSets;
+    if (filterLevel) result = result.filter(s => s.level.id === filterLevel);
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(s => s.title.toLowerCase().includes(q) || s.skill.includes(q));
     }
-    setLoading(false);
-  }
+    return result;
+  }, [examSets, filterLevel, search]);
 
-  async function handleDelete(id: string) {
-    if (!confirm('Xóa bộ đề này? Tất cả câu hỏi sẽ bị xóa.')) return;
-    await fetch(`/api/admin/examsets/${id}`, { method: 'DELETE' });
-    setExamSets(prev => prev.filter(s => s.id !== id));
-    if (editing?.id === id) { setEditing(null); setForm(BLANK_FORM); }
-  }
-
-  const filtered = useMemo(
-    () => selectedLevelId ? examSets.filter(s => s.level.id === selectedLevelId) : examSets,
-    [examSets, selectedLevelId],
-  );
-  const countByLevel = useMemo(() => {
-    const m: Record<string, number> = {};
-    examSets.forEach(s => { m[s.level.id] = (m[s.level.id] ?? 0) + 1; });
-    return m;
-  }, [examSets]);
-
-  const isAdding = !editing;
-  const fieldLabel = (text: string) => (
-    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{text}</label>
-  );
+  /* ── Columns ── */
+  const columns: ColumnDef<ExamSet>[] = [
+    {
+      key: 'icon', header: '', width: '40px',
+      render: s => (
+        <div className="admin-icon-box" style={{ width: 32, height: 32 }}>
+          {SKILL_ICONS[s.skill] ?? <FaFileLines size={13} />}
+        </div>
+      ),
+    },
+    {
+      key: 'title', header: 'Tên bộ đề', width: '2fr',
+      render: s => (
+        <div>
+          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.title}</div>
+          {s.description && <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{s.description}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'level', header: 'Cấp', width: '56px',
+      render: s => <AdminBadge variant="danger">{s.level.code}</AdminBadge>,
+    },
+    {
+      key: 'skill', header: 'Kỹ năng', width: '80px',
+      render: s => <SkillBadge skill={s.skill} />,
+    },
+    {
+      key: 'questions', header: 'Câu hỏi', width: '60px',
+      headerClassName: 'text-center', cellClassName: 'text-center',
+      render: s => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{s._count.questions}</span>,
+    },
+    {
+      key: 'time', header: 'Thời gian', width: '70px',
+      render: s => s.timeLimit ? (
+        <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          <FaClock size={9} /> {s.timeLimit / 60}p
+        </span>
+      ) : <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>,
+    },
+    {
+      key: 'actions', header: '', width: '110px',
+      cellClassName: 'text-right',
+      render: s => (
+        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Link href={`/admin/examsets/${s.id}/questions`}>
+            <AdminButton variant="secondary" size="sm">Câu hỏi</AdminButton>
+          </Link>
+          <AdminButton variant="danger" size="sm" onClick={e => { e.stopPropagation(); setDeleteTarget(s); }}>Xóa</AdminButton>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div style={{ paddingBottom: 40 }}>
-
-      {/* Form card */}
-        <div style={{ background: 'var(--bg-surface)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,.08)', overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '14px 20px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
-              {isAdding ? <FaPlus size={14} /> : <FaPen size={14} />}
-              {isAdding ? 'Thêm bộ đề mới' : `Chỉnh sửa: ${editing?.title}`}
-            </div>
-            {!isAdding && (
-              <button onClick={startAdd} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <FaPlus size={10} /> Bộ đề mới
-              </button>
-            )}
-          </div>
-          <form onSubmit={handleSubmit} style={{ padding: 20 }}>
-            {/* Cài đặt */}
-            <div style={{ background: 'var(--bg-muted)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-              <SLabel>Cài đặt</SLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>{fieldLabel('Cấp độ')}<select className="input" value={form.levelId} onChange={e => setField('levelId', e.target.value)} required><option value="">Chọn cấp độ...</option>{levels.map(l => <option key={l.id} value={l.id}>{l.code} – {l.name}</option>)}</select></div>
-                <div>{fieldLabel('Kỹ năng')}<select className="input" value={form.skill} onChange={e => setField('skill', e.target.value)} required>{SKILLS.map(s => <option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}</select></div>
-              </div>
-              <div style={{ marginTop: 12 }}>
-                {fieldLabel('Thời gian làm bài (phút — bỏ trống = không giới hạn)')}
-                <input className="input" style={{ width: 120 }} type="number" value={form.timeLimit} onChange={e => setField('timeLimit', e.target.value)} placeholder="60" min={1} />
-              </div>
-            </div>
-            {/* Nội dung */}
-            <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-              <SLabel>Nội dung</SLabel>
-              <div style={{ marginBottom: 12 }}>{fieldLabel('Tên bộ đề')}<input className="input" value={form.title} onChange={e => setField('title', e.target.value)} placeholder="Ví dụ: Đề số 1 — Nghe hiểu N5" required /></div>
-              <div>{fieldLabel('Mô tả (tuỳ chọn)')}<input className="input" value={form.description} onChange={e => setField('description', e.target.value)} placeholder="Mô tả ngắn..." /></div>
-            </div>
-            {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
-            {saved && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 10 }}>✓ Đã lưu</p>}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Đang lưu...' : isAdding ? '+ Thêm bộ đề' : '✓ Lưu thay đổi'}</button>
-              {!isAdding && <button type="button" onClick={startAdd} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer' }}>Hủy</button>}
-            </div>
-          </form>
-        </div>
-
-        {/* List */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-            <FaListUl size={12} />
-            {filtered.length} bộ đề
-          </div>
-          <select className="input" style={{ width: 'auto' }} value={selectedLevelId} onChange={e => setSelectedLevelId(e.target.value)}>
+    <div className="pb-10">
+      <AdminToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Tìm bộ đề..."
+        filters={
+          <select className="input text-sm py-1.5" style={{ width: 'auto' }} value={filterLevel} onChange={e => setFilterLevel(e.target.value)}>
             <option value="">Tất cả cấp</option>
             {levels.map(l => <option key={l.id} value={l.id}>{l.code} – {l.name}</option>)}
           </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {filtered.map(s => (
-            <div key={s.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', border: editing?.id === s.id ? '2px solid var(--primary)' : '2px solid transparent', transition: 'border-color 0.15s' }} onClick={() => startEdit(s)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-muted)', flexShrink: 0 }}>
-                  {SKILL_ICONS[s.skill] ?? <FaFileLines size={16} />}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{s.title}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '1px 6px', borderRadius: 4 }}>{s.level.code}</span>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full" style={SKILL_STYLES[s.skill] ?? { background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>{s.skill}</span>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s._count.questions} câu</span>
-                    {s.timeLimit && <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2 }}><FaClock size={9} /> {s.timeLimit / 60}p</span>}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                <Link href={`/admin/examsets/${s.id}/questions`} className="btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}>Câu hỏi</Link>
-                <button onClick={() => handleDelete(s.id)} style={{ fontSize: 12, color: '#ef4444', padding: '4px 8px', background: 'none', border: 'none', cursor: 'pointer' }}>Xóa</button>
-              </div>
-            </div>
-          ))}
-          {filtered.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px 0' }}>Chưa có bộ đề nào.</div>}
-        </div>
+        }
+        actions={
+          <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm bộ đề</AdminButton>
+        }
+      />
+
+      <AdminTable
+        columns={columns}
+        data={filtered}
+        rowKey={s => s.id}
+        onRowClick={openEdit}
+        emptyIcon={<FaBook />}
+        emptyTitle="Chưa có bộ đề nào"
+        emptyDescription="Tạo bộ đề đầu tiên để bắt đầu."
+        emptyAction={<AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm bộ đề</AdminButton>}
+      />
+
+      {/* ── Create/Edit Modal ── */}
+      <AdminModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? `Chỉnh sửa: ${editing.title}` : 'Thêm bộ đề mới'}
+        icon={<FaBook size={14} />}
+        size="md"
+        footer={
+          <>
+            <AdminButton variant="secondary" onClick={() => setModalOpen(false)}>Hủy</AdminButton>
+            <AdminButton loading={loading} onClick={handleSubmit}>
+              {editing ? 'Lưu thay đổi' : 'Thêm bộ đề'}
+            </AdminButton>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <AdminFormField label="Cấp độ" required>
+              <select className="input w-full" value={form.levelId} onChange={e => setField('levelId', e.target.value)} required>
+                <option value="">Chọn cấp độ...</option>
+                {levels.map(l => <option key={l.id} value={l.id}>{l.code} – {l.name}</option>)}
+              </select>
+            </AdminFormField>
+            <AdminFormField label="Kỹ năng" required>
+              <select className="input w-full" value={form.skill} onChange={e => setField('skill', e.target.value)} required>
+                {SKILLS.map(s => <option key={s.key} value={s.key}>{s.icon} {s.label}</option>)}
+              </select>
+            </AdminFormField>
+          </div>
+          <AdminFormField label="Thời gian làm bài (phút — bỏ trống = không giới hạn)">
+            <input className="input" style={{ width: 120 }} type="number" value={form.timeLimit} onChange={e => setField('timeLimit', e.target.value)} placeholder="60" min={1} />
+          </AdminFormField>
+          <AdminFormField label="Tên bộ đề" required>
+            <input className="input w-full" value={form.title} onChange={e => setField('title', e.target.value)} placeholder="Ví dụ: Đề số 1 — Nghe hiểu N5" required />
+          </AdminFormField>
+          <AdminFormField label="Mô tả (tuỳ chọn)">
+            <input className="input w-full" value={form.description} onChange={e => setField('description', e.target.value)} placeholder="Mô tả ngắn..." />
+          </AdminFormField>
+          {error && <p className="admin-field-error">{error}</p>}
+        </form>
+      </AdminModal>
+
+      {/* ── Delete confirm ── */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={`Xóa bộ đề "${deleteTarget?.title}"?`}
+        description="Tất cả câu hỏi bên trong sẽ bị xóa. Hành động này không thể hoàn tác."
+        confirmLabel="Xóa"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -11,6 +11,19 @@ const nextConfig = {
   //   localeDetection: true,
   // },
 
+  // ── OAuth avatar hostnames ──────────────────────────────────────────────
+  images: {
+    remotePatterns: [
+      // Facebook (platform-lookaside + scontent CDNs)
+      { protocol: 'https', hostname: '**.fbsbx.com' },
+      { protocol: 'https', hostname: '**.fbcdn.net' },
+      // Google
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      // GitHub
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
+    ],
+  },
+
   // ── URL migration: old paths → ISO lang-prefixed paths ──────────────────
   async redirects() {
     return [

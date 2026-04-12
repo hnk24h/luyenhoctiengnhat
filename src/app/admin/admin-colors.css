@@ -5,6 +5,19 @@
   --admin-accent: #C84B31;
   --admin-bg-base: #F7F6F2;
   --admin-bg-surface: #FFFFFF;
+  --admin-bg-muted: #F3F4F6;
+  --admin-border: #E2E0D8;
+  --admin-success: #059669;
+  --admin-danger: #DC2626;
+  --admin-warning: #D97706;
+
+  /* ── Shorthand aliases used by sidebar/layout components ── */
+  --bg-surface:   var(--admin-bg-surface);
+  --bg-muted:     var(--admin-bg-muted);
+  --border:       var(--admin-border);
+  --text-primary:   var(--admin-text-primary);
+  --text-secondary: var(--admin-text-secondary);
+  --text-muted:     var(--admin-text-muted);
 }
 
 html[data-appearance="dark"] {
@@ -14,7 +27,22 @@ html[data-appearance="dark"] {
   --admin-accent: #FFB347;
   --admin-bg-base: #181A23;
   --admin-bg-surface: #23253A;
+  --admin-bg-muted: #2A2D3E;
+  --admin-border: #363952;
+  --admin-success: #4ADE80;
+  --admin-danger: #F87171;
+  --admin-warning: #FBBF24;
+
+  /* ── Shorthand aliases (dark override) ── */
+  --bg-surface:   var(--admin-bg-surface);
+  --bg-muted:     var(--admin-bg-muted);
+  --border:       var(--admin-border);
+  --text-primary:   var(--admin-text-primary);
+  --text-secondary: var(--admin-text-secondary);
+  --text-muted:     var(--admin-text-muted);
 }
+
+/* ── Text utilities ─────────────────────────────────────────────────────── */
 
 .text-admin-secondary {
   color: var(--admin-text-secondary);
@@ -25,6 +53,54 @@ html[data-appearance="dark"] {
 .text-admin-accent {
   color: var(--admin-accent);
 }
+
+/* ── Button base + variants ─────────────────────────────────────────────── */
+
+.admin-btn {
+  @apply inline-flex items-center justify-center font-semibold rounded-lg
+         transition-all duration-150 cursor-pointer select-none;
+  border: none;
+  outline: none;
+}
+.admin-btn:disabled {
+  @apply opacity-50 pointer-events-none;
+}
+.admin-btn--primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.admin-btn--primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  transform: translateY(-0.5px);
+}
+.admin-btn--secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.admin-btn--secondary:hover {
+  background: var(--primary-light);
+}
+.admin-btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+.admin-btn--ghost:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}
+.admin-btn--danger {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+.admin-btn--danger:hover {
+  background: #FECACA;
+}
+
+/* ── Legacy admin primary (kept for backward compat) ────────────────────── */
+
 .btn-admin-primary {
   @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-150;
   background: var(--admin-accent);
@@ -37,6 +113,16 @@ html[data-appearance="dark"] {
   box-shadow: 0 4px 12px rgba(61,58,140,.35);
   transform: translateY(-1px);
 }
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
+.admin-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
 .card-admin {
   background: var(--admin-bg-surface);
   border: 1px solid var(--admin-text-muted);
@@ -56,4 +142,105 @@ html[data-appearance="dark"] {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(61,58,140,.12);
   border-color: var(--admin-accent);
+}
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+
+.admin-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold leading-tight whitespace-nowrap;
+}
+.admin-badge--default {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+.admin-badge--primary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.admin-badge--success {
+  background: #D1FAE5;
+  color: #065F46;
+}
+.admin-badge--danger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+.admin-badge--warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+/* ── Icon box ────────────────────────────────────────────────────────────── */
+
+.admin-icon-box {
+  @apply flex items-center justify-center shrink-0 w-8 h-8 rounded-lg;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+
+.admin-table-header {
+  @apply sticky top-0 z-10 text-xs font-semibold uppercase tracking-wide;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+.admin-table-row {
+  @apply transition-colors cursor-pointer border-b;
+  border-color: var(--border);
+}
+.admin-table-row:hover {
+  background: color-mix(in srgb, var(--primary) 6%, var(--bg-muted));
+}
+.admin-table-row--active {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+
+.admin-modal-overlay {
+  @apply fixed inset-0 z-[200] flex items-center justify-center p-4;
+  background: rgba(0,0,0,0.45);
+  animation: admin-fade-in 0.15s ease;
+}
+.admin-modal-panel {
+  @apply w-full overflow-hidden;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: admin-slide-up 0.2s ease;
+}
+.admin-modal--sm { max-width: 448px; }
+.admin-modal--md { max-width: 672px; }
+.admin-modal--lg { max-width: 896px; }
+.admin-modal--xl { max-width: 1152px; }
+
+/* ── Form field ──────────────────────────────────────────────────────────── */
+
+.admin-field-label {
+  @apply block text-xs font-semibold mb-1;
+  color: var(--text-secondary);
+}
+.admin-field-error {
+  @apply text-xs mt-0.5;
+  color: #DC2626;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+
+.admin-toolbar {
+  @apply flex flex-wrap items-center gap-3 mb-4;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+
+@keyframes admin-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes admin-slide-up {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }

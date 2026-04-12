@@ -53,7 +53,10 @@ export default async function ExamPage({ params: rawParams }: Props) {
   let subject: 'JLPT' | 'HSK' = 'JLPT';
   if (params.lang === 'zh') subject = 'HSK';
   const allLevels = await prisma.level.findMany({ where: { subject }, orderBy: { order: 'asc' } });
-  const LEVELS_OBJ = allLevels.map(lv => ({ code: lv.code, label: lv.code, desc: (lv as any).desc || '' }));
+  const JA_DESCS: Record<string, string> = { N5: 'Sơ cấp', N4: 'Sơ trung cấp', N3: 'Trung cấp', N2: 'Trung cao cấp', N1: 'Cao cấp' };
+  const ZH_DESCS: Record<string, string> = { HSK1: 'Nhập môn', HSK2: 'Sơ cấp', HSK3: 'Trung cấp', HSK4: 'Trên trung cấp', HSK5: 'Cao cấp', HSK6: 'Thành thạo' };
+  const descMap = params.lang === 'zh' ? ZH_DESCS : JA_DESCS;
+  const LEVELS_OBJ = allLevels.map(lv => ({ code: lv.code, label: lv.code, desc: descMap[lv.code] ?? lv.description ?? '' }));
 
   // Lấy danh sách skill trong cấp độ này
   const skillKeys = await getExamSkills(examSet.level.code);

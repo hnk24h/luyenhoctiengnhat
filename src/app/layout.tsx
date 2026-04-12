@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { Noto_Sans_JP, Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
-import { Footer } from '@/components/Footer';
-import { ChatBot } from '@/components/ChatBot';
+import { PublicShell } from '@/components/PublicShell';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -88,8 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
             {children}
           </main>
-          <Footer />
-          <ChatBot />
+          <PublicShell />
         </Providers>
       </body>
     </html>

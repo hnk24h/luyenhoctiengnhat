@@ -1,9 +1,10 @@
 import React from 'react';
-import { FaXmark, FaCheck, FaPlus, FaFileArrowUp, FaDownload, FaCircleCheck, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaCheck } from 'react-icons/fa6';
+import { AdminModal, AdminFormField, AdminButton } from '@/components/admin/ui';
 
-interface Level { code: string; name?: string }
+interface Level { id: string; code: string; name: string }
 interface Skill { value: string; label: string }
-interface CatForm { levelCode: string; skill: string; name: string; description: string; icon: string; order: number }
+interface CatForm { levelId: string; skill: string; name: string; description: string; icon: string; order: number }
 type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
 interface CategoryModalProps {
   modal: Modal;
@@ -20,14 +21,20 @@ interface CategoryModalProps {
 export function CategoryModal({ modal, setModal, modalErr, catForm, setCatForm, levels, SKILLS, saving, saveCat }: CategoryModalProps) {
   if (modal !== 'cat-create' && modal !== 'cat-edit') return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setModal(null)}>
-      <div className="card w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold" style={{ color: 'var(--text-base)' }}>
-            {modal === 'cat-create' ? 'Thêm chủ đề mới' : 'Sửa chủ đề'}
-          </h2>
-          <button onClick={() => setModal(null)} className="btn-ghost p-1.5"><FaXmark size={14} /></button>
+    <AdminModal
+      open
+      onClose={() => setModal(null)}
+      title={modal === 'cat-create' ? 'Thêm chủ đề mới' : 'Sửa chủ đề'}
+      size="sm"
+      footer={
+        <div className="flex gap-3">
+          <AdminButton variant="secondary" className="flex-1" onClick={() => setModal(null)}>Hủy</AdminButton>
+          <AdminButton variant="primary" className="flex-1" onClick={saveCat} disabled={saving} loading={saving} icon={<FaCheck size={12} />}>
+            Lưu
+          </AdminButton>
         </div>
+      }
+    >
         {modalErr && (
           <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#DC2626' }}>
             {modalErr}
@@ -35,47 +42,34 @@ export function CategoryModal({ modal, setModal, modalErr, catForm, setCatForm, 
         )}
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Cấp độ *</label>
-              <select className="input w-full text-sm" value={catForm.levelCode} onChange={e => setCatForm(f => ({ ...f, levelCode: e.target.value }))}>
-                {levels.map(lv => <option key={lv.code} value={lv.code}>{lv.code}{lv.name && lv.name !== lv.code ? ` — ${lv.name}` : ''}</option>)}
+            <AdminFormField label="Cấp độ" required>
+              <select className="input w-full text-sm" value={catForm.levelId} onChange={e => setCatForm(f => ({ ...f, levelId: e.target.value }))}>
+                <option value="">Chọn cấp độ</option>
+                {levels.map(lv => <option key={lv.id} value={lv.id}>{lv.code}{lv.name && lv.name !== lv.code ? ` — ${lv.name}` : ''}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Kỹ năng *</label>
+            </AdminFormField>
+            <AdminFormField label="Kỹ năng" required>
               <select className="input w-full text-sm" value={catForm.skill} onChange={e => setCatForm(f => ({ ...f, skill: e.target.value }))}>
                 {SKILLS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
-            </div>
+            </AdminFormField>
           </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Tên chủ đề *</label>
+          <AdminFormField label="Tên chủ đề" required>
             <input className="input w-full" placeholder="VD: Từ vựng chủ đề Gia đình" value={catForm.name} onChange={e => setCatForm(f => ({ ...f, name: e.target.value }))} />
-          </div>
+          </AdminFormField>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Icon (emoji)</label>
+            <AdminFormField label="Icon (emoji)">
               <input className="input w-full" placeholder="👨‍👩‍👧" value={catForm.icon} onChange={e => setCatForm(f => ({ ...f, icon: e.target.value }))} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Thứ tự</label>
+            </AdminFormField>
+            <AdminFormField label="Thứ tự">
               <input type="number" className="input w-full" min={0} value={catForm.order} onChange={e => setCatForm(f => ({ ...f, order: Number(e.target.value) }))} />
-            </div>
+            </AdminFormField>
           </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-base)' }}>Mô tả</label>
+          <AdminFormField label="Mô tả">
             <textarea className="input w-full resize-none" rows={2} placeholder="Mô tả ngắn về chủ đề..." value={catForm.description} onChange={e => setCatForm(f => ({ ...f, description: e.target.value }))} />
-          </div>
+          </AdminFormField>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={() => setModal(null)} className="btn-secondary flex-1">Hủy</button>
-          <button onClick={saveCat} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-            {saving ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <FaCheck size={12} />}
-            Lưu
-          </button>
-        </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }
 

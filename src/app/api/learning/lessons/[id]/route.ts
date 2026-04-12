@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest, { params: rawParams }: { params: Pro
   if (!isAdmin(session)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
-  const { title, description, content, type, order, requiredTier } = body;
+  const { title, description, content, type, order, requiredTier, status } = body;
 
   const updated = await prisma.learningLesson.update({
     where: { id: params.id },
@@ -40,6 +40,7 @@ export async function PUT(req: NextRequest, { params: rawParams }: { params: Pro
       ...(type        !== undefined ? { type }                           : {}),
       ...(order       !== undefined ? { order }                          : {}),
       ...(requiredTier !== undefined ? { requiredTier }                  : {}),
+      ...(status !== undefined && ['draft', 'published', 'archived'].includes(status) ? { status } : {}),
     },
     include: {
       _count: { select: { items: true } },

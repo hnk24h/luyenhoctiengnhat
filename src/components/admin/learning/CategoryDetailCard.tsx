@@ -1,23 +1,25 @@
 import React from 'react';
 import { FaPencil, FaTrash } from 'react-icons/fa6';
 
+const SKILL_MAP: Record<string, { label: string; color: string }> = {
+  vocab: { label: 'Từ vựng', color: '#8B5CF6' },
+  grammar: { label: 'Ngữ pháp', color: '#F59E0B' },
+  doc: { label: 'Đọc', color: '#0EA5E9' },
+  nghe: { label: 'Nghe', color: '#10B981' },
+  noi: { label: 'Nói', color: '#EC4899' },
+  viet: { label: 'Viết', color: '#F97316' },
+};
+
 function SkillBadge({ skill }: { skill: string }) {
-  const colors = {
-    doc: '#0EA5E9', nghe: '#10B981', ngu_phap: '#F59E0B', tu_vung: '#8B5CF6',
-  } as const;
-  const labels = {
-    doc: 'Đọc', nghe: 'Nghe', ngu_phap: 'Ngữ pháp', tu_vung: 'Từ vựng',
-  } as const;
-  const c = colors[skill as keyof typeof colors] ?? '#6B7280';
-  const label = labels[skill as keyof typeof labels] ?? skill;
+  const s = SKILL_MAP[skill];
+  const c = s?.color ?? '#6B7280';
   return (
     <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: `${c}22`, color: c }}>
-      {label}
+      {s?.label ?? skill}
     </span>
   );
 }
 
-// Copied from page.tsx to avoid import issues
 interface Category {
   id: string; levelId: string; skill: string; name: string;
   description: string | null; icon: string | null; order: number;
@@ -33,31 +35,31 @@ interface CategoryDetailCardProps {
 
 export default function CategoryDetailCard({ cat, onEdit, onDelete }: CategoryDetailCardProps) {
   if (!cat) {
-    return <div className="card text-center text-sm text-muted py-8">Chọn một chủ đề để xem chi tiết và quản lý bài học.</div>;
+    return <div className="card text-center text-sm py-8" style={{ color: 'var(--text-muted)' }}>Chọn một chủ đề để xem chi tiết và quản lý bài học.</div>;
   }
   return (
     <div className="card flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="font-bold text-xl flex items-center gap-2 text-blue-700">
+        <span className="font-bold text-lg flex items-center gap-2" style={{ color: 'var(--primary)' }}>
+          {cat.icon && <span className="text-xl">{cat.icon}</span>}
           {cat.name}
         </span>
         <SkillBadge skill={cat.skill || ''} />
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+          style={{ background: 'color-mix(in srgb, var(--primary) 10%, transparent)', color: 'var(--primary)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)' }}>
           {cat._count.lessons ?? 0} bài học
         </span>
-        {/* Placeholder: lesson package/tier and difficulty */}
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-100">
-          Gói: Miễn phí
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          Cấp: {cat.level.code}
         </span>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 text-xs font-semibold border border-yellow-100">
-          Độ khó: Dễ
-        </span>
-        <button onClick={onEdit} className="p-2 rounded-lg hover:bg-blue-50 ml-2 text-blue-700 border border-blue-100" title="Sửa chủ đề">
-          <FaPencil size={13} />
-        </button>
-        <button onClick={onDelete} className="p-2 rounded-lg hover:bg-red-50 text-red-600 border border-red-100" title="Xóa chủ đề">
-          <FaTrash size={13} />
-        </button>
+        <div className="flex gap-1 ml-auto">
+          <button onClick={onEdit} className="p-2 rounded-lg transition-all" style={{ color: 'var(--primary)', border: '1px solid var(--border)' }} title="Sửa chủ đề">
+            <FaPencil size={13} />
+          </button>
+          <button onClick={onDelete} className="p-2 rounded-lg hover:bg-red-50 transition-all" style={{ color: '#EF4444', border: '1px solid var(--border)' }} title="Xóa chủ đề">
+            <FaTrash size={13} />
+          </button>
+        </div>
       </div>
       <div className="text-sm text-gray-500 mt-1">{cat.description}</div>
     </div>

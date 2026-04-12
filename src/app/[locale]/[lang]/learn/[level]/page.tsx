@@ -322,7 +322,7 @@ export default async function LearnLevelPage({ params: rawParams, searchParams: 
     select: { id: true, content: true, createdAt: true, user: { select: { name: true } } },
   });
   const posts: LevelPostData[] = rawPosts.map(p => ({
-    id: p.id, content: p.content, userName: p.user.name,
+    id: p.id, content: p.content, userName: p.user.name ?? '',
     createdAt: p.createdAt.toISOString(),
   }));
 

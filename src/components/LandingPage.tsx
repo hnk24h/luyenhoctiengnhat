@@ -89,7 +89,7 @@ function getConfig(lang: string): LangConfig {
       { icon: <FaHeadphones size={28}/>, label: 'Luyện Nghe', href: '/ja/listening', desc: 'Hội thoại & thông báo thực tế. Luyện tai để bắt kịp tốc độ người bản ngữ.',    from: '#DBEAFE', to: '#EFF6FF', icon_bg: '#2563EB', key_color: '#2563EB' },
       { icon: <FaMicrophone size={28}/>, label: 'Tập Nói',    href: '/ja/learn',     desc: 'Mẫu câu giao tiếp & phát âm chuẩn. Tự tin hội thoại trong mọi tình huống.',   from: '#D1FAE5', to: '#F0FDF4', icon_bg: '#10B981', key_color: '#10B981' },
       { icon: <FaBookOpen size={28}/>,   label: 'Đọc Hiểu',   href: '/ja/reading',   desc: 'Văn bản, bài báo, đề đọc sát format JLPT theo từng cấp độ N5–N1.',           from: '#FEF3C7', to: '#FFFBEB', icon_bg: '#F59E0B', key_color: '#F59E0B' },
-      { icon: <FaPencil size={28}/>,     label: 'Luyện Viết', href: '/ja/learn',     desc: 'Kana, Kanji và cấu trúc câu từ cơ bản đến nâng cao, có lộ trình rõ ràng.',   from: '#EDE9FE', to: '#F5F3FF', icon_bg: '#7C3AED', key_color: '#7C3AED' },
+      { icon: <FaPencil size={28}/>,     label: 'Luyện Viết', href: '/ja/kanji',     desc: 'Kanji từ cơ bản đến nâng cao: xem cách viết từng nét, ôn tập và xuất PDF luyện viết.',   from: '#EDE9FE', to: '#F5F3FF', icon_bg: '#7C3AED', key_color: '#7C3AED' },
     ],
     steps: [
       { num: '1', icon: <FaBullseye size={34} color="#7C3AED"/>, title: 'Chọn cấp độ phù hợp', desc: 'Bắt đầu từ N5 hoặc nhảy thẳng vào level bạn cần. Không cần kinh nghiệm.', color: '#7C3AED' },
@@ -157,7 +157,7 @@ function getConfig(lang: string): LangConfig {
       { icon: <FaHeadphones size={28}/>, label: 'Luyện Nghe', href: '/zh/listening', desc: 'Hội thoại & thông báo thực tế. Luyện tai nghe tiếng Trung tự nhiên.',     from: '#DBEAFE', to: '#EFF6FF', icon_bg: '#2563EB', key_color: '#2563EB' },
       { icon: <FaMicrophone size={28}/>, label: 'Tập Nói',    href: '/zh/learn',     desc: 'Phát âm 4 thanh điệu chuẩn, mẫu câu giao tiếp hàng ngày tự nhiên.',     from: '#D1FAE5', to: '#F0FDF4', icon_bg: '#10B981', key_color: '#10B981' },
       { icon: <FaBookOpen size={28}/>,   label: 'Đọc Hiểu',   href: '/zh/reading',   desc: 'Văn bản, bài báo, đề đọc sát format HSK theo từng cấp độ HSK1–6.',       from: '#FEF3C7', to: '#FFFBEB', icon_bg: '#F59E0B', key_color: '#F59E0B' },
-      { icon: <FaPencil size={28}/>,     label: 'Luyện Viết', href: '/zh/learn',     desc: 'Hán tự, Pinyin và cấu trúc câu từ cơ bản đến nâng cao bài bản.',         from: '#EDE9FE', to: '#F5F3FF', icon_bg: '#7C3AED', key_color: '#7C3AED' },
+      { icon: <FaPencil size={28}/>,     label: 'Luyện Viết', href: '/zh/kanji',     desc: 'Hán tự từ cơ bản đến nâng cao: xem cách viết từng nét, ôn tập và xuất PDF luyện viết.',         from: '#EDE9FE', to: '#F5F3FF', icon_bg: '#7C3AED', key_color: '#7C3AED' },
     ],
     steps: [
       { num: '1', icon: <FaBullseye size={34} color="#7C3AED"/>, title: 'Chọn cấp độ HSK phù hợp', desc: 'Bắt đầu từ HSK1 hoặc nhảy thẳng vào level bạn cần. Không cần kinh nghiệm.', color: '#7C3AED' },
