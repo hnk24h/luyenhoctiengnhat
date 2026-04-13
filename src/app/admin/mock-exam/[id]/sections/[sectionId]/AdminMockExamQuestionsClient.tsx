@@ -1,9 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  FaPlus, FaFloppyDisk, FaTrash, FaPen, FaCheck,
-  FaHeadphones, FaImage, FaCircleCheck,
+  FaPlus, FaFloppyDisk, FaTrash, FaPen,
+  FaHeadphones, FaImage, FaCircleCheck, FaXmark,
+  FaMagnifyingGlass, FaLayerGroup,
 } from 'react-icons/fa6';
+import { ConfirmDialog } from '@/components/admin/ui';
 
 interface Question {
   id: string;
@@ -21,6 +23,7 @@ interface Question {
   order: number;
 }
 
+/* ─── Helpers ────────────────────────────────────────────────── */
 function parseOpts(raw: unknown): string[] {
   if (!raw) return ['', '', '', ''];
   if (Array.isArray(raw)) {
@@ -35,24 +38,72 @@ function parseOpts(raw: unknown): string[] {
   return ['', '', '', ''];
 }
 
-const BLANK = { partLabel: '', partTitle: '', passageText: '', content: '', options: ['', '', '', ''], answer: '', explain: '', audioUrl: '', imageUrl: '' };
+const BLANK = {
+  partLabel: '', partTitle: '', passageText: '',
+  content: '', options: ['', '', '', ''],
+  answer: '', explain: '', audioUrl: '', imageUrl: '',
+};
 
+const ANSWER_LABELS = ['A', 'B', 'C', 'D'];
+
+/* ─── Component ──────────────────────────────────────────────── */
 export default function AdminMockExamQuestionsClient({
   examId, sectionId, questions: initial,
 }: {
   examId: string; sectionId: string; questions: Question[];
 }) {
   const [questions, setQuestions] = useState<Question[]>(initial);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  /* Drawer */
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing] = useState<Question | null>(null);
+
+  /* Form */
   const [form, setForm] = useState(BLANK);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const isEditing = selectedId !== null;
+  /* Filters */
+  const [filterPart, setFilterPart] = useState('');
+  const [search, setSearch] = useState('');
 
-  function loadQuestion(q: Question) {
-    setSelectedId(q.id);
+  /* Delete */
+  const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  /* ── part labels for filter tabs ── */
+  const partLabels = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const q of questions) {
+      const l = q.partLabel ?? '';
+      if (l && !seen.has(l)) { seen.add(l); out.push(l); }
+    }
+    return out;
+  }, [questions]);
+
+  /* ── filtered list ── */
+  const filtered = useMemo(() => questions.filter(q => {
+    if (filterPart && (q.partLabel ?? '') !== filterPart) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (!q.content.toLowerCase().includes(s) && !(q.partTitle ?? '').toLowerCase().includes(s)) return false;
+    }
+    return true;
+  }), [questions, filterPart, search]);
+
+  /* ── helpers ── */
+  function setField(k: string, v: unknown) { setForm(f => ({ ...f, [k]: v })); }
+
+  function openCreate() {
+    setEditing(null); setForm(BLANK);
+    setError(''); setSaved(false);
+    setDrawerOpen(true);
+  }
+
+  function openEdit(q: Question) {
+    setEditing(q);
     setForm({
       partLabel: q.partLabel ?? '',
       partTitle: q.partTitle ?? '',
@@ -65,28 +116,24 @@ export default function AdminMockExamQuestionsClient({
       imageUrl: q.imageUrl ?? '',
     });
     setError(''); setSaved(false);
+    setDrawerOpen(true);
   }
 
-  function resetForm() {
-    setSelectedId(null);
-    setForm(BLANK);
-    setError(''); setSaved(false);
-  }
+  function closeDrawer() { setDrawerOpen(false); }
 
-  function setField(k: string, v: unknown) { setForm(f => ({ ...f, [k]: v })); }
-
+  /* ── submit ── */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.content.trim()) { setError('Nội dung câu hỏi không được trống.'); return; }
     setLoading(true); setError('');
 
     const body = {
-      ...(isEditing && { questionId: selectedId }),
+      ...(editing && { questionId: editing.id }),
       partLabel: form.partLabel || null,
       partTitle: form.partTitle || null,
       passageText: form.passageText || null,
       content: form.content,
-      options: form.options.filter(o => o.trim()),
+      options: (form.options as string[]).filter(o => o.trim()),
       answer: form.answer,
       explain: form.explain || null,
       audioUrl: form.audioUrl || null,
@@ -95,161 +142,415 @@ export default function AdminMockExamQuestionsClient({
 
     const url = `/api/admin/mock-exam/${examId}/sections/${sectionId}/questions`;
     const res = await fetch(url, {
-      method: isEditing ? 'PUT' : 'POST',
+      method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
     if (res.ok) {
-      const data = await res.json();
-      if (isEditing) {
-        setQuestions(prev => prev.map(q => q.id === selectedId ? data : q));
+      const data: Question = await res.json();
+      if (editing) {
+        setQuestions(prev => prev.map(q => q.id === editing.id ? data : q));
+        setEditing(data); setSaved(true);
       } else {
         setQuestions(prev => [...prev, data]);
+        setEditing(data); setSaved(true);
       }
-      setSaved(true);
-      if (!isEditing) resetForm();
     } else {
       const d = await res.json(); setError(d.message || 'Lỗi xảy ra');
     }
     setLoading(false);
   }
 
-  async function handleDelete(qId: string) {
-    if (!confirm('Xóa câu hỏi này?')) return;
+  /* ── delete ── */
+  async function handleDelete(q: Question) {
+    setDeleting(true);
     const res = await fetch(`/api/admin/mock-exam/${examId}/sections/${sectionId}/questions`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: qId }),
+      body: JSON.stringify({ questionId: q.id }),
     });
     if (res.ok) {
-      setQuestions(prev => prev.filter(q => q.id !== qId));
-      if (selectedId === qId) resetForm();
+      setQuestions(prev => prev.filter(x => x.id !== q.id));
+      if (editing?.id === q.id) closeDrawer();
     }
+    setDeleteTarget(null);
+    setDeleting(false);
   }
 
-  const fieldLabel = (text: string) => (
-    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>{text}</label>
-  );
-
+  /* ── render ── */
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 20 }}>
-      {/* Left: question list */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{questions.length} câu hỏi</span>
-          <button onClick={resetForm} className="btn-primary" style={{ fontSize: 12, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <FaPlus size={10} /> Thêm câu
+    <>
+      {/* ── Card 1: filters ── */}
+      <div className="admin-card p-0 overflow-hidden">
+        {/* Row 1: part tabs + add button */}
+        <div className="flex items-center gap-1 px-4 py-2.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)' }}>
+          <button
+            onClick={() => setFilterPart('')}
+            className="px-3 py-1 rounded text-sm font-medium transition-colors"
+            style={filterPart === ''
+              ? { background: 'var(--primary)', color: '#fff' }
+              : { color: 'var(--text-secondary)', background: 'transparent' }}
+          >
+            Tất cả
+          </button>
+          {partLabels.map(label => (
+            <button
+              key={label}
+              onClick={() => setFilterPart(label)}
+              className="px-3 py-1 rounded text-sm font-medium transition-colors"
+              style={filterPart === label
+                ? { background: 'var(--primary)', color: '#fff' }
+                : { color: 'var(--text-secondary)', background: 'transparent' }}
+            >
+              {label}
+            </button>
+          ))}
+          <div className="flex-1" />
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium"
+            style={{ background: 'var(--primary)', color: '#fff' }}
+          >
+            <FaPlus size={11} /> Thêm câu hỏi
           </button>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {questions.map((q, i) => (
-            <div key={q.id} className="card" style={{
-              padding: '10px 14px', cursor: 'pointer',
-              border: selectedId === q.id ? '2px solid var(--primary)' : '2px solid transparent',
-              transition: 'border-color .15s',
-            }} onClick={() => loadQuestion(q)}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <span style={{
-                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700,
-                  background: q.answer ? 'rgba(22,163,74,.12)' : 'var(--bg-muted)',
-                  color: q.answer ? '#16a34a' : 'var(--text-muted)',
-                }}>
-                  {i + 1}
+
+        {/* Row 2: count + search */}
+        <div className="flex items-center gap-3 px-4 py-2">
+          <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <FaLayerGroup size={11} />
+            {filtered.length}/{questions.length} câu
+          </span>
+          <div className="flex-1" />
+          <div className="relative">
+            <FaMagnifyingGlass
+              size={12}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: 'var(--text-muted)' }}
+            />
+            <input
+              className="input pl-7"
+              style={{ width: 240 }}
+              placeholder="Tìm kiếm câu hỏi..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Card 2: question list ── */}
+      <div className="admin-card overflow-hidden">
+        <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+          {filtered.map((q) => {
+            const globalIdx = questions.indexOf(q);
+            const isActive = editing?.id === q.id && drawerOpen;
+            return (
+              <div
+                key={q.id}
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors"
+                style={{
+                  borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
+                  background: 'transparent',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={() => openEdit(q)}
+              >
+                {/* Index badge */}
+                <span
+                  className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold"
+                  style={{
+                    width: 28, height: 28,
+                    background: q.answer ? 'rgba(22,163,74,.12)' : 'var(--bg-muted)',
+                    color: q.answer ? '#16a34a' : 'var(--text-muted)',
+                  }}
+                >
+                  {globalIdx + 1}
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {q.partLabel && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>{q.partLabel}</div>}
-                  <div style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {q.partLabel && (
+                    <div className="text-[10px] font-bold mb-0.5" style={{ color: 'var(--primary)' }}>
+                      {q.partLabel}{q.partTitle ? ` — ${q.partTitle}` : ''}
+                    </div>
+                  )}
+                  <div className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
                     {q.content || '(trống)'}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 3, fontSize: 11, color: 'var(--text-muted)' }}>
-                    {q.audioUrl && <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}><FaHeadphones size={9} /> audio</span>}
-                    {q.imageUrl && <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}><FaImage size={9} /> ảnh</span>}
-                    {q.answer && <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}><FaCircleCheck size={9} /> {q.answer}</span>}
+                  <div className="flex items-center gap-3 mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {q.answer && (
+                      <span className="flex items-center gap-1">
+                        <FaCircleCheck size={9} style={{ color: '#16a34a' }} /> Đáp án: {q.answer}
+                      </span>
+                    )}
+                    {q.audioUrl && <span className="flex items-center gap-1"><FaHeadphones size={9} /> audio</span>}
+                    {q.imageUrl && <span className="flex items-center gap-1"><FaImage size={9} /> ảnh</span>}
+                    {q.passageText && <span className="flex items-center gap-1"><FaLayerGroup size={9} /> đoạn văn</span>}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
-                  <button onClick={() => loadQuestion(q)} title="Sửa" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                    <FaPen size={11} />
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                  <button
+                    title="Sửa"
+                    className="p-1.5 rounded transition-colors"
+                    style={{ color: 'var(--text-secondary)', background: 'transparent' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    onClick={() => openEdit(q)}
+                  >
+                    <FaPen size={12} />
                   </button>
-                  <button onClick={() => handleDelete(q.id)} title="Xóa" style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                    <FaTrash size={11} />
+                  <button
+                    title="Xóa"
+                    className="p-1.5 rounded transition-colors"
+                    style={{ color: '#ef4444', background: 'transparent' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    onClick={() => setDeleteTarget(q)}
+                  >
+                    <FaTrash size={12} />
                   </button>
                 </div>
               </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>
+              {questions.length === 0
+                ? 'Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.'
+                : 'Không tìm thấy câu hỏi phù hợp.'}
             </div>
-          ))}
-          {questions.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px 0' }}>Chưa có câu hỏi nào.</div>}
+          )}
         </div>
       </div>
 
-      {/* Right: form */}
-      <div style={{ position: 'sticky', top: 20, alignSelf: 'start' }}>
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-            {isEditing ? <><FaPen size={12} /> Sửa câu hỏi</> : <><FaPlus size={12} /> Thêm câu hỏi</>}
-          </div>
-          <form onSubmit={handleSubmit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>{fieldLabel('Part label')}<input className="input" value={form.partLabel} onChange={e => setField('partLabel', e.target.value)} placeholder="問題1" /></div>
-              <div>{fieldLabel('Part title')}<input className="input" value={form.partTitle} onChange={e => setField('partTitle', e.target.value)} placeholder="漢字読み" /></div>
-            </div>
-
-            <div>
-              {fieldLabel('Passage / đoạn văn (nếu có)')}
-              <textarea className="input" rows={3} value={form.passageText} onChange={e => setField('passageText', e.target.value)} placeholder="Đoạn văn chung cho nhóm câu hỏi..." />
-            </div>
-
-            <div>
-              {fieldLabel('Nội dung câu hỏi *')}
-              <textarea className="input" rows={3} value={form.content} onChange={e => setField('content', e.target.value)} placeholder="Câu hỏi..." required />
-            </div>
-
-            <div>
-              {fieldLabel('Đáp án (A/B/C/D)')}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {['A', 'B', 'C', 'D'].map((label, i) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{
-                      width: 24, height: 24, borderRadius: '50%', fontSize: 11, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      background: form.answer === label ? 'var(--primary)' : 'var(--bg-muted)',
-                      color: form.answer === label ? '#fff' : 'var(--text-muted)',
-                      cursor: 'pointer',
-                    }} onClick={() => setField('answer', form.answer === label ? '' : label)}>
-                      {label}
-                    </span>
-                    <input className="input" style={{ flex: 1 }} value={(form.options as string[])[i] || ''} onChange={e => {
-                      const next = [...(form.options as string[])];
-                      next[i] = e.target.value;
-                      setField('options', next);
-                    }} placeholder={`Đáp án ${label}`} />
+      {/* ── Right Drawer ── */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={closeDrawer}
+        >
+          <div
+            className="relative h-full flex flex-col overflow-hidden"
+            style={{
+              width: '100%', maxWidth: 540,
+              background: 'var(--bg-surface)',
+              boxShadow: '-4px 0 24px rgba(0,0,0,.15)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drawer header */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="flex-1">
+                <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {editing ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi mới'}
+                </div>
+                {editing?.partLabel && (
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--primary)' }}>
+                    {editing.partLabel}{editing.partTitle ? ` — ${editing.partTitle}` : ''}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-
-            <div>{fieldLabel('Giải thích (tuỳ chọn)')}<textarea className="input" rows={2} value={form.explain} onChange={e => setField('explain', e.target.value)} placeholder="Giải thích đáp án..." /></div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>{fieldLabel('Audio URL')}<input className="input" value={form.audioUrl} onChange={e => setField('audioUrl', e.target.value)} placeholder="https://..." /></div>
-              <div>{fieldLabel('Image URL')}<input className="input" value={form.imageUrl} onChange={e => setField('imageUrl', e.target.value)} placeholder="https://..." /></div>
-            </div>
-
-            {error && <p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p>}
-            {saved && <p style={{ color: '#16a34a', fontSize: 13 }}>✓ Đã lưu</p>}
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <FaFloppyDisk size={12} /> {loading ? 'Đang lưu...' : isEditing ? 'Cập nhật' : 'Thêm câu hỏi'}
+              <button
+                onClick={closeDrawer}
+                className="p-1.5 rounded transition-colors"
+                style={{ color: 'var(--text-muted)', background: 'transparent' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <FaXmark size={16} />
               </button>
-              {isEditing && <button type="button" onClick={resetForm} className="btn-secondary">Hủy</button>}
             </div>
-          </form>
+
+            {/* Drawer body */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col">
+              <div className="flex flex-col gap-4 px-5 py-4">
+
+                {/* Part info */}
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      Part label
+                    </label>
+                    <input
+                      className="input w-full"
+                      value={form.partLabel}
+                      onChange={e => setField('partLabel', e.target.value)}
+                      placeholder="問題1"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      Part title
+                    </label>
+                    <input
+                      className="input w-full"
+                      value={form.partTitle}
+                      onChange={e => setField('partTitle', e.target.value)}
+                      placeholder="漢字読み"
+                    />
+                  </div>
+                </div>
+
+                {/* Passage */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Đoạn văn / passage{' '}
+                    <span className="font-normal opacity-60">(tuỳ chọn — dùng chung cho nhóm câu)</span>
+                  </label>
+                  <textarea
+                    className="input w-full font-mono text-xs"
+                    rows={4}
+                    value={form.passageText}
+                    onChange={e => setField('passageText', e.target.value)}
+                    placeholder="Đoạn văn chung cho nhóm câu hỏi..."
+                  />
+                </div>
+
+                {/* Question content */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Nội dung câu hỏi <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    className="input w-full"
+                    rows={4}
+                    value={form.content}
+                    onChange={e => setField('content', e.target.value)}
+                    placeholder="Nội dung câu hỏi..."
+                    required
+                  />
+                </div>
+
+                {/* Options + answer */}
+                <div>
+                  <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    Đáp án — nhấn vào chữ cái để chọn đáp án đúng
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    {ANSWER_LABELS.map((label, i) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold transition-colors"
+                          style={{
+                            width: 28, height: 28,
+                            background: form.answer === label ? 'var(--primary)' : 'var(--bg-muted)',
+                            color: form.answer === label ? '#fff' : 'var(--text-muted)',
+                            border: form.answer === label ? 'none' : '1.5px solid var(--border)',
+                          }}
+                          onClick={() => setField('answer', form.answer === label ? '' : label)}
+                        >
+                          {label}
+                        </button>
+                        <input
+                          className="input flex-1"
+                          value={(form.options as string[])[i] ?? ''}
+                          onChange={e => {
+                            const next = [...(form.options as string[])];
+                            next[i] = e.target.value;
+                            setField('options', next);
+                          }}
+                          placeholder={`Nội dung đáp án ${label}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Explain */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Giải thích <span className="font-normal opacity-60">(tuỳ chọn)</span>
+                  </label>
+                  <textarea
+                    className="input w-full"
+                    rows={3}
+                    value={form.explain}
+                    onChange={e => setField('explain', e.target.value)}
+                    placeholder="Giải thích đáp án đúng..."
+                  />
+                </div>
+
+                {/* Media */}
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      <FaHeadphones className="inline mr-1" size={10} />Audio URL
+                    </label>
+                    <input
+                      className="input w-full"
+                      value={form.audioUrl}
+                      onChange={e => setField('audioUrl', e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      <FaImage className="inline mr-1" size={10} />Image URL
+                    </label>
+                    <input
+                      className="input w-full"
+                      value={form.imageUrl}
+                      onChange={e => setField('imageUrl', e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                {error && <p className="text-sm" style={{ color: '#dc2626' }}>{error}</p>}
+              </div>
+
+              {/* Drawer footer */}
+              <div
+                className="flex items-center gap-3 px-5 py-4 flex-shrink-0 mt-auto"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                {saved && (
+                  <span className="flex items-center gap-1.5 text-sm" style={{ color: '#16a34a' }}>
+                    <FaCircleCheck size={14} /> Đã lưu
+                  </span>
+                )}
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded text-sm"
+                  style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)' }}
+                  onClick={closeDrawer}
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                  style={{ background: 'var(--primary)', color: '#fff' }}
+                  disabled={loading}
+                >
+                  <FaFloppyDisk size={13} />
+                  {loading ? 'Đang lưu...' : editing ? 'Lưu thay đổi' : 'Thêm câu hỏi'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {/* ── Confirm Delete ── */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Xóa câu hỏi?"
+        description="Xóa câu hỏi này? Hành động không thể hoàn tác."
+        confirmLabel="Xóa"
+        danger
+        loading={deleting}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }

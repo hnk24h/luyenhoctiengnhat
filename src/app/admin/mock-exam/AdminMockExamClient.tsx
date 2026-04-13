@@ -1,13 +1,15 @@
-'use client';
+﻿'use client';
 import { useState, useMemo, useRef } from 'react';
 import {
-  FaPlus, FaPen, FaListUl, FaTrash, FaClock, FaFileImport,
-  FaChevronDown, FaChevronRight, FaCheck, FaEye, FaEyeSlash,
-  FaHeadphones, FaBookOpen, FaBook, FaBriefcase,
+  FaPlus, FaPen, FaTrash, FaClock, FaFileImport,
+  FaChevronDown, FaChevronRight, FaEye, FaEyeSlash,
+  FaHeadphones, FaBookOpen, FaBook, FaBriefcase, FaXmark,
+  FaFloppyDisk, FaCircleCheck,
 } from 'react-icons/fa6';
-import { JLPT_TEMPLATES, BJT_TEMPLATE, getExamTemplate } from '@/lib/mock-exam-config';
-import type { ExamTemplate } from '@/lib/mock-exam-config';
-import { AdminButton, AdminFormField, AdminBadge, ConfirmDialog } from '@/components/admin/ui';
+import { getExamTemplate } from '@/lib/mock-exam-config';
+import {
+  AdminButton, AdminFormField, ConfirmDialog,
+} from '@/components/admin/ui';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface SectionData {
@@ -52,7 +54,7 @@ const BLANK_FORM = { title: '', description: '', subject: 'JLPT', levelCode: 'N5
 
 function SLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--text-muted)', marginBottom: 12 }}>
+    <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>
       {children}
     </div>
   );
@@ -64,27 +66,37 @@ function formatTime(sec: number) {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-export default function AdminMockExamClient({
-  exams: initial, subject: _subject,
-}: {
-  exams: MockExam[]; subject: string;
-}) {
+export default function AdminMockExamClient({ exams: initial }: { exams: MockExam[] }) {
   const [exams, setExams] = useState<MockExam[]>(initial);
-  const [form, setForm] = useState(BLANK_FORM);
-  const [editing, setEditing] = useState<MockExam | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [importJson, setImportJson] = useState('');
-  const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
-  const [expandedExam, setExpandedExam] = useState<string | null>(null);
-  const [filterLevel, setFilterLevel] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
+  /* Drawer */
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editing, setEditing]       = useState<MockExam | null>(null);
+
+  /* Form */
+  const [form, setForm]       = useState(BLANK_FORM);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [saved, setSaved]     = useState(false);
+  const [showImport, setShowImport]       = useState(false);
+  const [importJson, setImportJson]       = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError]     = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* Filters */
+  const [filterSubject, setFilterSubject] = useState('');
+  const [filterLevel, setFilterLevel]     = useState('');
+  const [search, setSearch]               = useState('');
+
+  /* Expand */
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  /* Delete */
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting]         = useState(false);
+
+  /* ── helpers ── */
   function setField(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   // Auto-fill from template when subject/level changes
@@ -103,7 +115,13 @@ export default function AdminMockExamClient({
     }
   }
 
-  function startEdit(exam: MockExam) {
+  function openCreate() {
+    setEditing(null); setForm(BLANK_FORM);
+    setError(''); setSaved(false);
+    setShowImport(false); setImportJson(''); setImportError('');
+    setDrawerOpen(true);
+  }
+  function openEdit(exam: MockExam) {
     setEditing(exam);
     setForm({
       title: exam.title,
@@ -113,14 +131,15 @@ export default function AdminMockExamClient({
       year: exam.year ? String(exam.year) : '',
       totalTime: exam.totalTime ? String(Math.round(exam.totalTime / 60)) : '',
     });
-    setSaved(false); setError('');
+    setError(''); setSaved(false);
+    setShowImport(false); setImportJson(''); setImportError('');
+    setDrawerOpen(true);
   }
-  function startAdd() { setEditing(null); setForm(BLANK_FORM); setSaved(false); setError(''); }
+  function closeDrawer() { setDrawerOpen(false); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-
     const tpl = getExamTemplate(form.subject as any, form.levelCode);
     const totalTimeSec = form.totalTime ? parseInt(form.totalTime) * 60 : (tpl?.totalTime ?? 0);
 
@@ -131,45 +150,37 @@ export default function AdminMockExamClient({
         body: JSON.stringify({
           title: form.title,
           description: form.description,
-          subject: form.subject,
-          levelCode: form.levelCode,
+          year: form.year ? parseInt(form.year) : null,
           totalTime: totalTimeSec,
         }),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setExams(prev => prev.map(e => e.id === editing.id ? updated : e));
-        setSaved(true);
+        const updated: MockExam = await res.json();
+        setExams(prev => prev.map(e => e.id === updated.id ? { ...e, ...updated } : e));
+        setEditing(updated); setSaved(true);
       } else {
-        const d = await res.json(); setError(d.message || 'Lỗi xảy ra');
+        setError((await res.json()).error ?? 'Lỗi khi lưu');
       }
     } else {
-      // Create with sections from template
       const sections = tpl?.sections.map(s => ({
-        title: s.title,
-        titleVi: s.titleVi,
-        skill: s.skill,
-        timeLimit: s.timeLimit,
+        title: s.title, titleVi: s.titleVi, skill: s.skill, timeLimit: s.timeLimit,
       })) ?? [];
-
       const res = await fetch('/api/admin/mock-exam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: form.title,
-          description: form.description,
-          subject: form.subject,
-          levelCode: form.levelCode,
-          totalTime: totalTimeSec,
-          sections,
+          title: form.title, description: form.description,
+          subject: form.subject, levelCode: form.levelCode,
+          year: form.year ? parseInt(form.year) : null,
+          totalTime: totalTimeSec, sections,
         }),
       });
       if (res.ok) {
-        const created = await res.json();
+        const created: MockExam = await res.json();
         setExams(prev => [created, ...prev]);
-        setForm(BLANK_FORM); setSaved(true);
+        setEditing(created); setSaved(true);
       } else {
-        const d = await res.json(); setError(d.message || 'Lỗi xảy ra');
+        setError((await res.json()).error ?? 'Lỗi khi tạo');
       }
     }
     setLoading(false);
@@ -180,7 +191,7 @@ export default function AdminMockExamClient({
     const res = await fetch(`/api/admin/mock-exam/${id}`, { method: 'DELETE' });
     if (res.ok) {
       setExams(prev => prev.filter(e => e.id !== id));
-      if (editing?.id === id) startAdd();
+      if (editing?.id === id) closeDrawer();
     }
     setDeleteTarget(null);
     setDeleting(false);
@@ -193,8 +204,9 @@ export default function AdminMockExamClient({
       body: JSON.stringify({ published: !exam.published }),
     });
     if (res.ok) {
-      const updated = await res.json();
-      setExams(prev => prev.map(e => e.id === exam.id ? updated : e));
+      const updated: MockExam = await res.json();
+      setExams(prev => prev.map(e => e.id === updated.id ? { ...e, ...updated } : e));
+      if (editing?.id === exam.id) setEditing(updated);
     }
   }
 
@@ -208,11 +220,11 @@ export default function AdminMockExamClient({
         body: JSON.stringify(data),
       });
       if (res.ok) {
-        const created = await res.json();
+        const created: MockExam = await res.json();
         setExams(prev => [created, ...prev]);
-        setShowImport(false); setImportJson('');
+        closeDrawer();
       } else {
-        const d = await res.json(); setImportError(d.message || 'Lỗi import');
+        setImportError((await res.json()).error ?? 'Lỗi import');
       }
     } catch {
       setImportError('JSON không hợp lệ. Kiểm tra lại định dạng.');
@@ -220,269 +232,443 @@ export default function AdminMockExamClient({
     setImportLoading(false);
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => { setImportJson(ev.target?.result as string ?? ''); };
-    reader.readAsText(file);
-  }
+  const formLevels = form.subject === 'BJT' ? BJT_LEVELS : JLPT_LEVELS;
 
-  const levels = form.subject === 'BJT' ? BJT_LEVELS : JLPT_LEVELS;
+  const levelOptions = useMemo(() => {
+    const src = filterSubject ? exams.filter(e => e.subject === filterSubject) : exams;
+    return [...new Set(src.map(e => e.levelCode))];
+  }, [exams, filterSubject]);
 
-  const filtered = useMemo(
-    () => filterLevel ? exams.filter(e => e.levelCode === filterLevel) : exams,
-    [exams, filterLevel],
-  );
-
-  const isAdding = !editing;
+  const filtered = useMemo(() => exams.filter(e => {
+    if (filterSubject && e.subject !== filterSubject) return false;
+    if (filterLevel && e.levelCode !== filterLevel) return false;
+    if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }), [exams, filterSubject, filterLevel, search]);
 
   return (
-    <div style={{ paddingBottom: 40 }}>
-
-      {/* ── Create / Edit form ── */}
-      <div style={{ background: 'var(--bg-surface)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,.08)', overflow: 'hidden', marginBottom: 20 }}>
-        <div style={{ padding: '14px 20px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
-            {isAdding ? <FaPlus size={14} /> : <FaPen size={14} />}
-            {isAdding ? 'Tạo đề thi thử mới' : `Chỉnh sửa: ${editing?.title}`}
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {!isAdding && (
-              <button onClick={startAdd} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <FaPlus size={10} /> Đề mới
-              </button>
-            )}
-            <button onClick={() => setShowImport(!showImport)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 12px', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <FaFileImport size={10} /> Import JSON
+    <>
+      {/* ── Card 1: filters ── */}
+      <div className="admin-card p-0 overflow-hidden">
+        {/* Row 1: subject tabs + add button */}
+        <div className="flex items-center gap-1 px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+          {[
+            { value: '', label: 'Tất cả' },
+            { value: 'JLPT', label: '🇯🇵 JLPT' },
+            { value: 'BJT', label: '💼 BJT' },
+          ].map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => { setFilterSubject(tab.value); setFilterLevel(''); }}
+              className="px-3 py-1 rounded text-sm font-medium transition-colors"
+              style={filterSubject === tab.value
+                ? { background: 'var(--primary)', color: '#fff' }
+                : { color: 'var(--text-secondary)', background: 'transparent' }}
+            >
+              {tab.label}
             </button>
-          </div>
+          ))}
+          <div className="flex-1" />
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium"
+            style={{ background: 'var(--primary)', color: '#fff' }}
+          >
+            <FaPlus size={11} /> Thêm đề thi
+          </button>
         </div>
+        {/* Row 2: level select + search */}
+        <div className="flex items-center gap-3 px-4 py-2">
+          <select
+            className="input"
+            style={{ width: 'auto', minWidth: 130 }}
+            value={filterLevel}
+            onChange={e => setFilterLevel(e.target.value)}
+          >
+            <option value="">Tất cả cấp độ</option>
+            {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <div className="flex-1" />
+          <input
+            className="input"
+            style={{ width: 240 }}
+            placeholder="Tìm kiếm đề thi..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
-        {/* Import panel */}
-        {showImport && (
-          <div style={{ padding: 20, borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
-            <SLabel>Import đề thi từ JSON</SLabel>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
-              Tải lên file JSON hoặc dán nội dung JSON bên dưới. Xem cấu trúc tại API docs.
-            </p>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-              <AdminButton variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
-                Chọn file .json
-              </AdminButton>
-              <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
-            </div>
-            <textarea
-              className="input"
-              rows={8}
-              value={importJson}
-              onChange={e => setImportJson(e.target.value)}
-              placeholder='{"title":"...","subject":"JLPT","levelCode":"N3","totalTime":8400,"sections":[...]}'
-              style={{ fontFamily: 'monospace', fontSize: 12 }}
-            />
-            {importError && <p style={{ color: '#dc2626', fontSize: 13, marginTop: 8 }}>{importError}</p>}
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <AdminButton variant="primary" onClick={handleImport} disabled={importLoading || !importJson.trim()} loading={importLoading}>
-                {importLoading ? 'Đang import...' : 'Import'}
-              </AdminButton>
-              <AdminButton variant="secondary" onClick={() => { setShowImport(false); setImportJson(''); setImportError(''); }}>Hủy</AdminButton>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ padding: 20 }}>
-          {/* Settings */}
-          <div style={{ background: 'var(--bg-muted)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-            <SLabel>Cài đặt</SLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              <AdminFormField label="Môn thi">
-                <select className="input" value={form.subject} onChange={e => applyTemplate(e.target.value, form.subject === e.target.value ? form.levelCode : (e.target.value === 'BJT' ? 'J1+' : 'N5'))}>
-                  <option value="JLPT">JLPT</option>
-                  <option value="BJT">BJT</option>
-                </select>
-              </AdminFormField>
-              <AdminFormField label="Cấp độ">
-                <select className="input" value={form.levelCode} onChange={e => applyTemplate(form.subject, e.target.value)}>
-                  {levels.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </AdminFormField>
-              <AdminFormField label="Năm đề (tuỳ chọn)">
-                <input className="input" type="number" value={form.year} onChange={e => setField('year', e.target.value)} placeholder="2024" min={2000} max={2099} />
-              </AdminFormField>
-            </div>
-            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 160px', gap: 12 }}>
-              <AdminFormField label="Tổng thời gian (phút)">
-                <input className="input" type="number" value={form.totalTime} onChange={e => setField('totalTime', e.target.value)} placeholder="Tự tính từ template" min={1} />
-              </AdminFormField>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div style={{ border: '1.5px solid var(--border)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-            <SLabel>Nội dung</SLabel>
-            <div style={{ marginBottom: 12 }}>
-              <AdminFormField label="Tên đề thi" required>
-                <input className="input" value={form.title} onChange={e => setField('title', e.target.value)} placeholder="Ví dụ: Đề thi thử JLPT N3 — 2024" required />
-              </AdminFormField>
-            </div>
-            <AdminFormField label="Mô tả (tuỳ chọn)">
-              <input className="input" value={form.description} onChange={e => setField('description', e.target.value)} placeholder="Mô tả ngắn..." />
-            </AdminFormField>
-          </div>
-
-          {/* Template preview */}
-          {isAdding && (() => {
-            const tpl = getExamTemplate(form.subject as any, form.levelCode);
-            if (!tpl) return null;
+      {/* ── Card 2: exam accordion list ── */}
+      <div className="admin-card overflow-hidden">
+        <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+          {filtered.map(exam => {
+            const totalQ = exam.sections.reduce((s, sec) => s + sec._count.questions, 0);
+            const isOpen = expandedId === exam.id;
+            const isActive = editing?.id === exam.id && drawerOpen;
             return (
-              <div style={{ background: 'var(--bg-muted)', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-                <SLabel>Cấu trúc đề (sẽ tạo tự động)</SLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {tpl.sections.map((s, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-                      <span style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {SKILL_ICON[s.skill] ?? <FaBookOpen size={13} />}
+              <div key={exam.id} style={isActive ? { borderLeft: '3px solid var(--primary)' } : { borderLeft: '3px solid transparent' }}>
+                {/* Main row */}
+                <div
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors"
+                  style={{ background: 'transparent' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => setExpandedId(isOpen ? null : exam.id)}
+                >
+                  <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
+                    {isOpen ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                        {exam.title}
                       </span>
-                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.titleVi || s.title}</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>— {formatTime(s.timeLimit)}</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>({s.parts.length} phần)</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
-          {saved && <p style={{ color: '#16a34a', fontSize: 13, marginBottom: 10 }}>✓ Đã lưu</p>}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <AdminButton type="submit" variant="primary" disabled={loading} loading={loading}>
-              {isAdding ? '+ Tạo đề thi' : '✓ Lưu thay đổi'}
-            </AdminButton>
-            {!isAdding && (
-              <AdminButton variant="secondary" onClick={startAdd}>
-                Hủy
-              </AdminButton>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* ── Exam list ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-          <FaListUl size={12} />
-          {filtered.length} đề thi
-        </div>
-        <select className="input" style={{ width: 'auto' }} value={filterLevel} onChange={e => setFilterLevel(e.target.value)}>
-          <option value="">Tất cả cấp</option>
-          {(exams.some(e => e.subject === 'JLPT') ? JLPT_LEVELS : []).map(l => <option key={l} value={l}>{l}</option>)}
-          {(exams.some(e => e.subject === 'BJT') ? BJT_LEVELS : []).map(l => <option key={l} value={l}>{l}</option>)}
-        </select>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {filtered.map(exam => {
-          const totalQ = exam.sections.reduce((s, sec) => s + sec._count.questions, 0);
-          const isOpen = expandedExam === exam.id;
-          return (
-            <div key={exam.id} className="card" style={{ overflow: 'hidden', border: editing?.id === exam.id ? '2px solid var(--primary)' : '2px solid transparent', transition: 'border-color .15s' }}>
-              {/* Header row */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }} onClick={() => setExpandedExam(isOpen ? null : exam.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: exam.published ? 'rgba(22,163,74,.12)' : 'var(--bg-muted)', color: exam.published ? '#16a34a' : 'var(--text-muted)', flexShrink: 0 }}>
-                    {isOpen ? <FaChevronDown size={14} /> : <FaChevronRight size={14} />}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {exam.title}
                       {exam.published ? (
-                        <span style={{ fontSize: 10, background: 'rgba(22,163,74,.15)', color: '#16a34a', padding: '1px 6px', borderRadius: 4 }}>Đã xuất bản</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(22,163,74,.15)', color: '#16a34a' }}>Đã xuất bản</span>
                       ) : (
-                        <span style={{ fontSize: 10, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '1px 6px', borderRadius: 4 }}>Nháp</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>Nháp</span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '1px 6px', borderRadius: 4 }}>{exam.subject}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '1px 6px', borderRadius: 4 }}>{exam.levelCode}</span>
-                      {exam.year && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Năm {exam.year}</span>}
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{exam.sections.length} phần</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{totalQ} câu</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2 }}><FaClock size={9} /> {formatTime(exam.totalTime)}</span>
-                      {exam._count.sessions > 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{exam._count.sessions} lượt thi</span>}
+                    <div className="flex items-center gap-3 mt-0.5 text-xs flex-wrap" style={{ color: 'var(--text-muted)' }}>
+                      <span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-muted)' }}>{exam.subject}</span>
+                      <span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-muted)' }}>{exam.levelCode}</span>
+                      {exam.year && <span>Năm {exam.year}</span>}
+                      <span>{exam.sections.length} phần · {totalQ} câu</span>
+                      <span className="flex items-center gap-1"><FaClock size={9} />{formatTime(exam.totalTime)}</span>
+                      {exam._count.sessions > 0 && <span>{exam._count.sessions} lượt thi</span>}
                     </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                  <AdminButton variant="ghost" size="sm" title={exam.published ? 'Ẩn' : 'Xuất bản'}
-                    icon={exam.published ? <FaEye size={14} /> : <FaEyeSlash size={14} />}
-                    onClick={() => handleTogglePublish(exam)}
-                    style={{ color: exam.published ? '#16a34a' : 'var(--text-muted)' }} />
-                  <AdminButton variant="ghost" size="sm" title="Sửa"
-                    icon={<FaPen size={12} />}
-                    onClick={() => startEdit(exam)} />
-                  <AdminButton variant="ghost" size="sm" title="Xóa"
-                    icon={<FaTrash size={12} />}
-                    onClick={() => setDeleteTarget({ id: exam.id, title: exam.title })}
-                    style={{ color: '#ef4444' }} />
-                </div>
-              </div>
-
-              {/* Expanded sections */}
-              {isOpen && (
-                <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', background: 'var(--bg-muted)' }}>
-                  <SLabel>Các phần thi</SLabel>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {exam.sections.map(sec => (
-                      <div key={sec.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-surface)', borderRadius: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {SKILL_ICON[sec.skill] ?? <FaBookOpen size={13} />}
-                          </span>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{sec.titleVi || sec.title}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8 }}>
-                              <span>{SKILL_LABEL[sec.skill] || sec.skill}</span>
-                              <span><FaClock size={9} /> {formatTime(sec.timeLimit)}</span>
-                              <span>{sec._count.questions} câu</span>
-                            </div>
-                          </div>
-                        </div>
-                        <AdminButton variant="secondary" size="sm"
-                          onClick={() => window.location.href = `/admin/mock-exam/${exam.id}/sections/${sec.id}`}>
-                          Câu hỏi
-                        </AdminButton>
-                      </div>
-                    ))}
-                    {exam.sections.length === 0 && (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px 0', fontSize: 13 }}>
-                        Chưa có phần thi nào.
-                      </div>
-                    )}
+                  <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      title={exam.published ? 'Ẩn' : 'Xuất bản'}
+                      className="p-1.5 rounded transition-colors"
+                      style={{ color: exam.published ? '#16a34a' : 'var(--text-muted)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      onClick={() => handleTogglePublish(exam)}
+                    >
+                      {exam.published ? <FaEye size={13} /> : <FaEyeSlash size={13} />}
+                    </button>
+                    <button
+                      title="Sửa"
+                      className="p-1.5 rounded transition-colors"
+                      style={{ color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      onClick={() => openEdit(exam)}
+                    >
+                      <FaPen size={12} />
+                    </button>
+                    <button
+                      title="Xóa"
+                      className="p-1.5 rounded transition-colors"
+                      style={{ color: '#ef4444' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#FEF2F2')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      onClick={() => setDeleteTarget({ id: exam.id, title: exam.title })}
+                    >
+                      <FaTrash size={12} />
+                    </button>
                   </div>
                 </div>
-              )}
+                {/* Expanded: sections */}
+                {isOpen && (
+                  <div className="px-4 pb-3 pt-2" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
+                    <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+                      Các phần thi
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {exam.sections.length === 0 ? (
+                        <div className="text-sm text-center py-3" style={{ color: 'var(--text-muted)' }}>
+                          Chưa có phần thi nào.
+                        </div>
+                      ) : exam.sections.map(sec => (
+                        <div key={sec.id} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-surface)' }}>
+                          <div className="flex items-center gap-2">
+                            <span className="w-7 h-7 rounded flex items-center justify-center" style={{ background: 'var(--bg-muted)' }}>
+                              {SKILL_ICON[sec.skill] ?? <FaBookOpen size={13} />}
+                            </span>
+                            <div>
+                              <div className="text-sm font-semibold">{sec.titleVi || sec.title}</div>
+                              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                <span>{SKILL_LABEL[sec.skill] || sec.skill}</span>
+                                <span className="flex items-center gap-1"><FaClock size={9} />{formatTime(sec.timeLimit)}</span>
+                                <span>{sec._count.questions} câu</span>
+                              </div>
+                            </div>
+                          </div>
+                          <a
+                            href={`/admin/mock-exam/${exam.id}/sections/${sec.id}`}
+                            className="text-xs px-3 py-1.5 rounded font-medium"
+                            style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                          >
+                            Câu hỏi →
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>
+              Chưa có đề thi nào.
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '32px 0' }}>
-            Chưa có đề thi nào.
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Confirm Delete */}
+      {/* ── Right drawer ── */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={closeDrawer}
+        >
+          <div
+            className="h-full w-full max-w-lg flex flex-col shadow-2xl"
+            style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0" style={{ background: 'var(--primary)', color: '#fff' }}>
+                {editing ? <FaPen size={13} /> : <FaPlus size={13} />}
+              </span>
+              <span className="font-semibold text-base truncate" style={{ color: 'var(--text-primary)' }}>
+                {editing ? 'Sửa đề thi' : 'Thêm đề thi'}
+              </span>
+              <div className="flex-1" />
+              <button
+                title="Import JSON"
+                className="p-2 rounded transition-colors"
+                style={{ color: showImport ? 'var(--primary)' : 'var(--text-secondary)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={() => setShowImport(v => !v)}
+              >
+                <FaFileImport size={14} />
+              </button>
+              <button
+                className="p-2 rounded transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={closeDrawer}
+              >
+                <FaXmark size={16} />
+              </button>
+            </div>
+
+            {/* Body + Footer wrapped in form */}
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+                {/* Import panel */}
+                {showImport && (
+                  <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: '#FFFBEB', border: '1px solid #FCD34D' }}>
+                    <div className="text-xs font-bold uppercase tracking-wide" style={{ color: '#92400E' }}>Import từ JSON</div>
+                    <p className="text-xs" style={{ color: '#78350F' }}>
+                      Tải lên file JSON hoặc dán nội dung JSON bên dưới.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="text-xs px-3 py-1.5 rounded font-medium"
+                        style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D' }}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Chọn file .json
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => setImportJson(String(ev.target?.result ?? ''));
+                          reader.readAsText(f);
+                        }}
+                      />
+                    </div>
+                    <textarea
+                      className="input font-mono text-xs"
+                      rows={6}
+                      value={importJson}
+                      onChange={e => setImportJson(e.target.value)}
+                      placeholder='{"title":"...","subject":"JLPT","levelCode":"N3","totalTime":8400,"sections":[...]}'
+                    />
+                    {importError && <p className="text-xs" style={{ color: '#dc2626' }}>{importError}</p>}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium disabled:opacity-50"
+                        style={{ background: 'var(--primary)', color: '#fff' }}
+                        disabled={importLoading || !importJson.trim()}
+                        onClick={handleImport}
+                      >
+                        {importLoading ? 'Đang import...' : 'Import'}
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded text-sm"
+                        style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)' }}
+                        onClick={() => { setShowImport(false); setImportJson(''); setImportError(''); }}
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cài đặt */}
+                <div className="rounded-xl p-4" style={{ background: 'var(--bg-muted)' }}>
+                  <SLabel>Cài đặt</SLabel>
+                  <div className="grid grid-cols-3 gap-3">
+                    <AdminFormField label="Môn thi">
+                      <select
+                        className="input"
+                        value={form.subject}
+                        onChange={e => applyTemplate(e.target.value, e.target.value === form.subject ? form.levelCode : (e.target.value === 'BJT' ? 'J1+' : 'N5'))}
+                        disabled={!!editing}
+                      >
+                        <option value="JLPT">JLPT</option>
+                        <option value="BJT">BJT</option>
+                      </select>
+                    </AdminFormField>
+                    <AdminFormField label="Cấp độ">
+                      <select
+                        className="input"
+                        value={form.levelCode}
+                        onChange={e => applyTemplate(form.subject, e.target.value)}
+                        disabled={!!editing}
+                      >
+                        {formLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                    </AdminFormField>
+                    <AdminFormField label="Năm (tuỳ chọn)">
+                      <input
+                        className="input"
+                        type="number"
+                        value={form.year}
+                        onChange={e => setField('year', e.target.value)}
+                        placeholder="2024"
+                        min={2000}
+                        max={2099}
+                      />
+                    </AdminFormField>
+                  </div>
+                  <div className="mt-3">
+                    <AdminFormField label="Tổng thời gian (phút)">
+                      <input
+                        className="input"
+                        type="number"
+                        value={form.totalTime}
+                        onChange={e => setField('totalTime', e.target.value)}
+                        placeholder="Tự tính từ template"
+                        min={1}
+                      />
+                    </AdminFormField>
+                  </div>
+                </div>
+
+                {/* Nội dung */}
+                <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                  <SLabel>Nội dung</SLabel>
+                  <div className="flex flex-col gap-3">
+                    <AdminFormField label="Tên đề thi" required>
+                      <input
+                        className="input"
+                        value={form.title}
+                        onChange={e => setField('title', e.target.value)}
+                        placeholder="Ví dụ: Đề thi thử JLPT N3 — 2024"
+                        required
+                      />
+                    </AdminFormField>
+                    <AdminFormField label="Mô tả (tuỳ chọn)">
+                      <input
+                        className="input"
+                        value={form.description}
+                        onChange={e => setField('description', e.target.value)}
+                        placeholder="Mô tả ngắn..."
+                      />
+                    </AdminFormField>
+                  </div>
+                </div>
+
+                {/* Template preview — only when creating */}
+                {!editing && (() => {
+                  const tpl = getExamTemplate(form.subject as any, form.levelCode);
+                  if (!tpl) return null;
+                  return (
+                    <div className="rounded-xl p-4" style={{ background: '#F5F3FF', border: '1px solid #DDD6FE' }}>
+                      <SLabel>Cấu trúc đề (sẽ tạo tự động)</SLabel>
+                      <div className="flex flex-col gap-2">
+                        {tpl.sections.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="w-7 h-7 rounded flex items-center justify-center flex-shrink-0" style={{ background: '#EDE9FE' }}>
+                              {SKILL_ICON[s.skill] ?? <FaBookOpen size={12} />}
+                            </span>
+                            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{s.titleVi || s.title}</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>— {formatTime(s.timeLimit)} · {s.parts.length} phần</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {error && <p className="text-sm" style={{ color: '#dc2626' }}>{error}</p>}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+                {saved && (
+                  <span className="flex items-center gap-1.5 text-sm" style={{ color: '#16a34a' }}>
+                    <FaCircleCheck size={14} /> Đã lưu
+                  </span>
+                )}
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded text-sm"
+                  style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)' }}
+                  onClick={closeDrawer}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                  style={{ background: 'var(--primary)', color: '#fff' }}
+                  disabled={loading}
+                >
+                  <FaFloppyDisk size={13} />
+                  {loading ? 'Đang lưu...' : editing ? 'Lưu thay đổi' : 'Tạo đề thi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirm Delete ── */}
       <ConfirmDialog
         open={!!deleteTarget}
         title="Xóa đề thi?"
-        description={`Xóa "${deleteTarget?.title ?? ''}"`+ '? Tất cả phần thi, câu hỏi, và kết quả sẽ bị xóa.'}
+        description={`Xóa "${deleteTarget?.title ?? ''}"? Tất cả phần thi, câu hỏi và kết quả sẽ bị xóa vĩnh viễn.`}
         confirmLabel="Xóa"
         danger
         loading={deleting}
         onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </>
   );
 }

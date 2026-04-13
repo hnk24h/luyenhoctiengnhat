@@ -1,18 +1,32 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { FaPlus, FaLayerGroup } from 'react-icons/fa6';
-import {
-  AdminButton, AdminTable, AdminToolbar, AdminModal,
+import { FaPlus, FaLayerGroup, FaXmark, FaPencil, FaCircleExclamation, FaFloppyDisk } from 'react-icons/fa6';
+import { AdminButton, AdminTable,
   AdminFormField, AdminBadge, AdminEmptyState, ConfirmDialog,
 } from '@/components/admin/ui';
 import type { ColumnDef } from '@/components/admin/ui/AdminTable';
 
 interface Level { id: string; code: string; name: string; description: string | null; order: number }
 
+const SKILL_META: { key: string; label: string; color: string; bg: string }[] = [
+  { key: 'doc',     label: 'Đọc',      color: '#1D4ED8', bg: '#DBEAFE' },
+  { key: 'nghe',    label: 'Nghe',     color: '#0F766E', bg: '#CCFBF1' },
+  { key: 'vocab',   label: 'Từ vựng',  color: '#7C3AED', bg: '#EDE9FE' },
+  { key: 'grammar', label: 'Ngữ pháp', color: '#B45309', bg: '#FEF3C7' },
+  { key: 'viet',    label: 'Viết',     color: '#15803D', bg: '#DCFCE7' },
+  { key: 'noi',     label: 'Nói',      color: '#B91C1C', bg: '#FEE2E2' },
+];
+
 const BLANK = { code: '', name: '', desc: '', order: 0 };
 
-export default function AdminLevelsClient({ levels: initial, subject }: { levels: Level[]; subject: string }) {
+export default function AdminLevelsClient({
+  levels: initial, skillMap, subject,
+}: {
+  levels: Level[];
+  skillMap: Record<string, Record<string, number>>;
+  subject: string;
+}) {
   const [levels, setLevels]   = useState<Level[]>(initial);
   const [form, setForm]       = useState(BLANK);
   const [editing, setEditing] = useState<Level | null>(null);
@@ -85,6 +99,27 @@ export default function AdminLevelsClient({ levels: initial, subject }: { levels
       ),
     },
     {
+      key: 'skills', header: 'Bài thi theo kỹ năng', width: '2fr',
+      render: l => {
+        const counts = skillMap[l.id] ?? {};
+        const hasAny = SKILL_META.some(s => (counts[s.key] ?? 0) > 0);
+        if (!hasAny) return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {SKILL_META.filter(s => (counts[s.key] ?? 0) > 0).map(s => (
+              <span
+                key={s.key}
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium"
+                style={{ background: s.bg, color: s.color }}
+              >
+                {s.label} <span className="font-bold">{counts[s.key]}</span>
+              </span>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       key: 'order', header: 'Thứ tự', width: '60px',
       headerClassName: 'text-center', cellClassName: 'text-center',
       render: l => <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{l.order}</span>,
@@ -105,62 +140,127 @@ export default function AdminLevelsClient({ levels: initial, subject }: { levels
   ];
 
   return (
-    <div className="pb-10">
-      <AdminToolbar
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Tìm cấp độ..."
-        actions={
-          <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>
-        }
-      />
+    <>
+      {/* Card 1: tìm kiếm + thêm mới */}
+      <div className="admin-card p-3 flex flex-wrap items-center gap-2">
+        <input
+          className="input text-sm flex-1 min-w-[180px]"
+          placeholder="Tìm theo mã hoặc tên cấp độ..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>
+      </div>
 
-      <AdminTable
-        columns={columns}
-        data={filtered}
-        rowKey={l => l.id}
-        onRowClick={openEdit}
-        emptyIcon={<FaLayerGroup />}
-        emptyTitle="Chưa có cấp độ nào"
-        emptyDescription="Tạo cấp độ đầu tiên để bắt đầu."
-        emptyAction={<AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>}
-        pageSize={0}
-      />
+      {/* Card 2: danh sách */}
+      <div className="admin-card overflow-hidden">
+        <AdminTable
+          columns={columns}
+          data={filtered}
+          rowKey={l => l.id}
+          onRowClick={openEdit}
+          emptyIcon={<FaLayerGroup />}
+          emptyTitle="Chưa có cấp độ nào"
+          emptyDescription="Tạo cấp độ đầu tiên để bắt đầu."
+          emptyAction={<AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm cấp độ</AdminButton>}
+        />
+      </div>
 
-      {/* ── Create/Edit Modal ── */}
-      <AdminModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editing ? `Chỉnh sửa: ${editing.code}` : 'Thêm cấp độ mới'}
-        icon={<FaLayerGroup size={14} />}
-        size="sm"
-        footer={
-          <>
-            <AdminButton variant="secondary" onClick={() => setModalOpen(false)}>Hủy</AdminButton>
-            <AdminButton loading={loading} onClick={handleSubmit}>
-              {editing ? 'Lưu thay đổi' : 'Thêm cấp độ'}
-            </AdminButton>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-[1fr_1fr_80px] gap-3">
-            <AdminFormField label="Mã cấp độ" required>
-              <input className="input w-full" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="N5" required />
-            </AdminFormField>
-            <AdminFormField label="Tên cấp độ" required>
-              <input className="input w-full" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Sơ cấp" required />
-            </AdminFormField>
-            <AdminFormField label="Thứ tự">
-              <input className="input w-full" type="number" value={form.order} onChange={e => setForm(f => ({ ...f, order: Number(e.target.value) }))} />
-            </AdminFormField>
+      {/* ── Right-side Drawer ── */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="h-full w-full max-w-sm flex flex-col shadow-2xl overflow-y-auto"
+            style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <div className="flex items-center gap-2">
+                {editing ? <FaPencil size={13} style={{ color: 'var(--primary)' }} /> : <FaLayerGroup size={13} style={{ color: 'var(--primary)' }} />}
+                <h2 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {editing ? `Chỉnh sửa: ${editing.code}` : 'Thêm cấp độ mới'}
+                </h2>
+              </div>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-md transition-colors hover:bg-[var(--bg-muted)]"
+                style={{ border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <FaXmark size={14} />
+              </button>
+            </div>
+
+            {/* Form body */}
+            <div className="flex-1 px-5 py-5 flex flex-col gap-4">
+              {error && (
+                <div
+                  className="px-3 py-2.5 rounded-lg text-sm flex items-center gap-2"
+                  style={{ background: '#FEE2E2', color: '#DC2626' }}
+                >
+                  <FaCircleExclamation size={13} />
+                  {error}
+                </div>
+              )}
+
+              <AdminFormField label="Mã cấp độ" required>
+                <input
+                  className="input w-full"
+                  value={form.code}
+                  onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+                  placeholder="N5"
+                  autoFocus
+                />
+              </AdminFormField>
+
+              <AdminFormField label="Tên cấp độ" required>
+                <input
+                  className="input w-full"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Sơ cấp"
+                />
+              </AdminFormField>
+
+              <AdminFormField label="Thứ tự">
+                <input
+                  className="input w-full"
+                  type="number"
+                  value={form.order}
+                  onChange={e => setForm(f => ({ ...f, order: Number(e.target.value) }))}
+                />
+              </AdminFormField>
+
+              <AdminFormField label="Mô tả">
+                <input
+                  className="input w-full"
+                  value={form.desc}
+                  onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
+                  placeholder="Mô tả ngắn..."
+                />
+              </AdminFormField>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="flex items-center justify-end gap-2 px-5 py-4 border-t shrink-0"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-muted)' }}
+            >
+              <AdminButton variant="ghost" onClick={() => setModalOpen(false)}>Hủy</AdminButton>
+              <AdminButton loading={loading} icon={<FaFloppyDisk size={12} />} onClick={handleSubmit}>
+                {editing ? 'Lưu thay đổi' : 'Thêm cấp độ'}
+              </AdminButton>
+            </div>
           </div>
-          <AdminFormField label="Mô tả">
-            <input className="input w-full" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} placeholder="Mô tả ngắn..." />
-          </AdminFormField>
-          {error && <p className="admin-field-error">{error}</p>}
-        </form>
-      </AdminModal>
+        </div>
+      )}
 
       {/* ── Delete confirm ── */}
       <ConfirmDialog
@@ -172,6 +272,6 @@ export default function AdminLevelsClient({ levels: initial, subject }: { levels
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </>
   );
 }

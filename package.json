@@ -15,6 +15,7 @@
     "db:seed-minna": "tsx prisma/seed-minna.ts",
     "db:seed-minna-n4": "tsx prisma/seed-minna-n4.ts",
     "db:seed-alphabet": "tsx prisma/seed-alphabet.ts",
+    "db:seed-mock-exam-jlpt": "tsx prisma/seed-mock-exam-jlpt.ts",
     "db:seed-basic": "tsx scripts/seed/seed-basic.ts",
     "ollama:gen": "npx tsx prisma/ollama-gen.ts",
     "ollama:lessons": "npx tsx prisma/ollama-gen.ts --mode lessons --dataset ./prisma/data/jlpt-n5-topics.json",

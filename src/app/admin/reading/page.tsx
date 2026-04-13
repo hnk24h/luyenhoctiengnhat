@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import AdminPageHeader from '../_components/AdminPageHeader';
 import {
   FaPlus, FaTrash, FaPencil, FaNewspaper, FaCheck,
   FaEye, FaEyeSlash, FaFileImport, FaFileExport,
   FaPrint, FaCircleCheck, FaCircleXmark, FaDownload, FaUpload,
-  FaClipboard, FaFile,
+  FaClipboard, FaFile, FaHouse, FaChevronRight, FaXmark, FaFloppyDisk,
 } from 'react-icons/fa6';
 import {
-  AdminButton, AdminTable, AdminToolbar, AdminModal,
+  AdminButton, AdminTable, AdminModal,
   AdminFormField, AdminBadge, AdminPageLoader, ConfirmDialog,
 } from '@/components/admin/ui';
 import type { ColumnDef } from '@/components/admin/ui/AdminTable';
@@ -71,6 +70,7 @@ export default function AdminReadingPage() {
   const [importResult,  setImportResult]  = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [parseError,    setParseError]    = useState('');
   const [deleteTarget,  setDeleteTarget]  = useState<Passage | null>(null);
+  const [saved,          setSaved]          = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Auth guard
@@ -92,7 +92,7 @@ export default function AdminReadingPage() {
 
   /*──────────── Create / Edit ────────────*/
   function openCreate() {
-    setForm({ ...BLANK }); setEditId(null); setFormError(''); setShowModal(true);
+    setForm({ ...BLANK }); setEditId(null); setFormError(''); setSaved(false); setShowModal(true);
   }
   async function openEdit(id: string) {
     const res = await fetch(`/api/reading/${id}`);
@@ -110,7 +110,7 @@ export default function AdminReadingPage() {
       tags:      p.tags ? (p.tags as string[]).join(', ') : '',
       published: p.published !== false,
     });
-    setEditId(id); setFormError(''); setShowModal(true);
+    setEditId(id); setFormError(''); setSaved(false); setShowModal(true);
   }
   async function save() {
     if (!form.title.trim() || !form.content.trim()) { setFormError('Tiêu đề và nội dung bắt buộc.'); return; }
@@ -119,7 +119,7 @@ export default function AdminReadingPage() {
     const res = editId
       ? await fetch(`/api/reading/${editId}`,  { method: 'PUT',  headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       : await fetch('/api/reading',             { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (res.ok) { setShowModal(false); load(); }
+    if (res.ok) { setSaved(true); load(); }
     else        { setFormError('Lỗi lưu dữ liệu.'); }
     setSaving(false);
   }
@@ -255,37 +255,82 @@ export default function AdminReadingPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <AdminPageHeader
-        icon={<FaNewspaper size={18} />}
-        title="Bài đọc"
-        breadcrumb="Quản lý bài đọc"
-        badge={`${passages.length} bài đọc`}
-        actions={<>
-          <AdminButton variant="secondary" size="sm" icon={<FaFileImport size={12} />} onClick={() => setShowImport(true)}>Import</AdminButton>
-          <AdminButton variant="secondary" size="sm" icon={<FaFileExport size={12} />} onClick={handleExport} loading={exporting} disabled={passages.length === 0}>Export</AdminButton>
-          <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm mới</AdminButton>
-        </>}
-      />
+    <>
+      <div className="flex flex-col gap-3" style={{ background: 'var(--bg-muted)', minHeight: '100%' }}>
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs px-1" style={{ color: 'var(--text-muted)' }}>
+          <FaHouse size={10} />
+          <FaChevronRight size={8} />
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Bài đọc</span>
+        </nav>
 
-      <div className="pb-10">
-        {loading ? <AdminPageLoader label="Đang tải bài đọc..." /> : (
-          <>
-            <AdminToolbar
-              search={search}
-              onSearchChange={setSearch}
-              searchPlaceholder="Tìm bài đọc..."
-              filters={
-                <select className="input text-sm py-1.5" style={{ width: 'auto' }} value={levelFilter} onChange={e => setLevelFilter(e.target.value)}>
-                  <option value="">Tất cả cấp</option>
-                  {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-              }
-              actions={
-                <AdminButton icon={<FaPlus size={11} />} onClick={openCreate}>Thêm mới</AdminButton>
-              }
+        {/* Card 1: filters */}
+        <div className="admin-card p-0 overflow-hidden">
+          {/* Row 1: level tabs + action buttons */}
+          <div className="flex items-center gap-1 px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+            {['', ...LEVELS].map(lv => (
+              <button
+                key={lv}
+                onClick={() => setLevelFilter(lv)}
+                className="px-3 py-1 rounded text-sm font-medium transition-colors"
+                style={levelFilter === lv
+                  ? { background: 'var(--primary)', color: '#fff' }
+                  : { color: 'var(--text-secondary)', background: 'transparent' }}
+              >
+                {lv || 'Tất cả'}
+              </button>
+            ))}
+            <div className="flex-1" />
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm mr-1"
+              style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)', border: '1px solid var(--border)' }}
+              onClick={() => setShowImport(true)}
+            >
+              <FaFileImport size={12} /> Import
+            </button>
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm mr-2"
+              style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)', border: '1px solid var(--border)' }}
+              onClick={handleExport}
+              disabled={exporting || passages.length === 0}
+            >
+              <FaFileExport size={12} /> Export
+            </button>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium"
+              style={{ background: 'var(--primary)', color: '#fff' }}
+            >
+              <FaPlus size={11} /> Thêm mới
+            </button>
+          </div>
+          {/* Row 2: type filter + search */}
+          <div className="flex items-center gap-3 px-4 py-2">
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: 130 }}
+              value={levelFilter}
+              onChange={e => setLevelFilter(e.target.value)}
+            >
+              <option value="">Tất cả loại</option>
+              <option value="short">Đoạn ngắn</option>
+              <option value="long">Bài dài</option>
+              <option value="news">Tin tức</option>
+            </select>
+            <div className="flex-1" />
+            <input
+              className="input"
+              style={{ width: 240 }}
+              placeholder="Tìm bài đọc..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
             />
+          </div>
+        </div>
 
+        {/* Card 2: table */}
+        <div className="admin-card overflow-hidden">
+          {loading ? <AdminPageLoader label="Đang tải bài đọc..." /> : (
             <AdminTable
               columns={columns}
               data={filtered}
@@ -301,8 +346,8 @@ export default function AdminReadingPage() {
                 </div>
               }
             />
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Import Modal ── */}
@@ -373,87 +418,149 @@ export default function AdminReadingPage() {
         )}
       </AdminModal>
 
-      {/* ── Create / Edit Modal ── */}
-      <AdminModal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title={editId ? 'Sửa bài đọc' : 'Thêm bài đọc mới'}
-        icon={<FaNewspaper size={14} />}
-        size="lg"
-        footer={
-          <>
-            <AdminButton variant="secondary" onClick={() => setShowModal(false)}>Hủy</AdminButton>
-            <AdminButton loading={saving} onClick={save} icon={<FaCheck size={12} />}>
-              {editId ? 'Cập nhật' : 'Tạo bài'}
-            </AdminButton>
-          </>
-        }
-      >
-        {formError && <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#991B1B' }}>{formError}</div>}
+      {/* ── Create / Edit Drawer ── */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="h-full w-full max-w-lg flex flex-col shadow-2xl"
+            style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)', color: '#fff' }}>
+                {editId ? <FaPencil size={13} /> : <FaPlus size={13} />}
+              </span>
+              <span className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+                {editId ? 'Sửa bài đọc' : 'Thêm bài đọc mới'}
+              </span>
+              <div className="flex-1" />
+              <button
+                className="p-2 rounded transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={() => setShowModal(false)}
+              >
+                <FaXmark size={16} />
+              </button>
+            </div>
 
-        <div className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <AdminFormField label="Tiêu đề (Nhật)" required>
-              <input className="input w-full" style={{ fontFamily: '"Noto Sans JP", serif' }}
-                placeholder="日本語タイトル" value={form.title} onChange={e => set('title', e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Tiêu đề (Việt)">
-              <input className="input w-full" placeholder="Tiêu đề tiếng Việt"
-                value={form.titleVi} onChange={e => set('titleVi', e.target.value)} />
-            </AdminFormField>
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+              {formError && (
+                <div className="px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#991B1B' }}>{formError}</div>
+              )}
+
+              {/* Tiêu đề */}
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-muted)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Tiêu đề</div>
+                <div className="flex flex-col gap-3">
+                  <AdminFormField label="Tiêu đề (Nhật)" required>
+                    <input className="input w-full" style={{ fontFamily: '"Noto Sans JP", serif' }}
+                      placeholder="日本語タイトル" value={form.title} onChange={e => set('title', e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Tiêu đề (Việt)">
+                    <input className="input w-full" placeholder="Tiêu đề tiếng Việt"
+                      value={form.titleVi} onChange={e => set('titleVi', e.target.value)} />
+                  </AdminFormField>
+                </div>
+              </div>
+
+              {/* Nội dung */}
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Nội dung</div>
+                <div className="flex flex-col gap-3">
+                  <AdminFormField label={`Nội dung (Nhật) — ${form.content.length} ký tự`} required>
+                    <textarea rows={8} className="input w-full text-base"
+                      style={{ fontFamily: '"Noto Sans JP", serif', lineHeight: 2, resize: 'vertical' }}
+                      placeholder="日本語の本文..."
+                      value={form.content} onChange={e => set('content', e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Tóm tắt (Việt)">
+                    <textarea rows={2} className="input w-full" placeholder="Mô tả ngắn bằng tiếng Việt..."
+                      value={form.summary} onChange={e => set('summary', e.target.value)} />
+                  </AdminFormField>
+                </div>
+              </div>
+
+              {/* Cài đặt */}
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-muted)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Cài đặt</div>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <AdminFormField label="Cấp độ">
+                    <select className="input" value={form.level} onChange={e => set('level', e.target.value)}>
+                      {LEVELS.map(lv => <option key={lv}>{lv}</option>)}
+                    </select>
+                  </AdminFormField>
+                  <AdminFormField label="Loại">
+                    <select className="input" value={form.type} onChange={e => set('type', e.target.value)}>
+                      <option value="short">Đoạn ngắn</option>
+                      <option value="long">Bài dài</option>
+                      <option value="news">Tin tức</option>
+                    </select>
+                  </AdminFormField>
+                  <AdminFormField label="Trạng thái">
+                    <select className="input" value={form.published ? 'true' : 'false'}
+                      onChange={e => set('published', e.target.value === 'true')}>
+                      <option value="true">Công khai</option>
+                      <option value="false">Ẩn</option>
+                    </select>
+                  </AdminFormField>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <AdminFormField label="Nguồn">
+                    <input className="input" placeholder="VD: NHK Web Easy"
+                      value={form.source} onChange={e => set('source', e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="URL nguồn">
+                    <input className="input" placeholder="https://..."
+                      value={form.sourceUrl} onChange={e => set('sourceUrl', e.target.value)} />
+                  </AdminFormField>
+                </div>
+              </div>
+
+              {/* Tags */}
+              <AdminFormField label="Tags (cách nhau bởi dấu phẩy)">
+                <input className="input" placeholder="VD: gia đình, thức ăn, giao thông"
+                  value={form.tags} onChange={e => set('tags', e.target.value)} />
+              </AdminFormField>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-sm" style={{ color: '#16a34a' }}>
+                  <FaCircleCheck size={14} /> Đã lưu
+                </span>
+              )}
+              <div className="flex-1" />
+              <button
+                type="button"
+                className="px-4 py-2 rounded text-sm"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)' }}
+                onClick={() => setShowModal(false)}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                style={{ background: 'var(--primary)', color: '#fff' }}
+                disabled={saving}
+                onClick={save}
+              >
+                <FaFloppyDisk size={13} />
+                {saving ? 'Đang lưu...' : editId ? 'Lưu thay đổi' : 'Tạo bài'}
+              </button>
+            </div>
           </div>
-
-          <AdminFormField label={`Nội dung (Nhật) — ${form.content.length} ký tự`} required>
-            <textarea rows={10} className="input w-full text-base"
-              style={{ fontFamily: '"Noto Sans JP", serif', lineHeight: 2, resize: 'vertical' }}
-              placeholder="日本語の本文..."
-              value={form.content} onChange={e => set('content', e.target.value)} />
-          </AdminFormField>
-
-          <AdminFormField label="Tóm tắt (Việt)">
-            <textarea rows={2} className="input w-full" placeholder="Mô tả ngắn bằng tiếng Việt..."
-              value={form.summary} onChange={e => set('summary', e.target.value)} />
-          </AdminFormField>
-
-          <div className="grid sm:grid-cols-3 gap-4">
-            <AdminFormField label="Cấp độ">
-              <select className="input w-full" value={form.level} onChange={e => set('level', e.target.value)}>
-                {LEVELS.map(lv => <option key={lv}>{lv}</option>)}
-              </select>
-            </AdminFormField>
-            <AdminFormField label="Loại">
-              <select className="input w-full" value={form.type} onChange={e => set('type', e.target.value)}>
-                <option value="short">Đoạn ngắn</option>
-                <option value="long">Bài dài</option>
-                <option value="news">Tin tức</option>
-              </select>
-            </AdminFormField>
-            <AdminFormField label="Trạng thái">
-              <select className="input w-full" value={form.published ? 'true' : 'false'}
-                onChange={e => set('published', e.target.value === 'true')}>
-                <option value="true">Công khai</option>
-                <option value="false">Ẩn</option>
-              </select>
-            </AdminFormField>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            <AdminFormField label="Nguồn">
-              <input className="input w-full" placeholder="VD: NHK Web Easy"
-                value={form.source} onChange={e => set('source', e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="URL nguồn">
-              <input className="input w-full" placeholder="https://..."
-                value={form.sourceUrl} onChange={e => set('sourceUrl', e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <AdminFormField label="Tags (cách nhau bởi dấu phẩy)">
-            <input className="input w-full" placeholder="VD: gia đình, thức ăn, giao thông"
-              value={form.tags} onChange={e => set('tags', e.target.value)} />
-          </AdminFormField>
         </div>
-      </AdminModal>
+      )}
 
       {/* ── Delete confirm ── */}
       <ConfirmDialog
@@ -465,7 +572,7 @@ export default function AdminReadingPage() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </>
   );
 }
 

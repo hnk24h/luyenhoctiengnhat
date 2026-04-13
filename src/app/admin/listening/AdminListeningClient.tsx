@@ -12,11 +12,15 @@ import {
   FaTrashCan,
   FaUpload,
   FaVolumeHigh,
+  FaHouse,
+  FaChevronRight,
+  FaXmark,
+  FaFloppyDisk,
+  FaCircleCheck,
 } from 'react-icons/fa6';
-import AdminPageHeader from '../_components/AdminPageHeader';
 import { LISTENING_PRACTICES, type ListeningMondai, type ListeningPractice } from '@/modules/listeningContent';
 import { MediaUploadField } from '@/components/MediaUploadField';
-import { AdminButton, AdminModal, AdminFormField, AdminSearchInput, AdminSpinner, ConfirmDialog } from '@/components/admin/ui';
+import { AdminButton, AdminFormField, AdminSearchInput, AdminSpinner, ConfirmDialog } from '@/components/admin/ui';
 
 type AdminListeningItem = ListeningPractice & {
   lessonId: string;
@@ -112,6 +116,7 @@ export default function AdminListeningClient() {
   const [selectedMondaiFilter, setSelectedMondaiFilter] = useState<'ALL' | ListeningMondai>('ALL');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,11 +191,13 @@ export default function AdminListeningClient() {
 
   function openCreateDialog() {
     resetForm();
+    setSaved(false);
     setDialogOpen(true);
   }
 
   function openEditDialog(item: AdminListeningItem) {
     setForm(practiceToForm(item));
+    setSaved(false);
     setDialogOpen(true);
   }
 
@@ -260,10 +267,10 @@ export default function AdminListeningClient() {
     }
 
     const wasEdit = Boolean(form.id);
-    closeDialog();
-    setMessage(wasEdit ? 'Đã cập nhật bài nghe.' : 'Đã tạo bài nghe mới.');
+    setSaved(true);
     await loadItems();
     setSaving(false);
+    if (!wasEdit) { /* stay open for new items */ }
   }
 
   async function deleteItem(id: string) {
@@ -317,30 +324,305 @@ export default function AdminListeningClient() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <AdminPageHeader
-        icon={<FaHeadphones size={18} />}
-        title="Bài nghe"
-        breadcrumb="Quản lý bài nghe"
-        badge={`${items.length} bài nghe`}
-        actions={<>
-          <AdminButton variant="secondary" size="md" icon={<FaHeadphones size={13} />}
-            onClick={() => window.open('/ja/listening', '_blank')}>
-            Xem page
-          </AdminButton>
-          <a href="/samples/jlpt-listening-sample.json" download>
-            <AdminButton variant="secondary" size="md" icon={<FaDownload size={13} />}>
-              JSON mẫu
-            </AdminButton>
-          </a>
-          <AdminButton variant="primary" size="md" icon={<FaPlus size={13} />}
-            onClick={openCreateDialog}>
-            Bài nghe mới
-          </AdminButton>
-        </>}
-      />
+    <>
+      <div className="flex flex-col gap-3" style={{ background: 'var(--bg-muted)', minHeight: '100%' }}>
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-xs px-1" style={{ color: 'var(--text-muted)' }}>
+          <FaHouse size={10} />
+          <FaChevronRight size={8} />
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Bài nghe</span>
+        </nav>
 
-      <div style={{ paddingBottom: 40 }}>
+        {/* Card 1: filters */}
+        <div className="admin-card p-0 overflow-hidden">
+          <div className="flex items-center gap-1 px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+            {(['ALL', ...LEVELS] as const).map(lv => (
+              <button
+                key={lv}
+                onClick={() => setSelectedLevelFilter(lv)}
+                className="px-3 py-1 rounded text-sm font-medium transition-colors"
+                style={selectedLevelFilter === lv
+                  ? { background: 'var(--primary)', color: '#fff' }
+                  : { color: 'var(--text-secondary)', background: 'transparent' }}
+              >
+                {lv === 'ALL' ? 'Tất cả' : lv}
+              </button>
+            ))}
+            <div className="flex-1" />
+            <button
+              onClick={openCreateDialog}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium"
+              style={{ background: 'var(--primary)', color: '#fff' }}
+            >
+              <FaPlus size={11} /> Bài nghe mới
+            </button>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 flex-wrap">
+            <select className="input" style={{ width: 'auto', minWidth: 130 }} value={selectedMondaiFilter}
+              onChange={e => setSelectedMondaiFilter(e.target.value as 'ALL' | ListeningMondai)}>
+              <option value="ALL">Tất cả mondai</option>
+              {MONDAI.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select className="input" style={{ width: 'auto', minWidth: 150 }} value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}>
+              <option value="ALL">Tất cả category</option>
+              {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <div className="flex-1" />
+            <AdminSearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Tìm bài nghe..." />
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm"
+              style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)', border: '1px solid var(--border)' }}
+              onClick={resetFilters}
+            >
+              <FaRotateLeft size={12} /> Reset
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: grouped list */}
+        <div className="admin-card overflow-hidden p-4">
+          {(message || error) && (
+            <div className="rounded-xl px-4 py-3 mb-4 text-sm font-medium"
+              style={error
+                ? { background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid #f8c4bb' }
+                : { background: '#ecfdf5', color: '#166534', border: '1px solid #a7f3d0' }}>
+              {error ?? message}
+            </div>
+          )}
+          {loading ? (
+            <AdminSpinner label="Đang tải dữ liệu..." />
+          ) : (
+            <div className="space-y-5">
+              {grouped.map((group) => (
+                <div key={group.level}>
+                  <div className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: 'var(--primary)' }}>{group.level}</div>
+                  {group.items.length === 0 ? (
+                    <div className="rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
+                      Chưa có bài nghe cho {group.level}.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {group.items.map((item) => (
+                        <div key={item.lessonId} className="rounded-xl border px-4 py-3"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="flex-1 min-w-[240px]">
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>{item.categoryName}</span>
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>{item.mondai}</span>
+                                {item.audioUrl && (
+                                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(29,78,216,0.12)', color: '#1d4ed8' }}>
+                                    <FaVolumeHigh size={9} className="inline mr-1" /> audio
+                                  </span>
+                                )}
+                              </div>
+                              <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{item.title}</div>
+                              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.question}</div>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              <AdminButton variant="secondary" size="sm" icon={<FaPenToSquare size={12} />}
+                                onClick={() => openEditDialog(item)}>
+                                Sửa
+                              </AdminButton>
+                              <AdminButton variant="danger" size="sm" icon={<FaTrashCan size={12} />}
+                                onClick={() => confirmDelete(item)}>
+                                Xóa
+                              </AdminButton>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Import JSON card */}
+        <div className="admin-card p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Import JSON</div>
+            <div className="flex gap-2">
+              <AdminButton variant="secondary" size="sm" icon={<FaDownload size={12} />}
+                onClick={() => setImportJson(sampleImportJson())}>
+                Nạp mẫu
+              </AdminButton>
+              <AdminButton variant="primary" size="sm" icon={<FaFileImport size={12} />}
+                onClick={importItems} disabled={importing || !importJson.trim()} loading={importing}>
+                {importing ? 'Đang import...' : 'Import'}
+              </AdminButton>
+            </div>
+          </div>
+          <textarea
+            className="input w-full font-mono text-xs"
+            rows={8}
+            value={importJson}
+            onChange={(event) => setImportJson(event.target.value)}
+            placeholder={'{\n  "items": [\n    {\n      "levelCode": "N5",\n      "mondai": "Mondai 1",\n      "title": "...",\n      "audioUrl": "https://...mp3",\n      "transcript": [{ "speaker": "A", "text": "..." }]\n    }\n  ]\n}'}
+            style={{ resize: 'vertical', fontFamily: 'monospace' }}
+          />
+        </div>
+      </div>
+
+      {/* ── Create/Edit Drawer ── */}
+      {dialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={closeDialog}
+        >
+          <div
+            className="h-full w-full max-w-xl flex flex-col shadow-2xl"
+            style={{ background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--primary)', color: '#fff' }}>
+                {form.id ? <FaPenToSquare size={13} /> : <FaPlus size={13} />}
+              </span>
+              <span className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+                {form.id ? 'Cập nhật bài nghe' : 'Tạo bài nghe mới'}
+              </span>
+              <div className="flex-1" />
+              <button
+                className="p-2 rounded transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onClick={closeDialog}
+              >
+                <FaXmark size={16} />
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+              {error && (
+                <div className="px-3 py-2 rounded-lg text-sm" style={{ background: '#FEE2E2', color: '#991B1B' }}>{error}</div>
+              )}
+
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-muted)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Cài đặt</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <AdminFormField label="Level">
+                    <select className="input" value={form.levelCode} onChange={e => updateField('levelCode', e.target.value)}>
+                      {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </AdminFormField>
+                  <AdminFormField label="Mondai">
+                    <select className="input" value={form.mondai} onChange={e => updateField('mondai', e.target.value as ListeningMondai)}>
+                      {MONDAI.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </AdminFormField>
+                </div>
+              </div>
+
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Nội dung</div>
+                <div className="flex flex-col gap-3">
+                  <AdminFormField label="Tiêu đề">
+                    <input className="input" value={form.title} onChange={e => updateField('title', e.target.value)} />
+                  </AdminFormField>
+                  <div className="grid grid-cols-2 gap-3">
+                    <AdminFormField label="Tóm tắt">
+                      <input className="input" value={form.summary} onChange={e => updateField('summary', e.target.value)} />
+                    </AdminFormField>
+                    <AdminFormField label="Tình huống">
+                      <input className="input" value={form.situation} onChange={e => updateField('situation', e.target.value)} />
+                    </AdminFormField>
+                  </div>
+                  <AdminFormField label="Thời lượng (giây)">
+                    <input className="input" type="number" min="10" value={form.durationSec} onChange={e => updateField('durationSec', e.target.value)} />
+                  </AdminFormField>
+                </div>
+              </div>
+
+              <MediaUploadField
+                type="audio"
+                value={form.audioUrl}
+                onChange={url => updateField('audioUrl', url)}
+                label="🎧 Audio"
+                onUploading={setAudioUploading}
+              />
+
+              <div className="rounded-xl p-4" style={{ background: 'var(--bg-muted)' }}>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Câu hỏi</div>
+                <div className="flex flex-col gap-3">
+                  <AdminFormField label="Trọng tâm">
+                    <input className="input" value={form.focus} onChange={e => updateField('focus', e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Câu hỏi">
+                    <textarea className="input min-h-[80px]" value={form.question} onChange={e => updateField('question', e.target.value)} />
+                  </AdminFormField>
+                  <div className="grid grid-cols-2 gap-3">
+                    <AdminFormField label="Options, mỗi dòng một đáp án">
+                      <textarea className="input min-h-[110px]" value={form.optionsText} onChange={e => updateField('optionsText', e.target.value)} />
+                    </AdminFormField>
+                    <div className="flex flex-col gap-3">
+                      <AdminFormField label="Đáp án đúng">
+                        <input className="input" value={form.answer} onChange={e => updateField('answer', e.target.value)} />
+                      </AdminFormField>
+                      <AdminFormField label="Giải thích">
+                        <textarea className="input min-h-[80px]" value={form.explanation} onChange={e => updateField('explanation', e.target.value)} />
+                      </AdminFormField>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <AdminFormField label="Transcript, mỗi dòng theo dạng Speaker: nội dung">
+                <textarea className="input min-h-[180px] font-jp" value={form.transcriptText} onChange={e => updateField('transcriptText', e.target.value)} />
+              </AdminFormField>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-sm" style={{ color: '#16a34a' }}>
+                  <FaCircleCheck size={14} /> Đã lưu
+                </span>
+              )}
+              <div className="flex-1" />
+              <button
+                className="px-4 py-2 rounded text-sm"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-muted)' }}
+                onClick={closeDialog}
+              >
+                Hủy
+              </button>
+              <button
+                className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium disabled:opacity-50"
+                style={{ background: 'var(--primary)', color: '#fff' }}
+                disabled={saving || audioUploading}
+                onClick={saveItem}
+              >
+                <FaFloppyDisk size={13} />
+                {saving ? 'Đang lưu...' : form.id ? 'Cập nhật' : 'Tạo mới'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Xóa bài nghe?"
+        description={`Bạn có chắc muốn xóa "${deleteTarget?.title ?? ''}"?`}
+        confirmLabel="Xóa"
+        danger
+        loading={deleting}
+        onConfirm={() => deleteTarget && deleteItem(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
+  );
+}
+
         <div>
 
       {(message || error) && (

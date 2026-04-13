@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { FaKey } from 'react-icons/fa6';
-import AdminPageHeader from '../_components/AdminPageHeader';
+import { FaKey, FaHouse, FaChevronRight } from 'react-icons/fa6';
 
 type User = {
   id: string;
@@ -66,8 +65,13 @@ export default function AdminUserLessonAccess() {
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6">
-      <AdminPageHeader icon={<FaKey size={18}/>} title="Quyền truy cập bài học" breadcrumb="Phân quyền bài học" />
+    <div className="flex flex-col gap-3" style={{ background: 'var(--bg-muted)', minHeight: '100%' }}>
+      <nav className="flex items-center gap-1.5 text-xs px-1" style={{ color: 'var(--text-muted)' }}>
+        <FaHouse size={10} />
+        <FaChevronRight size={8} />
+        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Phân quyền bài học</span>
+      </nav>
+      <div className="admin-card p-5 max-w-xl">
       <div className="mb-3">
         <label className="block mb-1 font-semibold">Chọn user:</label>
         <select className="input w-full" value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
@@ -96,6 +100,7 @@ export default function AdminUserLessonAccess() {
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 }

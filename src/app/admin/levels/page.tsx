@@ -2,41 +2,45 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { FaBullseye } from 'react-icons/fa6';
-import AdminPageHeader from '../_components/AdminPageHeader';
+import { FaHouse, FaChevronRight } from 'react-icons/fa6';
 import AdminLevelsClient from './AdminLevelsClient';
 
 export const dynamic = 'force-dynamic';
-
-const SUBJECT_META: Record<string, { label: string; flag: string }> = {
-  JLPT: { label: 'Tiếng Nhật — JLPT', flag: '🇯🇵' },
-  HSK:  { label: 'Tiếng Trung — HSK',  flag: '🇨🇳' },
-  PMP:  { label: 'Quản lý dự án — PMP', flag: '📋' },
-};
 
 export default async function AdminLevelsPage({ searchParams: rawSearchParams }: { searchParams: Promise<{ subject?: string }> }) {
   const searchParams = await rawSearchParams;
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') redirect('/');
 
-  const subject = (['JLPT', 'HSK', 'PMP'].includes(searchParams.subject ?? '') ? searchParams.subject : 'JLPT') as string;
-  const meta = SUBJECT_META[subject] ?? SUBJECT_META.JLPT;
+  const subject = (['JLPT', 'HSK', 'BJT', 'PMP'].includes(searchParams.subject ?? '') ? searchParams.subject : 'JLPT') as string;
 
-  const levels = await prisma.level.findMany({
-    where: { subject: subject as any },
-    orderBy: { order: 'asc' },
-  });
+  const [levels, skillCounts] = await Promise.all([
+    prisma.level.findMany({
+      where: { subject: subject as any },
+      orderBy: { order: 'asc' },
+    }),
+    prisma.examSet.groupBy({
+      by: ['levelId', 'skill'],
+      _count: { id: true },
+      where: { level: { subject: subject as any } },
+    }),
+  ]);
+
+  // Build map: levelId -> { skill -> count }
+  const skillMap: Record<string, Record<string, number>> = {};
+  for (const row of skillCounts) {
+    skillMap[row.levelId] ??= {};
+    skillMap[row.levelId][row.skill] = row._count.id;
+  }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <AdminPageHeader
-        icon={<FaBullseye size={18} />}
-        title="Cấp độ"
-        breadcrumb="Quản lý cấp độ"
-        badge={`${levels.length} cấp — ${meta.flag} ${meta.label}`}
-        subjects={{ active: subject, baseHref: '/admin/levels' }}
-      />
-      <AdminLevelsClient levels={levels} subject={subject} />
+    <div className="flex flex-col gap-3" style={{ background: 'var(--bg-muted)', minHeight: '100%' }}>
+      <nav className="flex items-center gap-1.5 text-xs px-1" style={{ color: 'var(--text-muted)' }} aria-label="Breadcrumb">
+        <FaHouse size={10} />
+        <FaChevronRight size={8} />
+        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Cấp độ</span>
+      </nav>
+      <AdminLevelsClient levels={levels} skillMap={skillMap} subject={subject} />
     </div>
   );
 }
