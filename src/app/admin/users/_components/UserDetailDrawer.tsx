@@ -347,7 +347,7 @@ export function UserDetailDrawer({ detail, loading, onClose, onEdit, onRefresh }
                         className="flex items-center justify-between text-xs py-1.5 px-2.5 bg-[var(--bg-muted)] rounded-md"
                       >
                         <span className="text-[var(--text-primary)] font-mono truncate max-w-[180px]">{s.id.slice(-8)}</span>
-                        <span className="text-[var(--text-muted)] whitespace-nowrap">{fmtDateTime(s.createdAt)}</span>
+                        <span className="text-[var(--text-muted)] whitespace-nowrap">{fmtDateTime(s.startedAt)}</span>
                       </div>
                     ))}
                   </div>
