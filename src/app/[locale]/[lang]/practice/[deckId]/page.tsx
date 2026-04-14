@@ -6,7 +6,6 @@ import { LearnSidebar } from '@/components/LearnSidebar';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   FaArrowLeft, FaPlus, FaXmark, FaCheck, FaBolt,
   FaLayerGroup, FaTrash, FaPencil, FaCircleCheck,
@@ -56,8 +55,10 @@ function CardItem({
         <div className="flex-1 min-w-0">
           {card.imageUrl && (
             <div className="mb-2">
-              <Image src={card.imageUrl} alt={card.front} width={72} height={72}
-                className="rounded-lg object-cover" style={{ maxHeight: 72 }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={card.imageUrl} alt={card.front}
+                className="rounded-lg object-cover"
+                style={{ width: 72, height: 72, maxHeight: 72 }} />
             </div>
           )}
           <div className="flex items-start gap-2 flex-wrap">
@@ -135,6 +136,7 @@ export default function DeckPage() {
   const [form,     setForm]     = useState({ front: '', back: '', reading: '', example: '', imageUrl: '' });
   const [saving,   setSaving]   = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   // Edit deck
   const [editingDeck,  setEditingDeck]  = useState(false);
@@ -182,15 +184,24 @@ export default function DeckPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError('');
     const fd = new FormData();
     fd.append('image', file);
-    const res = await fetch('/api/flashcards/upload', { method: 'POST', body: fd });
-    if (res.ok) {
-      const { url } = await res.json();
-      setForm(f => ({ ...f, imageUrl: url }));
+    try {
+      const res = await fetch('/api/flashcards/upload', { method: 'POST', body: fd });
+      if (res.ok) {
+        const { url } = await res.json();
+        setForm(f => ({ ...f, imageUrl: url }));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setUploadError(err?.error?.message || `Upload thất bại (${res.status})`);
+      }
+    } catch {
+      setUploadError('Lỗi kết nối khi tải ảnh');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
     }
-    setUploading(false);
-    e.target.value = '';
   }
 
   async function saveCard(e: React.FormEvent) {
@@ -528,11 +539,12 @@ export default function DeckPage() {
                 <div className="flex items-start gap-3">
                   {form.imageUrl ? (
                     <div className="relative shrink-0">
-                      <Image src={form.imageUrl} alt="preview" width={80} height={80}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={form.imageUrl} alt="preview"
                         className="rounded-lg object-cover border"
                         style={{ borderColor: 'var(--border)', width: 80, height: 80 }} />
                       <button type="button"
-                        onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
+                        onClick={() => { setForm(f => ({ ...f, imageUrl: '' })); setUploadError(''); }}
                         className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
                         style={{ background: '#EF4444' }}>
                         <FaXmark size={9} />
@@ -555,6 +567,9 @@ export default function DeckPage() {
                       <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={handleImageUpload} />
                     </label>
                     <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>JPG, PNG, GIF, WEBP · tối đa 5 MB</p>
+                    {uploadError && (
+                      <p className="text-xs mt-1" style={{ color: '#DC2626' }}>{uploadError}</p>
+                    )}
                   </div>
                 </div>
               </div>

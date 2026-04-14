@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
-  FaPlay, FaClock, FaCircleCheck, FaChevronLeft, FaChevronRight,
-  FaMap, FaHeadphones, FaBookOpen, FaBook, FaLayerGroup,
-  FaClipboardList, FaBolt, FaXmark, FaArrowRight, FaPencil,
-  FaFileLines, FaGraduationCap,
+  FaPlay, FaClock, FaCircleCheck, FaMap, FaHeadphones,
+  FaBookOpen, FaBook, FaLayerGroup, FaClipboardList, FaXmark,
+  FaArrowRight, FaGraduationCap,
 } from 'react-icons/fa6';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -78,86 +77,77 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 function StartScreen({ exam, onStart }: { exam: MockExamData; onStart: () => void }) {
   const totalQ = exam.sections.reduce((a, s) => a + s.questions.length, 0);
+  const totalMin = Math.round(exam.totalTime / 60);
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="card w-full max-w-lg">
-        {/* Icon */}
-        <div className="flex justify-center mb-5">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center"
-            style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-            <FaGraduationCap size={36} />
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: '24px 16px' }}>
+      <div style={{ width: '100%', maxWidth: 520 }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {/* Gradient header */}
+          <div style={{ padding: '20px 24px 18px', background: 'linear-gradient(135deg, var(--primary) 0%, #5B5EA6 100%)', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <FaGraduationCap size={26} style={{ color: '#fff' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 6, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
+                {exam.subject} {exam.levelCode}
+              </span>
+              <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 6, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }}>
+                Đề thi thử đầy đủ
+              </span>
+            </div>
+            <h1 style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1.35, margin: 0 }}>{exam.title}</h1>
+            {exam.description && (
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 6, marginBottom: 0 }}>{exam.description}</p>
+            )}
+          </div>
+
+          <div style={{ padding: '20px 24px' }}>
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 16 }}>
+              {[
+                { label: 'Tổng câu', value: totalQ, color: '#4F46E5' },
+                { label: 'Thời gian', value: `${totalMin}p`, color: '#D97706' },
+                { label: 'Số phần', value: exam.sections.length, color: '#059669' },
+              ].map(s => (
+                <div key={s.label} style={{ borderRadius: 12, padding: '10px 8px', textAlign: 'center', background: 'var(--bg-muted)' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Section breakdown */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+              {exam.sections.map((sec, i) => (
+                <div key={sec.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'var(--bg-muted)' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: (SKILL_COLOR[sec.skill] ?? '#4F46E5') + '18', color: SKILL_COLOR[sec.skill] ?? '#4F46E5' }}>
+                    {SKILL_ICON[sec.skill] ?? <FaClipboardList size={12} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      Phần {i + 1}: {sec.titleVi ?? sec.title}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>
+                    {sec.questions.length}Q · {Math.round(sec.timeLimit / 60)}p
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Notice */}
+            <div style={{ borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 11, lineHeight: 1.6, background: '#FEF3C7', color: '#92400E' }}>
+              <strong>Lưu ý:</strong> Mỗi phần có giới hạn thời gian riêng. Hết giờ sẽ tự chuyển sang phần tiếp theo.
+              Không thể quay lại phần đã hoàn thành.
+            </div>
+
+            <button onClick={onStart}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 0', borderRadius: 14, fontSize: 14, fontWeight: 800, color: '#fff', background: 'var(--primary)', border: 'none', cursor: 'pointer' }}>
+              <FaPlay size={13} /> Bắt đầu thi thử
+            </button>
           </div>
         </div>
-
-        {/* Badges */}
-        <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-            style={{ background: 'var(--primary)', color: '#fff' }}>
-            {exam.subject} {exam.levelCode}
-          </span>
-          <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-            style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-            Đề thi thử đầy đủ
-          </span>
-        </div>
-
-        <h1 className="text-xl font-extrabold text-center mb-2 leading-snug"
-          style={{ color: 'var(--text-base)' }}>
-          {exam.title}
-        </h1>
-        {exam.description && (
-          <p className="text-xs text-center mb-4" style={{ color: 'var(--text-muted)' }}>{exam.description}</p>
-        )}
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {[
-            { label: 'Tổng câu', value: totalQ, color: 'var(--primary)' },
-            { label: 'Thời gian', value: `${Math.round(exam.totalTime / 60)} phút`, color: '#D97706' },
-            { label: 'Số phần', value: exam.sections.length, color: '#059669' },
-          ].map(s => (
-            <div key={s.label} className="rounded-2xl p-3 text-center" style={{ background: 'var(--bg-muted)' }}>
-              <div className="font-bold text-sm mb-0.5" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Section breakdown */}
-        <div className="space-y-2 mb-6">
-          <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Cấu trúc đề thi:</div>
-          {exam.sections.map((sec, i) => (
-            <div key={sec.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--bg-muted)' }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: (SKILL_COLOR[sec.skill] ?? '#4F46E5') + '18', color: SKILL_COLOR[sec.skill] ?? '#4F46E5' }}>
-                {SKILL_ICON[sec.skill] ?? <FaClipboardList size={14} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                  Phần {i + 1}: {sec.titleVi ?? sec.title}
-                </div>
-                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {sec.questions.length} câu · {Math.round(sec.timeLimit / 60)} phút
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Instructions */}
-        <div className="rounded-2xl p-4 mb-6 text-xs leading-relaxed"
-          style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-          <span className="font-semibold" style={{ color: 'var(--text-base)' }}>Lưu ý: </span>
-          Mỗi phần thi có giới hạn thời gian riêng. Khi hết giờ phần hiện tại sẽ tự động chuyển sang phần tiếp theo.
-          Bạn không thể quay lại phần đã hoàn thành. Sau khi hoàn tất tất cả các phần, kết quả sẽ được tính tổng hợp.
-        </div>
-
-        <button onClick={onStart}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-base font-bold text-white transition-all hover:opacity-90"
-          style={{ background: 'var(--primary)' }}>
-          <FaPlay size={14} /> Bắt đầu thi thử
-        </button>
       </div>
     </div>
   );
@@ -166,48 +156,35 @@ function StartScreen({ exam, onStart }: { exam: MockExamData; onStart: () => voi
 // ─── Section Transition ───────────────────────────────────────────────────────
 
 function SectionTransition({
-  section,
-  sectionIndex,
-  totalSections,
-  answeredInSection,
-  onContinue,
+  section, sectionIndex, totalSections, answeredInSection, onContinue,
 }: {
-  section: MockSection;
-  sectionIndex: number;
-  totalSections: number;
-  answeredInSection: number;
-  onContinue: () => void;
+  section: MockSection; sectionIndex: number; totalSections: number;
+  answeredInSection: number; onContinue: () => void;
 }) {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
-      <div className="card w-full max-w-md text-center">
-        <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-          style={{ background: '#DCFCE7', color: '#16A34A' }}>
-          <FaCircleCheck size={24} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', padding: '0 16px' }}>
+      <div className="card" style={{ width: '100%', maxWidth: 360, textAlign: 'center', padding: '28px 24px' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 18, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#DCFCE7' }}>
+          <FaCircleCheck size={26} style={{ color: '#16A34A' }} />
         </div>
-        <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+        <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
           Hoàn thành phần {sectionIndex}!
         </h2>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
           Đã trả lời {answeredInSection} câu
         </p>
-
-        {sectionIndex < totalSections && (
+        {sectionIndex < totalSections && section && (
           <>
-            <div className="rounded-xl p-3 mb-5" style={{ background: 'var(--bg-muted)' }}>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Phần tiếp theo:</div>
-              <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                {section.titleVi ?? section.title}
-              </div>
-              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <div style={{ borderRadius: 12, padding: '12px 16px', marginBottom: 16, background: 'var(--bg-muted)', textAlign: 'left' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Phần tiếp theo:</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{section.titleVi ?? section.title}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
                 {section.questions.length} câu · {Math.round(section.timeLimit / 60)} phút
               </div>
             </div>
-
             <button onClick={onContinue}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:opacity-90"
-              style={{ background: 'var(--primary)' }}>
-              Bắt đầu phần tiếp <FaArrowRight size={12} />
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--primary)', border: 'none', cursor: 'pointer' }}>
+              Bắt đầu phần tiếp <FaArrowRight size={11} />
             </button>
           </>
         )}
@@ -220,12 +197,13 @@ function SectionTransition({
 
 export default function MockExamClient({ exam }: { exam: MockExamData }) {
   const router = useRouter();
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const params = useParams();
+  const locale = (params?.locale as string) ?? 'vi';
+  const lang = (params?.lang as string) ?? 'ja';
 
-  // Exam state
   const [started, setStarted] = useState(false);
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
-  const [currentQIdx, setCurrentQIdx] = useState(0);
+  const [activeQIdx, setActiveQIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [sectionTimes, setSectionTimes] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -235,46 +213,83 @@ export default function MockExamClient({ exam }: { exam: MockExamData }) {
 
   const section = exam.sections[currentSectionIdx];
   const questions = section?.questions ?? [];
-  const q = questions[currentQIdx];
-  const totalQuestions = exam.sections.reduce((a, s) => a + s.questions.length, 0);
   const totalAnswered = Object.keys(answers).length;
+  const totalQuestions = exam.sections.reduce((a, s) => a + s.questions.length, 0);
 
-  // Section-level answered count
   const sectionAnswered = useMemo(() => {
     if (!section) return 0;
     return section.questions.filter(qq => answers[qq.id]).length;
   }, [section, answers]);
 
-  // Timer
+  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sectionStartRef = useRef<number>(0);
+
+  // Group questions by partLabel
+  const partGroups = useMemo(() => {
+    type Group = {
+      label: string; title: string | null;
+      passage: string | null; passageAudio: string | null; passageImage: string | null;
+      items: { q: MockQuestion; idx: number }[];
+    };
+    const groups: Group[] = [];
+    let lastLabel = '';
+    for (let i = 0; i < questions.length; i++) {
+      const pl = questions[i].partLabel ?? '';
+      if (pl !== lastLabel) {
+        groups.push({ label: pl, title: questions[i].partTitle, passage: questions[i].passageText, passageAudio: questions[i].passageAudio, passageImage: questions[i].passageImage, items: [{ q: questions[i], idx: i }] });
+        lastLabel = pl;
+      } else {
+        groups[groups.length - 1].items.push({ q: questions[i], idx: i });
+      }
+    }
+    return groups;
+  }, [questions]);
+
+  // Reset on section change
   useEffect(() => {
     if (!started || sectionTransition || !section) return;
     setTimeLeft(section.timeLimit);
+    questionRefs.current = {};
+    setActiveQIdx(0);
+    scrollContainerRef.current?.scrollTo({ top: 0 });
   }, [started, currentSectionIdx, sectionTransition, section]);
 
+  // Timer countdown
   useEffect(() => {
     if (!started || sectionTransition || timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft(t => {
-        if (t <= 1) {
-          // Time's up for this section
-          clearInterval(timer);
-          handleNextSection();
-          return 0;
-        }
+        if (t <= 1) { clearInterval(timer); handleNextSection(); return 0; }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, sectionTransition, currentSectionIdx]);
 
-  // Track time spent per section
-  const sectionStartRef = useRef<number>(0);
   useEffect(() => {
-    if (started && !sectionTransition && section) {
-      sectionStartRef.current = Date.now();
-    }
+    if (started && !sectionTransition && section) sectionStartRef.current = Date.now();
   }, [started, sectionTransition, section]);
+
+  // IntersectionObserver for active question tracking
+  useEffect(() => {
+    if (!started || sectionTransition) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length > 0) {
+          const topmost = visible.reduce((a, b) => a.boundingClientRect.top < b.boundingClientRect.top ? a : b);
+          setActiveQIdx(parseInt(topmost.target.getAttribute('data-q-idx') ?? '0', 10));
+        }
+      },
+      { root: container, rootMargin: '-20% 0px -40% 0px', threshold: 0.1 }
+    );
+    Object.values(questionRefs.current).forEach(el => { if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [started, sectionTransition, questions]);
 
   function recordSectionTime() {
     if (!section) return;
@@ -284,16 +299,12 @@ export default function MockExamClient({ exam }: { exam: MockExamData }) {
 
   function handleNextSection() {
     recordSectionTime();
-    if (currentSectionIdx + 1 >= exam.sections.length) {
-      handleSubmit();
-      return;
-    }
+    if (currentSectionIdx + 1 >= exam.sections.length) { handleSubmit(); return; }
     setSectionTransition(true);
   }
 
   function startNextSection() {
     setCurrentSectionIdx(i => i + 1);
-    setCurrentQIdx(0);
     setSectionTransition(false);
   }
 
@@ -309,7 +320,7 @@ export default function MockExamClient({ exam }: { exam: MockExamData }) {
       });
       const data = await res.json();
       if (res.ok) {
-        router.push(`/mock-exam/${exam.id}/result/${data.sessionId}`);
+        router.push(`/${locale}/${lang}/mock-exam/${exam.id}/result/${data.sessionId}`);
       } else {
         alert(data.error || 'Có lỗi xảy ra, thử lại nhé!');
         setSubmitting(false);
@@ -318,40 +329,30 @@ export default function MockExamClient({ exam }: { exam: MockExamData }) {
       alert('Mất kết nối. Kiểm tra mạng và thử lại.');
       setSubmitting(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitting, exam.id, answers, sectionTimes, router]);
 
   function setAnswer(questionId: string, val: string) {
     setAnswers(prev => ({ ...prev, [questionId]: val }));
   }
 
-  function goTo(idx: number) {
-    setCurrentQIdx(Math.max(0, Math.min(questions.length - 1, idx)));
+  function scrollToQuestion(idx: number) {
+    const qId = questions[idx]?.id;
+    if (!qId) return;
+    const el = questionRefs.current[qId];
+    const container = scrollContainerRef.current;
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      container.scrollBy({ top: elRect.top - containerRect.top - 80, behavior: 'smooth' });
+    }
+    setActiveQIdx(idx);
     setNavOpen(false);
   }
 
-  // ── Helper: group questions by partLabel (must be before any early returns) ──
-  const partGroups = useMemo(() => {
-    const groups: { label: string; title: string | null; startIdx: number; count: number }[] = [];
-    let lastLabel = '';
-    for (let i = 0; i < questions.length; i++) {
-      const pl = questions[i].partLabel ?? '';
-      if (pl !== lastLabel) {
-        groups.push({ label: pl, title: questions[i].partTitle, startIdx: i, count: 1 });
-        lastLabel = pl;
-      } else {
-        groups[groups.length - 1].count++;
-      }
-    }
-    return groups;
-  }, [questions]);
+  // ── Pre-start screens ──────────────────────────────────────────────────────
+  if (!started) return <StartScreen exam={exam} onStart={() => setStarted(true)} />;
 
-  // ── Not started yet ──────────────────────────────────────────────────────
-  if (!started) {
-    return <StartScreen exam={exam} onStart={() => setStarted(true)} />;
-  }
-
-  // ── Section transition screen ────────────────────────────────────────────
   if (sectionTransition) {
     const nextSection = exam.sections[currentSectionIdx + 1];
     return (
@@ -365,322 +366,344 @@ export default function MockExamClient({ exam }: { exam: MockExamData }) {
     );
   }
 
-  if (!section || !q) return null;
+  if (!section) return null;
 
+  const skillColor = SKILL_COLOR[section.skill] ?? '#4F46E5';
   const timerRed = timeLeft < 60;
   const timerYellow = timeLeft < 300 && !timerRed;
 
+  // ── Exam: fixed full-screen, no page scroll ────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-base)' }}>
-      {/* ── Sticky header ────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          {/* Left: section info */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[10px] px-2 py-0.5 rounded-lg font-bold shrink-0"
-              style={{ background: 'var(--primary)', color: '#fff' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', overflow: 'hidden' }}>
+
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <header style={{ flexShrink: 0, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          {/* Left */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 7, fontWeight: 800, background: 'var(--primary)', color: '#fff', flexShrink: 0 }}>
               {exam.levelCode}
             </span>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: (SKILL_COLOR[section.skill] ?? '#4F46E5') + '18', color: SKILL_COLOR[section.skill] ?? '#4F46E5' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: skillColor + '18', color: skillColor }}>
               {SKILL_ICON[section.skill] ?? <FaClipboardList size={12} />}
             </div>
-            <div className="min-w-0">
-              <div className="text-[11px] font-bold truncate" style={{ color: 'var(--text-base)' }}>
-                Phần {currentSectionIdx + 1}/{exam.sections.length}: {section.titleVi ?? section.title}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-base)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {section.titleVi ?? section.title}
               </div>
-              <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                Câu {currentQIdx + 1}/{questions.length} · Tổng: {totalAnswered}/{totalQuestions}
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                Phần {currentSectionIdx + 1}/{exam.sections.length} · {sectionAnswered}/{questions.length} câu · Tổng {totalAnswered}/{totalQuestions}
               </div>
             </div>
           </div>
 
-          {/* Right: timer + nav + submit */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Timer */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold"
-              style={timerRed
-                ? { background: '#FEE2E2', color: '#DC2626' }
-                : timerYellow
-                ? { background: '#FEF3C7', color: '#D97706' }
-                : { background: 'var(--bg-muted)', color: 'var(--text-base)' }}>
-              <FaClock size={10} />
+          {/* Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8,
+              fontFamily: 'monospace', fontSize: 14, fontWeight: 800, transition: 'all 0.3s',
+              background: timerRed ? '#FEE2E2' : timerYellow ? '#FEF3C7' : 'var(--bg-muted)',
+              color: timerRed ? '#DC2626' : timerYellow ? '#D97706' : 'var(--text-base)',
+            }}>
+              <FaClock size={11} />
               {formatDuration(timeLeft)}
             </div>
 
-            {/* Nav toggle */}
             <button onClick={() => setNavOpen(o => !o)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold"
-              style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-              <FaMap size={10} />
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, background: 'var(--bg-muted)', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}
+              className="lg:hidden">
+              <FaMap size={12} />
             </button>
 
-            {/* Submit section / final submit */}
             {currentSectionIdx + 1 >= exam.sections.length ? (
               <button onClick={handleSubmit} disabled={submitting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 disabled:opacity-60"
-                style={{ background: 'var(--primary)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--primary)', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                 <FaCircleCheck size={10} />
-                <span className="hidden sm:inline">{submitting ? 'Đang nộp…' : 'Nộp bài'}</span>
+                {submitting ? 'Đang nộp…' : 'Nộp bài'}
               </button>
             ) : (
               <button onClick={handleNextSection}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
-                style={{ background: SKILL_COLOR[section.skill] ?? 'var(--primary)' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, color: '#fff', background: skillColor, border: 'none', cursor: 'pointer' }}>
                 Phần tiếp <FaArrowRight size={10} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Progress bars — section + overall */}
-        <div className="h-1 flex">
+        {/* Multi-section progress bar: full-width */}
+        <div style={{ height: 3, display: 'flex' }}>
           {exam.sections.map((sec, i) => {
-            const secAnswered = sec.questions.filter(qq => answers[qq.id]).length;
-            const pct = sec.questions.length > 0 ? (secAnswered / sec.questions.length) * 100 : 0;
-            const isActive = i === currentSectionIdx;
+            const secAns = sec.questions.filter(qq => answers[qq.id]).length;
+            const pct = sec.questions.length > 0 ? (secAns / sec.questions.length) * 100 : 0;
             return (
-              <div key={sec.id} className="flex-1 relative" style={{ background: 'var(--bg-muted)' }}>
-                <div className="h-1 transition-all duration-300"
-                  style={{
-                    width: `${pct}%`,
-                    background: isActive ? (SKILL_COLOR[sec.skill] ?? 'var(--primary)') : '#94A3B8',
-                    opacity: i < currentSectionIdx ? 0.5 : 1,
-                  }} />
+              <div key={sec.id} style={{ flex: 1, background: 'var(--bg-muted)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`,
+                  background: i === currentSectionIdx ? (SKILL_COLOR[sec.skill] ?? 'var(--primary)') : '#94A3B8',
+                  opacity: i < currentSectionIdx ? 0.5 : 1, transition: 'width 0.3s',
+                }} />
               </div>
             );
           })}
         </div>
       </header>
 
-      {/* ── Body ─────────────────────────────────────────────────── */}
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex gap-5 items-start">
-        {/* Main question card */}
-        <div className="flex-1 min-w-0">
-          <div className="card">
-            {/* Part label */}
-            {q.partLabel && (
-              <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <span className="text-[11px] px-2.5 py-1 rounded-lg font-bold"
-                  style={{ background: (SKILL_COLOR[section.skill] ?? '#4F46E5') + '15', color: SKILL_COLOR[section.skill] ?? '#4F46E5' }}>
-                  {q.partLabel}
-                </span>
-                {q.partTitle && (
-                  <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>{q.partTitle}</span>
+      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+
+        {/* Questions scroll area */}
+        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 32px' }}>
+          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+            {partGroups.map((group, gIdx) => (
+              <div key={`${group.label}-${gIdx}`} style={{ marginTop: gIdx > 0 ? 36 : 0 }}>
+
+                {/* Part header: full-width accent bar */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+                  borderRadius: 12, marginBottom: 16, background: skillColor + '0e',
+                  borderLeft: `4px solid ${skillColor}`,
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {group.label && (
+                      <span style={{ fontSize: 13, fontWeight: 800, color: skillColor }}>{group.label}</span>
+                    )}
+                    {group.title && (
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: group.label ? 8 : 0 }}>{group.title}</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0 }}>
+                    {group.items.length} câu
+                  </span>
+                </div>
+
+                {/* Shared passage */}
+                {group.passage && (
+                  <div style={{ marginBottom: 16, padding: '14px 18px', borderRadius: 12, fontSize: 13, lineHeight: 1.85, whiteSpace: 'pre-wrap', background: 'var(--bg-muted)', color: 'var(--text-base)' }}>
+                    {group.passage}
+                  </div>
                 )}
-              </div>
-            )}
+                {group.passageAudio && (
+                  <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, background: '#FFF7ED' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FED7AA', color: '#C2410C', flexShrink: 0 }}>
+                      <FaHeadphones size={13} />
+                    </div>
+                    <audio controls src={group.passageAudio} style={{ flex: 1, height: 32 }} />
+                  </div>
+                )}
 
-            {/* Question header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-extrabold text-white shrink-0"
-                  style={{ background: SKILL_COLOR[section.skill] ?? 'var(--primary)' }}>
-                  {currentQIdx + 1}
-                </span>
-                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>/ {questions.length} câu</span>
-              </div>
-              {answers[q.id] && (
-                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold" style={{ background: '#DCFCE7', color: '#16A34A' }}>
-                  ✓ Đã trả lời
-                </span>
-              )}
-            </div>
+                {/* Questions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {group.items.map(({ q, idx }) => {
+                    const isAnswered = !!answers[q.id];
+                    const isActive = activeQIdx === idx;
+                    return (
+                      <div
+                        key={q.id}
+                        ref={el => { questionRefs.current[q.id] = el; }}
+                        data-q-idx={String(idx)}
+                        style={{
+                          borderRadius: 14, padding: '16px 18px',
+                          background: 'var(--bg-surface)',
+                          border: `1.5px solid ${isActive ? skillColor : isAnswered ? skillColor + '40' : 'var(--border)'}`,
+                          boxShadow: isActive ? `0 0 0 3px ${skillColor}12` : 'none',
+                          transition: 'border-color 0.2s, box-shadow 0.2s',
+                        }}
+                      >
+                        {/* Number badge + status */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                          <span style={{
+                            width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 12, fontWeight: 800, flexShrink: 0,
+                            background: isAnswered ? '#DCFCE7' : skillColor,
+                            color: isAnswered ? '#16A34A' : '#fff',
+                          }}>
+                            {idx + 1}
+                          </span>
+                          {isAnswered && (
+                            <span style={{ fontSize: 10, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 3, fontWeight: 600 }}>
+                              <FaCircleCheck size={9} /> Đã trả lời
+                            </span>
+                          )}
+                        </div>
 
-            {/* Passage (shared reading context) */}
-            {q.passageText && (
-              <div className="mb-5 p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap"
-                style={{ background: 'var(--bg-muted)', color: 'var(--text-base)', borderLeft: `3px solid ${SKILL_COLOR[section.skill] ?? 'var(--primary)'}` }}>
-                {q.passageText}
-              </div>
-            )}
+                        {/* Per-question audio */}
+                        {q.audioUrl && !group.passageAudio && (
+                          <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, background: '#FFF7ED' }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FED7AA', color: '#C2410C', flexShrink: 0 }}>
+                              <FaHeadphones size={11} />
+                            </div>
+                            <audio controls src={q.audioUrl} style={{ flex: 1, height: 28 }} />
+                          </div>
+                        )}
 
-            {/* Passage audio */}
-            {q.passageAudio && (
-              <div className="mb-4 p-3 rounded-2xl flex items-center gap-3" style={{ background: '#FFF7ED' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FED7AA', color: '#C2410C' }}>
-                  <FaHeadphones size={14} />
+                        {/* Image */}
+                        {q.imageUrl && (
+                          <div style={{ marginBottom: 10, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={q.imageUrl} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'contain', background: 'var(--bg-muted)' }} />
+                          </div>
+                        )}
+
+                        {/* Per-question passage (different from part passage) */}
+                        {q.passageText && q.passageText !== group.passage && (
+                          <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, fontSize: 12, lineHeight: 1.8, whiteSpace: 'pre-wrap', background: 'var(--bg-muted)', color: 'var(--text-base)' }}>
+                            {q.passageText}
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.75, color: 'var(--text-base)', marginBottom: 14, whiteSpace: 'pre-wrap' }}>
+                          {q.content}
+                        </p>
+
+                        {/* Options */}
+                        {Array.isArray(q.options) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                            {q.options.map((opt, i) => {
+                              const letter = LETTERS[i] ?? String(i + 1);
+                              const selected = answers[q.id] === opt;
+                              return (
+                                <button key={i} onClick={() => setAnswer(q.id, opt)}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderRadius: 10,
+                                    border: `1.5px solid ${selected ? skillColor : 'var(--border)'}`,
+                                    background: selected ? skillColor + '0f' : 'var(--bg-base)',
+                                    cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.15s',
+                                  }}>
+                                  <span style={{
+                                    width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 11, fontWeight: 800, flexShrink: 0, transition: 'all 0.15s',
+                                    background: selected ? skillColor : 'var(--bg-muted)',
+                                    color: selected ? '#fff' : 'var(--text-muted)',
+                                  }}>
+                                    {letter}
+                                  </span>
+                                  <span style={{ fontSize: 13, fontWeight: selected ? 600 : 400, flex: 1, lineHeight: 1.5, color: selected ? skillColor : 'var(--text-base)' }}>
+                                    {opt}
+                                  </span>
+                                  {selected && <FaCircleCheck size={11} style={{ color: skillColor, flexShrink: 0 }} />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Text input fallback */}
+                        {!q.options && (
+                          <input type="text" className="input"
+                            placeholder="Nhập câu trả lời..."
+                            style={{ maxWidth: 340, fontSize: 13 }}
+                            value={answers[q.id] ?? ''}
+                            onChange={e => setAnswer(q.id, e.target.value)}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <audio controls src={q.passageAudio} className="flex-1 h-8 min-w-0" />
               </div>
-            )}
+            ))}
 
-            {/* Question audio */}
-            {q.audioUrl && !q.passageAudio && (
-              <div className="mb-4 p-3 rounded-2xl flex items-center gap-3" style={{ background: '#FFF7ED' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FED7AA', color: '#C2410C' }}>
-                  <FaHeadphones size={14} />
-                </div>
-                <audio ref={audioRef} controls src={q.audioUrl} className="flex-1 h-8 min-w-0" />
-              </div>
-            )}
-
-            {/* Passage/question image */}
-            {(q.passageImage || q.imageUrl) && (
-              <div className="mb-4 rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={q.passageImage || q.imageUrl || ''} alt="Hình minh họa"
-                  className="w-full max-h-64 object-contain" style={{ background: 'var(--bg-muted)' }} />
-              </div>
-            )}
-
-            {/* Question content */}
-            <p className="text-sm font-semibold leading-relaxed whitespace-pre-wrap mb-5"
-              style={{ color: 'var(--text-base)' }}>
-              {q.content}
-            </p>
-
-            {/* Multiple choice options */}
-            {Array.isArray(q.options) && (
-              <div className="flex flex-col gap-2">
-                {q.options.map((opt, i) => {
-                  const letter = LETTERS[i] ?? String(i + 1);
-                  const selected = answers[q.id] === opt;
-                  return (
-                    <button key={i} onClick={() => setAnswer(q.id, opt)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all w-full"
-                      style={selected
-                        ? { borderColor: SKILL_COLOR[section.skill] ?? 'var(--primary)', background: (SKILL_COLOR[section.skill] ?? 'var(--primary)') + '10' }
-                        : { borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-                      <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 transition-all"
-                        style={selected
-                          ? { background: SKILL_COLOR[section.skill] ?? 'var(--primary)', color: '#fff' }
-                          : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                        {letter}
-                      </span>
-                      <span className="text-sm font-medium flex-1 leading-snug"
-                        style={{ color: selected ? (SKILL_COLOR[section.skill] ?? 'var(--primary)') : 'var(--text-base)' }}>
-                        {opt}
-                      </span>
-                      {selected && <FaCircleCheck size={12} style={{ color: SKILL_COLOR[section.skill] ?? 'var(--primary)', flexShrink: 0 }} />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Text input (for fill-in questions without options) */}
-            {!q.options && (
-              <input type="text"
-                className="input w-full max-w-sm text-sm"
-                placeholder="Nhập câu trả lời..."
-                value={answers[q.id] ?? ''}
-                onChange={e => setAnswer(q.id, e.target.value)}
-              />
-            )}
-
-            {/* Prev / Next */}
-            <div className="flex justify-between mt-6 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-              <button onClick={() => goTo(currentQIdx - 1)} disabled={currentQIdx === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-30"
-                style={{ background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                <FaChevronLeft size={10} /> Câu trước
-              </button>
-
-              {currentQIdx < questions.length - 1 ? (
-                <button onClick={() => goTo(currentQIdx + 1)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
-                  style={{ background: SKILL_COLOR[section.skill] ?? 'var(--primary)' }}>
-                  Câu tiếp <FaChevronRight size={10} />
-                </button>
-              ) : currentSectionIdx + 1 < exam.sections.length ? (
-                <button onClick={handleNextSection}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
-                  style={{ background: SKILL_COLOR[section.skill] ?? 'var(--primary)' }}>
-                  Kết thúc phần <FaArrowRight size={10} />
+            {/* Section end action */}
+            <div style={{ marginTop: 32, paddingTop: 20, borderTop: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {sectionAnswered}/{questions.length} câu đã trả lời
+              </span>
+              {currentSectionIdx + 1 >= exam.sections.length ? (
+                <button onClick={handleSubmit} disabled={submitting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--primary)', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
+                  <FaCircleCheck size={12} /> {submitting ? 'Đang nộp…' : 'Nộp bài'}
                 </button>
               ) : (
-                <button onClick={handleSubmit} disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 disabled:opacity-60"
-                  style={{ background: 'var(--primary)' }}>
-                  <FaCircleCheck size={10} /> {submitting ? 'Đang nộp…' : 'Nộp bài'}
+                <button onClick={handleNextSection}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#fff', background: skillColor, border: 'none', cursor: 'pointer' }}>
+                  Kết thúc phần → Sang phần tiếp <FaArrowRight size={12} />
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* ── Question navigator panel ─────────────────────────────── */}
-        <div className={`${navOpen ? 'fixed inset-0 z-40 bg-black/30 lg:static lg:bg-transparent' : 'hidden lg:block'}`} onClick={() => setNavOpen(false)}>
-          <div className={`${navOpen ? 'fixed right-0 top-0 h-full w-72 z-50' : 'w-56'} rounded-2xl overflow-hidden`}
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-            onClick={e => e.stopPropagation()}>
-            {/* Nav header */}
-            <div className="px-4 py-3 flex items-center justify-between"
-              style={{ borderBottom: '1px solid var(--border)', background: (SKILL_COLOR[section.skill] ?? 'var(--primary)') }}>
-              <div className="flex items-center gap-2">
-                <FaMap size={11} className="text-white/80" />
-                <span className="text-xs font-bold text-white">Bản đồ câu hỏi</span>
-              </div>
-              <button onClick={() => setNavOpen(false)} className="lg:hidden text-white/70 hover:text-white">
-                <FaXmark size={14} />
-              </button>
+        {/* ── Navigator sidebar ───────────────────────────────────────────── */}
+        {navOpen && (
+          <div className="lg:hidden" onClick={() => setNavOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,0.4)' }} />
+        )}
+        <aside
+          style={{ width: 216, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)' }}
+          className={navOpen ? 'fixed right-0 top-0 h-full z-50 shadow-2xl flex flex-col' : 'hidden lg:flex lg:flex-col'}
+        >
+          <div style={{ padding: '12px 14px', background: skillColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FaMap size={11} style={{ color: 'rgba(255,255,255,0.8)' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>Danh sách câu hỏi</span>
             </div>
+            <button onClick={() => setNavOpen(false)} className="lg:hidden"
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: 2 }}>
+              <FaXmark size={14} />
+            </button>
+          </div>
 
-            {/* Section tabs */}
-            <div className="px-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
+          {exam.sections.length > 1 && (
+            <div style={{ padding: '8px 10px', display: 'flex', gap: 5, borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               {exam.sections.map((sec, i) => (
                 <button key={sec.id}
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
-                  style={i === currentSectionIdx
-                    ? { background: SKILL_COLOR[sec.skill] ?? 'var(--primary)', color: '#fff' }
-                    : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }}
+                  style={{
+                    flex: 1, padding: '4px', borderRadius: 7, fontSize: 10, fontWeight: 700, border: 'none',
+                    cursor: i === currentSectionIdx ? 'default' : 'not-allowed',
+                    background: i === currentSectionIdx ? (SKILL_COLOR[sec.skill] ?? 'var(--primary)') : 'var(--bg-muted)',
+                    color: i === currentSectionIdx ? '#fff' : 'var(--text-muted)',
+                    opacity: i < currentSectionIdx ? 0.5 : 1,
+                  }}
                   disabled={i !== currentSectionIdx}>
                   P{i + 1}
                 </button>
               ))}
             </div>
+          )}
 
-            {/* Question grid */}
-            <div className="p-3 max-h-[calc(100vh-200px)] overflow-y-auto">
-              {partGroups.map(group => (
-                <div key={group.label + group.startIdx} className="mb-3">
-                  {group.label && (
-                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1.5 px-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {group.label}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {Array.from({ length: group.count }, (_, j) => {
-                      const idx = group.startIdx + j;
-                      const qq = questions[idx];
-                      const isAnswered = !!answers[qq.id];
-                      const isCurrent = idx === currentQIdx;
-                      return (
-                        <button key={qq.id} onClick={() => goTo(idx)}
-                          className="w-8 h-8 rounded-lg text-[10px] font-bold transition-all"
-                          style={isCurrent
-                            ? { background: SKILL_COLOR[section.skill] ?? 'var(--primary)', color: '#fff', boxShadow: `0 0 0 2px ${SKILL_COLOR[section.skill] ?? 'var(--primary)'}40` }
-                            : isAnswered
-                            ? { background: '#DCFCE7', color: '#16A34A' }
-                            : { background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
-                          {idx + 1}
-                        </button>
-                      );
-                    })}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
+            {partGroups.map((group, gIdx) => (
+              <div key={`nav-${group.label}-${gIdx}`} style={{ marginBottom: 12 }}>
+                {group.label && (
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 5, padding: '0 2px' }}>
+                    {group.label}
                   </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4 }}>
+                  {group.items.map(({ q, idx }) => {
+                    const isAnswered = !!answers[q.id];
+                    const isActive = activeQIdx === idx;
+                    return (
+                      <button key={q.id} onClick={() => scrollToQuestion(idx)}
+                        style={{
+                          height: 30, borderRadius: 7, fontSize: 10, fontWeight: 700, border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                          background: isActive ? skillColor : isAnswered ? '#DCFCE7' : 'var(--bg-muted)',
+                          color: isActive ? '#fff' : isAnswered ? '#16A34A' : 'var(--text-muted)',
+                          boxShadow: isActive ? `0 0 0 2px ${skillColor}50` : 'none',
+                        }}>
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              {/* Section progress */}
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="text-[10px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Tiến độ phần này
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
-                    <div className="h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${questions.length > 0 ? (sectionAnswered / questions.length) * 100 : 0}%`, background: SKILL_COLOR[section.skill] ?? 'var(--primary)' }} />
-                  </div>
-                  <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>
-                    {sectionAnswered}/{questions.length}
-                  </span>
-                </div>
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 5 }}>Tiến độ phần này</div>
+              <div style={{ height: 5, borderRadius: 3, background: 'var(--bg-muted)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 3, background: skillColor, transition: 'width 0.3s',
+                  width: `${questions.length > 0 ? (sectionAnswered / questions.length) * 100 : 0}%`,
+                }} />
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+                {sectionAnswered}/{questions.length} câu
               </div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

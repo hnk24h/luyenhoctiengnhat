@@ -91,6 +91,7 @@ function formatTime(seconds: number): string {
 export default function MockExamListPage() {
   const routeParams = useParams();
   const lang = (routeParams?.lang as string) ?? 'ja';
+  const locale = (routeParams?.locale as string) ?? 'vi';
   const isBJT = lang === 'bjt';
 
   const levels = isBJT ? BJT_LEVELS : JA_LEVELS;
@@ -209,7 +210,7 @@ export default function MockExamListPage() {
           {filtered.map(exam => {
             const totalQ = exam.sections.reduce((a, s) => a + s._count.questions, 0);
             return (
-              <Link key={exam.id} href={`/${lang}/mock-exam/${exam.id}`}
+              <Link key={exam.id} href={`/${locale}/${lang}/mock-exam/${exam.id}`}
                 className="block group">
                 <div className="rounded-2xl overflow-hidden transition-all hover:scale-[1.005] active:scale-[0.995]"
                   style={{ border: '1.5px solid var(--border)', background: 'var(--bg-surface)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>

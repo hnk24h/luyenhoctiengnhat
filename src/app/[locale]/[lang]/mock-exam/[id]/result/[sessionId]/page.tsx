@@ -31,6 +31,18 @@ export default async function MockExamResultPage({ params: rawParams }: Props) {
 
   if (!session) notFound();
 
+  // Fetch past sessions for this user + exam (exclude current, latest first, max 10)
+  const pastSessions = await prisma.mockExamSession.findMany({
+    where: {
+      userId: session.userId,
+      mockExamId: session.mockExamId,
+      finishedAt: { not: null },
+    },
+    orderBy: { finishedAt: 'desc' },
+    take: 10,
+    select: { id: true, score: true, correctQ: true, totalQ: true, finishedAt: true },
+  });
+
   // Build per-section stats
   const sectionStats = session.mockExam.sections.map(sec => {
     const secAnswers = session.answers.filter(a => a.sectionId === sec.id);
@@ -80,6 +92,15 @@ export default async function MockExamResultPage({ params: rawParams }: Props) {
         finishedAt: session.finishedAt?.toISOString() ?? null,
       }}
       sectionStats={sectionStats}
+      history={pastSessions.map(s => ({
+        id: s.id,
+        score: s.score ?? 0,
+        correctQ: s.correctQ,
+        totalQ: s.totalQ,
+        finishedAt: s.finishedAt!.toISOString(),
+        isCurrent: s.id === params.sessionId,
+      }))}
+      locale={params.locale}
       lang={params.lang}
     />
   );

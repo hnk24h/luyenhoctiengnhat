@@ -6,6 +6,9 @@ import { AdminModal, AdminFormField, AdminButton } from '@/components/admin/ui';
 // Định nghĩa lại type Modal cho đúng với page.tsx
 type Modal = 'cat-create' | 'cat-edit' | 'les-create' | 'les-edit' | 'item-create' | 'item-edit' | null;
 
+interface Category { id: string; name: string; skill: string; level: { code: string } }
+interface Level { id: string; code: string; name: string }
+
 interface LessonModalProps {
   modal: Modal;
   setModal: React.Dispatch<React.SetStateAction<Modal>>;
@@ -28,13 +31,29 @@ interface LessonModalProps {
     audioFile?: File;
     audioUrl?: string;
   }>>;
+  // Optional: category picker for flat-list create flow
+  categories?: Category[];
+  activeCatId?: string | null;
+  setActiveCatId?: (id: string) => void;
+  levels?: Level[];
+  activeLevel?: string;
+  setActiveLevel?: (code: string) => void;
   LESSON_TYPES: string[];
   saving: boolean;
   saveLes: () => void;
 }
 
-export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LESSON_TYPES, saving, saveLes }: LessonModalProps) {
+export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LESSON_TYPES, saving, saveLes,
+  categories, activeCatId, setActiveCatId, levels, activeLevel, setActiveLevel,
+}: LessonModalProps) {
   if (modal !== 'les-create' && modal !== 'les-edit') return null;
+
+  // When creating and category picker props provided, show a level + category selector
+  const showCatPicker = modal === 'les-create' && !!categories && !!setActiveCatId;
+  const filteredCats = showCatPicker && activeLevel
+    ? (categories ?? []).filter(c => c.level?.code === activeLevel)
+    : (categories ?? []);
+
   return (
     <AdminModal
       open
@@ -56,6 +75,26 @@ export function LessonModal({ modal, setModal, modalErr, lesForm, setLesForm, LE
           </div>
         )}
         <div className="space-y-3">
+          {showCatPicker && (
+            <div className="grid grid-cols-2 gap-3">
+              {levels && setActiveLevel && (
+                <AdminFormField label="Cấp độ" required>
+                  <select className="input w-full text-sm" value={activeLevel ?? ''} onChange={e => setActiveLevel(e.target.value)}>
+                    <option value="">— Chọn cấp độ —</option>
+                    {levels.map(l => <option key={l.id} value={l.code}>{l.name || l.code}</option>)}
+                  </select>
+                </AdminFormField>
+              )}
+              <AdminFormField label="Chủ đề" required>
+                <select className="input w-full text-sm" value={activeCatId ?? ''} onChange={e => setActiveCatId!(e.target.value)}>
+                  <option value="">— Chọn chủ đề —</option>
+                  {filteredCats.map(c => (
+                    <option key={c.id} value={c.id}>[{c.level?.code}] {c.name}</option>
+                  ))}
+                </select>
+              </AdminFormField>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <AdminFormField label="Tên bài học" required>
               <input className="input w-full" placeholder="VD: Bài 1 - Gia đình" value={lesForm.title} onChange={e => setLesForm(f => ({ ...f, title: e.target.value }))} />

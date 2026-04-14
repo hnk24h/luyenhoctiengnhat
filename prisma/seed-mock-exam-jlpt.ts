@@ -751,7 +751,7 @@ export async function seedJLPTMockExams() {
         levelCode,
         year: 2025,
         totalTime: totalTimeMin * 60,
-        published: false,
+        published: true,
       },
     });
 

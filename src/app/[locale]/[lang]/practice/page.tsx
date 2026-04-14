@@ -98,12 +98,14 @@ function FlashcardListPanel({
   selectedSkill,
   status,
   lang,
+  locale,
 }: {
   decks: Deck[];
   loading: boolean;
   selectedSkill: string;
   status: string;
   lang: string;
+  locale: string;
 }) {
   const [search, setSearch] = useState('');
   const filtered = decks.filter(d =>
@@ -159,7 +161,7 @@ function FlashcardListPanel({
           filtered.map(deck => (
             <Link
               key={deck.id}
-              href={`/${lang}/flashcards/${deck.id}`}
+              href={`/${locale}/${lang}/practice/${deck.id}`}
               className="flex items-center gap-2.5 p-2.5 rounded-xl transition-colors hover:scale-[1.01]"
               style={{ background: 'var(--bg-muted)' }}
             >
@@ -373,6 +375,7 @@ function FlashcardsContent() {
   const { data: session, status } = useSession();
   const routeParams = useParams();
   const lang = (routeParams?.lang as string) ?? 'ja';
+  const locale = (routeParams?.locale as string) ?? 'vi';
   const langCfg = useMemo(
     () => PRACTICE_LANG_CONFIG[lang] ?? PRACTICE_LANG_CONFIG.ja,
     [lang],
@@ -553,6 +556,7 @@ function FlashcardsContent() {
             selectedSkill={selectedSkill}
             status={status}
             lang={lang}
+            locale={locale}
           />
         }
       >
@@ -718,7 +722,7 @@ function FlashcardsContent() {
                           <FaTrash size={10} />
                         </button>
                       </div>
-                      <Link href={`/flashcards/${deck.id}`} className="block p-4">
+                      <Link href={`/${locale}/${lang}/practice/${deck.id}`} className="block p-4">
                         <div className="flex items-start gap-3 mb-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '18', color: deck.color }}>
                             <FaLayerGroup size={14} />
@@ -761,11 +765,11 @@ function FlashcardsContent() {
                             )}
                           </div>
                           {deck._count.cards > 0 && (
-                            <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()}
+                            <button onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = `/${locale}/${lang}/practice/${deck.id}/study`; }}
                               className="text-[11px] px-3 py-1.5 flex items-center gap-1.5 rounded-lg font-semibold transition-all hover:scale-105"
                               style={{ background: deck.color, color: '#fff' }}>
                               <FaBolt size={9} /> Ôn tập
-                            </Link>
+                            </button>
                           )}
                         </div>
                       </Link>
@@ -819,7 +823,7 @@ function FlashcardsContent() {
                       {sharedDecks.map(deck => (
                         <div key={deck.id} className="relative rounded-2xl overflow-hidden transition-all hover:scale-[1.01] active:scale-[0.99]"
                           style={{ border: '1.5px solid var(--border)', background: 'var(--bg-surface)', boxShadow: `inset 0 3px 0 0 ${deck.color}` }}>
-                          <Link href={`/flashcards/${deck.id}`} className="block p-4">
+                          <Link href={`/${locale}/${lang}/practice/${deck.id}`} className="block p-4">
                             <div className="flex items-start gap-3 mb-3">
                               <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: deck.color + '18', color: deck.color }}>
                                 <FaLayerGroup size={14} />
@@ -862,11 +866,11 @@ function FlashcardsContent() {
                                 </span>
                               </div>
                               {deck._count.cards > 0 && (
-                                <Link href={`/flashcards/${deck.id}/study`} onClick={e => e.stopPropagation()}
+                                <button onClick={e => { e.stopPropagation(); e.preventDefault(); window.location.href = `/${locale}/${lang}/practice/${deck.id}/study`; }}
                                   className="text-[11px] px-3 py-1.5 flex items-center gap-1.5 rounded-lg font-semibold transition-all hover:scale-105"
                                   style={{ background: deck.color, color: '#fff' }}>
                                   <FaBolt size={9} /> Học
-                                </Link>
+                                </button>
                               )}
                             </div>
                           </Link>
