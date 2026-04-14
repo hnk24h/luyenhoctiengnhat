@@ -246,10 +246,10 @@ export default function AdminImportPage() {
                 <FaBullseye size={11}/> skill
               </span>
               {[
-                ['doc', <FaBookOpen size={10}/>, 'Đọc'],
-                ['nghe', <FaHeadphones size={10}/>, 'Nghe'],
-                ['viet', <FaPencil size={10}/>, 'Viết'],
-                ['noi', <FaMicrophone size={10}/>, 'Nói'],
+                ['doc', <FaBookOpen key="doc-icon" size={10}/>, 'Đọc'],
+                ['nghe', <FaHeadphones key="nghe-icon" size={10}/>, 'Nghe'],
+                ['viet', <FaPencil key="viet-icon" size={10}/>, 'Viết'],
+                ['noi', <FaMicrophone key="noi-icon" size={10}/>, 'Nói'],
               ].map(([k, icon, label]) => (
                 <div key={k as string} className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   <code className="font-mono px-1 rounded" style={{ background: 'var(--bg-muted)' }}>{k}</code>
