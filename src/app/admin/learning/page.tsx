@@ -184,13 +184,15 @@ function AdminLearningPage() {
   }, [allLessons, levelFilter, skillFilter, statusFilter, search]);
 
   // ── Counts for filter tabs ──
-  const counts = useMemo(() => {
-    const byStatus: Record<string, number> = {};
+  const counts = useMemo((): { total: number; published: number; draft: number; archived: number } => {
+    let published = 0, draft = 0, archived = 0;
     allLessons.forEach(l => {
       const s = l.status ?? 'draft';
-      byStatus[s] = (byStatus[s] ?? 0) + 1;
+      if (s === 'published') published++;
+      else if (s === 'archived') archived++;
+      else draft++;
     });
-    return { total: allLessons.length, ...byStatus };
+    return { total: allLessons.length, published, draft, archived };
   }, [allLessons]);
 
   // ── Modal state ──
