@@ -74,7 +74,8 @@ const NAV: NavNode[] = [
   {
     t: 'section', label: 'Hệ thống',
     children: [
-      { t: 'leaf', href: '/admin/users', icon: FaUsers, label: 'Người dùng' },
+      { t: 'leaf', href: '/admin/users',    icon: FaUsers,   label: 'Người dùng' },
+      { t: 'leaf', href: '/admin/nav-menu', icon: FaClipboardList, label: 'Quản lý Menu' },
       {
         t: 'group', key: 'tools', icon: FaWrench, label: 'Công cụ',
         items: [

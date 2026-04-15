@@ -14,6 +14,9 @@ interface LearnLayoutProps {
 
 export const LearnLayout: React.FC<LearnLayoutProps> = ({ sidebarProps, bottomBarProps, children, rightPanel }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mode, setMode] = useState<'level' | 'skill'>('level');
+  const [selectedLevel, setSelectedLevel] = useState<string>(sidebarProps?.levels?.[0]?.code ?? '');
+  const [selectedSkill, setSelectedSkill] = useState<string>(sidebarProps?.skills?.[0]?.key ?? '');
 
   return (
     <div
@@ -27,7 +30,17 @@ export const LearnLayout: React.FC<LearnLayoutProps> = ({ sidebarProps, bottomBa
       >
         {sidebarProps?.customSidebar
           ? sidebarProps.customSidebar
-          : <LearnSidebar {...sidebarProps} collapsed={collapsed} onToggleCollapse={() => setCollapsed(c => !c)} />
+          : <LearnSidebar
+              mode={mode}
+              setMode={setMode}
+              selectedLevel={selectedLevel}
+              setSelectedLevel={setSelectedLevel}
+              selectedSkill={selectedSkill}
+              setSelectedSkill={setSelectedSkill}
+              {...sidebarProps}
+              collapsed={collapsed}
+              onToggleCollapse={() => setCollapsed(c => !c)}
+            />
         }
       </div>
       {/* Bottom bar mobile/tablet */}

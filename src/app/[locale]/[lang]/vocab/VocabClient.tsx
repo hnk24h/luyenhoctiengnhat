@@ -12,7 +12,7 @@ import { LearnHeader } from '@/components/learn/LearnHeader';
 import { useSession } from 'next-auth/react';
 import { useVocabWords } from './hooks/useVocabWords';
 import { useRefVocab } from './hooks/useRefVocab';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
   FaBookmark, FaTrash, FaPlus, FaArrowLeft,
   FaMagnifyingGlass, FaXmark, FaCheck, FaFolder, FaCircleXmark,
@@ -327,11 +327,20 @@ function GamificationBar() {
 function VocabContent() {
   const { status } = useSession();
   const routeParams = useParams();
+  const searchParams = useSearchParams();
   const lang = (routeParams?.lang as string) ?? 'ja';
   const langCfg = VOCAB_LANG_CONFIG[lang] ?? VOCAB_LANG_CONFIG.ja;
 
   // ── UI state (layout only) ───────────────────────────────────────────────────
-  const [selectedLevel, setSelectedLevel] = useState(langCfg.defaultLevel);
+  const [selectedLevel, setSelectedLevel] = useState(() => {
+    const lvl = searchParams.get('level');
+    return lvl && langCfg.levels.includes(lvl) ? lvl : langCfg.defaultLevel;
+  });
+  // Sync level when ?level= param changes (e.g. navbar dropdown click on same page)
+  useEffect(() => {
+    const lvl = searchParams.get('level');
+    if (lvl && langCfg.levels.includes(lvl)) setSelectedLevel(lvl);
+  }, [searchParams, langCfg.levels]);
   const [selectedFunc,  setSelectedFunc]  = useState('flashcard');
   const [tier, setTier] = useState<'free' | 'basic' | 'premium'>('free');
 

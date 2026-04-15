@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LearnLayout } from '@/components/learn/LearnLayout';
 import { LearnSidebar } from '@/components/LearnSidebar';
 import { useSession } from 'next-auth/react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   FaLayerGroup, FaPlus, FaXmark, FaCheck, FaBolt,
@@ -374,6 +374,7 @@ function ShareDialog({
 function FlashcardsContent() {
   const { data: session, status } = useSession();
   const routeParams = useParams();
+  const searchParams = useSearchParams();
   const lang = (routeParams?.lang as string) ?? 'ja';
   const locale = (routeParams?.locale as string) ?? 'vi';
   const langCfg = useMemo(
@@ -396,7 +397,15 @@ function FlashcardsContent() {
     { key: 'srs', label: 'Lặp lại ngắt quãng (SRS)', icon: <FaLayerGroup size={14} /> },
     { key: 'quick', label: 'Luyện ghi nhớ thường', icon: <FaBookOpen size={14} /> },
   ];
-  const [selectedLevel, setSelectedLevel] = useState(levels[0]?.code || '');
+  const [selectedLevel, setSelectedLevel] = useState(() => {
+    const lvl = searchParams.get('level');
+    return lvl && levels.some(l => l.code === lvl) ? lvl : (levels[0]?.code || '');
+  });
+  // Sync level when ?level= param changes (e.g. navbar dropdown click on same page)
+  useEffect(() => {
+    const lvl = searchParams.get('level');
+    if (lvl && levels.some(l => l.code === lvl)) setSelectedLevel(lvl);
+  }, [searchParams, levels]);
   const [selectedSkill, setSelectedSkill] = useState<'srs' | 'quick'>('srs');
 
   // ── SRS state ────────────────────────────────────────────────────────────────

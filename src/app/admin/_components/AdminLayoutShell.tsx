@@ -41,6 +41,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   theme:     'Theme',
   normalize: 'Chuẩn hóa data',
   'user-access': 'Phân quyền',
+  'nav-menu': 'Quản lý Menu',
 };
 
 function BreadcrumbInner() {

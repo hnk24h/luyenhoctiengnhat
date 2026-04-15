@@ -6,7 +6,7 @@ import { LearnHeader } from './LearnHeader';
 import { LearnCardList } from './LearnCardList';
 import { GrammarCard } from '../GrammarCard';
 import { HSK_GRAMMAR, type HskGrammarLevel, type GrammarPattern } from '@/modules/chineseGrammarContent';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 
 const HSK_LEVELS_OBJ = [
   { code: 'HSK1', label: 'HSK1', desc: 'Cơ bản, cấu trúc đơn giản' },
@@ -34,11 +34,24 @@ const JA_SKILLS = [
 
 export const GrammarPageContent: React.FC = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const lang = (params?.lang as string) || 'zh';
+
+  const allLevelCodes = lang === 'zh'
+    ? HSK_LEVELS_OBJ.map(l => l.code)
+    : JA_LEVELS_OBJ.map(l => l.code);
 
   // Shared state
   const [sidebarMode, setSidebarMode] = useState<'level' | 'skill'>('level');
-  const [selectedLevel, setSelectedLevel] = useState<string>('HSK1');
+  const [selectedLevel, setSelectedLevel] = useState<string>(() => {
+    const lvl = searchParams.get('level');
+    return lvl && allLevelCodes.includes(lvl) ? lvl : (lang === 'zh' ? 'HSK1' : 'N5');
+  });
+  // Sync level when ?level= param changes (e.g. navbar dropdown click on same page)
+  useEffect(() => {
+    const lvl = searchParams.get('level');
+    if (lvl && allLevelCodes.includes(lvl)) setSelectedLevel(lvl);
+  }, [searchParams, allLevelCodes]);
   const [selectedSkill, setSelectedSkill] = useState<string>('grammar');
   const [search, setSearch] = useState('');
   const [expandAll, setExpandAll] = useState(false);

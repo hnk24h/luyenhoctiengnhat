@@ -38,8 +38,10 @@ const MenuItem = ({ href, label, icon: Icon, active, onClick, className }: MenuI
 import type { IconType } from 'react-icons';
 import { useTheme, type AppearanceMode } from '@/context/ThemeContext';
 import { LogoMark } from '@/components/Logo';
+import { getIcon } from '@/lib/nav-icons';
+import type { NavConfigItem } from '@/lib/nav-config';
 
-type NavLink = { href: string; label: string; icon: IconType; authRequired?: boolean };
+type NavLink = { href: string; label: string; labelOverride?: string; icon: IconType; authRequired?: boolean };
 
 // ── ISO-coded nav links ─────────────────────────────────────────────────────
 
@@ -106,12 +108,14 @@ const LANG_LEVELS: Record<string, LevelMeta[]> = {
   ],
 };
 
-export function Navbar() {
+export function Navbar({ navConfig }: { navConfig?: NavConfigItem[] }) {
   const t = useTranslations('menu');
+  // Safe translate: returns the key itself if i18n entry is missing (e.g. newly added menu items)
+  const st = (key: string) => { try { return t(key); } catch { return key; } };
     function handleLogout() {
       signOut();
     }
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -153,9 +157,19 @@ export function Navbar() {
   const currentLang = langSegment;
   const currentSubjectMeta = SUBJECTS.find(s => s.id === currentLang) ?? SUBJECTS[0];
 
-  const activeNavLinks: NavLink[] = currentLang === 'zh' ? CHINESE_NAV_LINKS
-    : currentLang === 'en' ? PMP_NAV_LINKS
-    : JLPT_NAV_LINKS;
+  // Use DB-sourced navConfig when available, otherwise fall back to hardcoded arrays
+  const activeNavLinks: NavLink[] = useMemo(() => {
+    if (navConfig && navConfig.length > 0) {
+      const langKey = currentLang === 'en' ? 'pmp' : currentLang;
+      return navConfig
+        .filter(i => i.lang === langKey && i.enabled)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(i => ({ href: i.href, label: i.labelKey, labelOverride: i.label, icon: getIcon(i.iconName), authRequired: i.authRequired }));
+    }
+    return currentLang === 'zh' ? CHINESE_NAV_LINKS
+      : currentLang === 'en' ? PMP_NAV_LINKS
+      : JLPT_NAV_LINKS;
+  }, [navConfig, currentLang]);
 
   const isAdmin = (session?.user as any)?.role === 'admin';
 
@@ -169,6 +183,13 @@ export function Navbar() {
     ...(isAdmin ? [{ href: '/admin', label: 'profile', icon: FaGear }] : []),
   ];
   const primaryLinks = useMemo(() => {
+    // If DB config is present, use isPrimary from there
+    if (navConfig && navConfig.length > 0) {
+      const langKey = currentLang === 'en' ? 'pmp' : currentLang;
+      const primaryHrefs = new Set(navConfig.filter(i => i.lang === langKey && i.isPrimary).map(i => i.href));
+      return visibleLinks.filter(l => primaryHrefs.has(l.href));
+    }
+    // Fallback: hardcoded primary set
     if (currentLang === 'en') return visibleLinks;
     const primaryHrefs = new Set([
       `/${currentLang}/vocab`,
@@ -179,7 +200,7 @@ export function Navbar() {
       `/${currentLang}/grammar`,
     ]);
     return visibleLinks.filter(l => primaryHrefs.has(l.href));
-  }, [visibleLinks, currentLang]);
+  }, [visibleLinks, currentLang, navConfig]);
 
   const exploreLinks = useMemo(
     () => visibleLinks.filter(link => !primaryLinks.some(primary => primary.href === link.href)),
@@ -297,6 +318,7 @@ export function Navbar() {
               toggleMenu={toggleMenu}
               openMenu={openMenu}
               currentLocale={locale}
+              sessionStatus={sessionStatus}
             />
 
             {/* ── Right controls ── */}
@@ -353,12 +375,12 @@ export function Navbar() {
           label: t(sub.label),
           desc: t(sub.desc)
         }))}
-        primaryLinks={primaryLinks.map(link => ({ ...link, label: t(link.label) }))}
-        exploreLinks={exploreLinks.map(link => ({ ...link, label: t(link.label) }))}
+        primaryLinks={primaryLinks.map(link => ({ ...link, label: link.labelOverride ?? st(link.label) }))}
+        exploreLinks={exploreLinks.map(link => ({ ...link, label: link.labelOverride ?? st(link.label) }))}
         isActive={isActive}
         LANG_LEVELS={Object.fromEntries(Object.entries(LANG_LEVELS).map(([lang, levels]) => [lang, levels.map(lv => ({ ...lv, desc: t(lv.desc) }))]))}
         session={session}
-        profileLinks={profileLinks.map(link => ({ ...link, label: t(link.label) }))}
+        profileLinks={profileLinks.map(link => ({ ...link, label: st(link.label) }))}
         appearanceOptions={appearanceOptions.map(opt => ({ ...opt, label: t(opt.label) }))}
         appearance={appearance}
         setAppearance={setAppearance}

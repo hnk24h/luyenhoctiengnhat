@@ -560,6 +560,29 @@ model SavedWordsOnCollections {
   @@id([wordId, collectionId])
 }
 
+// ─── NAV MENU MANAGEMENT ──────────────────────────────────────────────────────
+// Stores customisable navigation items for each language section (ja / zh / pmp).
+// Replaces the hardcoded JLPT_NAV_LINKS / CHINESE_NAV_LINKS / PMP_NAV_LINKS arrays.
+// Admin can enable/disable, reorder, or rename items without a code deploy.
+
+model NavMenuItem {
+  id           String   @id @default(cuid())
+  lang         String   // 'ja' | 'zh' | 'pmp'
+  href         String   // route path, e.g. '/ja/vocab'
+  labelKey     String   // i18n key used in t('menu.<key>'), e.g. 'vocab'
+  label        String?  // optional display name override; if set, shown instead of i18n key
+  iconName     String   // react-icons name, e.g. 'FaBookOpen'
+  sortOrder    Int      @default(0)
+  isPrimary    Boolean  @default(false)  // shown in top desktop nav bar
+  enabled      Boolean  @default(true)
+  authRequired Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([lang, href])
+  @@index([lang, enabled, sortOrder])
+}
+
 // ─── Chinese / HSK Module ─────────────────────────────────────────────────────
 
 model ChinesePassage {

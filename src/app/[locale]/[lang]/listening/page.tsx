@@ -109,6 +109,11 @@ function ListeningPageContent() {
   const [practices, setPractices] = useState<ListeningPractice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState(() => searchParams.get('level') ?? cfg.levelCodes[0]);
+  // Sync level when ?level= param changes (e.g. navbar dropdown click on same page)
+  useEffect(() => {
+    const lvl = searchParams.get('level');
+    if (lvl && cfg.levelCodes.includes(lvl)) setSelectedLevel(lvl);
+  }, [searchParams, cfg.levelCodes]);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
