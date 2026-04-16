@@ -453,9 +453,9 @@ export default function AdminUsersPage() {
       <ConfirmDialog
         open={!!hook.deleteTarget}
         title="Xóa người dùng"
-        message={`Bạn có chắc muốn xóa "${hook.deleteTarget?.name ?? hook.deleteTarget?.email}"? Hành động này không thể hoàn tác.`}
+        description={`Bạn có chắc muốn xóa "${hook.deleteTarget?.name ?? hook.deleteTarget?.email}"? Hành động này không thể hoàn tác.`}
         confirmLabel="Xóa"
-        variant="danger"
+        danger
         loading={hook.deleting}
         onConfirm={hook.confirmDelete}
         onCancel={() => hook.setDeleteTarget(null)}
@@ -464,9 +464,9 @@ export default function AdminUsersPage() {
       <ConfirmDialog
         open={bulkConfirm}
         title="Xóa hàng loạt"
-        message={`Xóa ${selectedIds.size} người dùng đã chọn? Hành động này không thể hoàn tác.`}
+        description={`Xóa ${selectedIds.size} người dùng đã chọn? Hành động này không thể hoàn tác.`}
         confirmLabel="Xóa tất cả"
-        variant="danger"
+        danger
         loading={bulkDeleting}
         onConfirm={handleBulkDelete}
         onCancel={() => setBulkConfirm(false)}
