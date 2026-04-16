@@ -438,7 +438,7 @@ export default function LessonDetailModal({ lesson, onClose, onEdit, onDelete, i
         <ConfirmDialog
           open={!!deleteTarget}
           title="Xóa mục"
-          message={`Bạn có chắc muốn xóa mục "${deleteTarget?.term}"?`}
+          description={`Bạn có chắc muốn xóa mục "${deleteTarget?.term}"?`}
           onConfirm={() => deleteTarget && handleDeleteItem(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
           danger
